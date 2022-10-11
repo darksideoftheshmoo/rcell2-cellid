@@ -78,12 +78,37 @@ A minimal usage example with:
 
 > Note: this is only meant as a quick example, read on to learn more! and use the ?help ;)
 
+The example requires sample images from the `rcell2.examples` package. 
+Install it first, directly from GitHub:
+
+
 ```{r}
 # Location of your image set
-data.dir <- system.file("extdata/time_series_image_samples/", package = "rcell2.cellid")
+data.dir <- "/path/to/your/data"
 
-# Optional: use this if you have images from Metamorph's MDA, you may need to rename them
-# rename_mda(images.path = images.path)
+if(!require(remotes)){
+  # Install the "remotes" package if not found:
+  install.packages("remotes")
+}
+
+if(!require(rcell2.examples)){
+  # Install the "rcell2.examples" package if not found:
+  remotes::install_github("darksideoftheshmoo/rcell2.examples")
+}
+
+# Or use the example images
+data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
+                        package = "rcell2.examples")
+
+# List files
+dir(data.dir)
+```
+
+Run the example:
+
+```{r}
+# Optional: uncomment the following if you have images from Metamorph's MDA, you may need to rename them
+# rename_mda(images.path = data.dir)
 
 # Optional: Define a set of parameters for CellID.
 # parameters.txt <- rcell2.cellid::parameters_write(rcell2.cellid::parameters_default())
@@ -103,6 +128,9 @@ cell2.out <-
                        # dry = T,  # To test stuff without overwritting previous output files.
                        output_coords_to_tsv = T  # Optional! Only works with newer CellID (>= 1.5).
                        )
+
+# Chech the output messages:
+cell2.out
 ```
 
 The output tables can be loaded with `cell.load.alt`.
@@ -185,7 +213,7 @@ Using Metamorph's _Multi-dimensional acquisition_ (MDA for short), may use file 
 `rename_mda` will help you renaming those weird file names into something more useful.
 
 ```{r}
-images.path <- "~/Projects/PhD/data/uscope/multidimensional_exp-20211126-Far1NG-wt_y_dKar4/"
+images.path <- ""  # Path to the images produced by MetaMorph's MDA.
 rename_mda(images.path)
 ```
 
@@ -213,10 +241,18 @@ It requires the ijtiff and XML package:
 > so I stuck to the XML package. See tiff_plane_info's help and source for details.
 
 ```{r}
-metamorph_pics_dir <- 
-  system.file("extdata/time_series_image_samples/", 
-              package = "rcell2.cellid")
+# Choose your own path!
+metamorph_pics_dir <- "/path/to/your/data"
 
+# Or use the example images (requires "rcell2.examples", see first example above).
+metamorph_pics_dir <- system.file("extdata/sample_datasets/time_series_sample/",
+                                  package = "rcell2.examples")
+
+# List files
+dir(metamorph_pics_dir)
+```
+
+```{r}
 metamorph_pic <- paste0(metamorph_pics_dir, "/BF_Position001_time01.tif")
 
 pic_plane_info <- tiff_plane_info(path = metamorph_pic)
@@ -350,12 +386,23 @@ Here is a wrapper that does most of this for you, calling ImageJ headlessly.
 Prepare new image directory with the subset of BF files:
 
 ```{r}
-data.dir <- 
-  system.file("extdata/time_series_image_samples/", package = "rcell2.cellid")
+# Choose your own path!
+data.dir <- "/path/to/your/data"
 
+# Or use the example images (requires "rcell2.examples", see first example above).
+data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
+                        package = "rcell2.examples")
+
+# List files
+dir(data.dir)
+```
+
+
+```{r}
 # Get image paths
-cellid.args <- rcell2.cellid::arguments(path = data.dir,
-                                        file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$") %>% 
+cellid.args <- 
+  rcell2.cellid::arguments(path = data.dir,
+                           file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$") %>% 
   filter(pos %in% good.pos)
 
 # Save BF files
@@ -399,8 +446,9 @@ if(length(all.files) == length(bf.files) + length(the.rest)){
 
 ```{r}
 # Get image paths
-cellid.args <- rcell2.cellid::arguments(path = new.data.dir,
-                                        file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$") %>% 
+cellid.args <-
+  rcell2.cellid::arguments(path = new.data.dir,
+                           file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$") %>% 
   filter(pos %in% positions)
 ```
 
@@ -560,8 +608,12 @@ Define the path of the original images:
 # Choose your own path!
 data.dir <- "/path/to/your/data"
 
-# Or, try the sample images:
-data.dir <- system.file("extdata/time_series_image_samples/", package = "rcell2.cellid")
+# Or use the example images (requires "rcell2.examples", see first example above).
+data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
+                        package = "rcell2.examples")
+
+# List files
+dir(data.dir)
 ```
 
 `arguments()` produce un data.frame con información de las fotos para ejecutar CellID. Se genera con la función `arguments`.
