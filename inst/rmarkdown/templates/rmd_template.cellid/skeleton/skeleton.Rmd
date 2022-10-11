@@ -81,7 +81,6 @@ A minimal usage example with:
 The example requires sample images from the `rcell2.examples` package. 
 Install it first, directly from GitHub:
 
-
 ```{r}
 # Location of your image set
 data.dir <- "/path/to/your/data"

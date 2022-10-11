@@ -5,8 +5,8 @@ This branch wraps [Cell-ID](https://github.com/darksideoftheshmoo/cellID-linux/t
 rcell2's functionality is split into four packages:
 
 * The main rcell2 package offers functions to load Cell-ID's output to data.frames, and image manipulation based on EBImage. A development version of this package is available in the [`rcell.dev`](https://github.com/darksideoftheshmoo/rcell2/tree/rcell2.dev) branch.
-* Cell-ID, the image segmentation software, has been wrapped in the [`rcell.cellid`](https://github.com/darksideoftheshmoo/rcell2/tree/rcell2.cellid) package. It offers functions to run CellID from R, and an rmarkdown template showcasing advanced functionality.
-* The cell tiling and graphic filtering apps, built on R-Shiny and [magick](https://github.com/ropensci/magick), are available in the [`rcell.magick`](https://github.com/darksideoftheshmoo/rcell2/tree/rcell2.magick) package.
+* Cell-ID, the image segmentation software, has been wrapped in the [`rcell.cellid`](https://github.com/darksideoftheshmoo/rcell2-cellid) package. It offers functions to run CellID from R, and an rmarkdown template showcasing advanced functionality.
+* The cell tiling and graphic filtering apps, built on R-Shiny and [magick](https://github.com/ropensci/magick), are available in the [`rcell.magick`](https://github.com/darksideoftheshmoo/rcell2-magick) package.
 * The [`rcell2.examples`](https://github.com/darksideoftheshmoo/rcell2.examples) package contains notebooks on general usage, and on several classification and analysis methods.
 
 This package is very well tested in baker's yeast data, and R version 4+.
@@ -31,7 +31,7 @@ With Rcell2, you can load an analize the CellID results freely, using standard R
 
 > Background corrected fluorescent signal concentration VS time, plotted with ggplot2.
 
-## Usage
+## Usage examples
 
 An Rmd notebook with minimal and detailed usage examples is available.
 
