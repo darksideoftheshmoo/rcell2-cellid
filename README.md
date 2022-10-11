@@ -33,57 +33,53 @@ With Rcell2, you can load an analize the CellID results freely, using standard R
 
 ## Usage
 
-Get a workflow template notebook with:
+An Rmd notebook with minimal and detailed usage examples is available.
 
-```R
+It is included as an Rmarkdown template,
+and can also be opened in Rstudio with a convenience function:
+
+```r
 get_workflow_template_cellid()
 ```
 
-This will download and open a Rmarkdown notebook, with usage examples and brief explanations.
+This will either copy or download and open a Rmarkdown notebook,
+with usage examples and brief explanations.
 
-## Branch notes
-
-You can try out the CellID binary in the R package library directory,
-after installation of this package.
-
-Once you've installed the package, the binary's path can be obtained with: `system.file("rcellid", package = "rcell2.cellid", mustWork = T)`.
-
-It is automatically used by `cell2()`.
-
-However, if CellID's compilation fails the package will still install.
-In that case you can compile the program yourself by visiting its repo, and following the README's instructions:
-
-* CellID 1.4.6: https://github.com/darksideoftheshmoo/cellID-linux
-* CellID 1.5+: https://github.com/darksideoftheshmoo/cellID-linux/tree/mask_mod
-
-# Installation
+## Installation
 
 Overview:
 
 1. Install R dependencies (this step is automatic).
-2. Install system dependencies (optional, but required to _make_ the CellID executable).
-3. Install the package with `devtools::install_github("darksideoftheshmoo/rcell2", ref = "rcell2.cellid")`.
+2. Install system dependencies (required to _make_ the CellID executable, otherwise optional).
+3. Install the package with:
+
+```r
+remotes::install_github("darksideoftheshmoo/rcell2-cellid")
+```
 
 > Note that step 2 _can_ be skipped if you already have a CellID binary in your system,
 but you will need to specify it's path in `cell2()`. If the binary is of an older version
 of CellID, the new parameters in `cell2()` will not work.
 
-## R Dependencies
+### R Dependencies
 
-Most of the R package dependencies are listed in the `DESCRIPTION` file, and should install automatically.
+Most of the R package dependencies are listed in the `DESCRIPTION` file,
+and should install automatically.
 
-We suggest installing the [```tidyverse```][1] meta-package (and use it, you'll not regret it) and [```devtools```][2].
+We suggest installing the [```tidyverse```][1] meta-package 
+(and use it, you'll not regret it) and [```devtools```][2].
 
 ```R
 # Dependencies
 install.packages(c("tidyverse", "devtools"))
 ```
 
-## System dependencies for CellID
+### System dependencies for CellID
 
 Obvious dependency: `R`
 
-The package has some C library dependencies, needed to compile the bundled C code.
+The package has some C library dependencies (such as `tiff`), 
+needed to compile the bundled C code.
 
 However, if compilation fails, the package will still install, 
 and you will need a CellID binary to use `cell2()`.
@@ -126,6 +122,7 @@ You need to install `Rtools`: https://cran.r-project.org/bin/windows/Rtools/
 
 Apparently it works just fine, we thank the devs of the [ijtiff](https://github.com/ropensci/ijtiff) package for [this](https://github.com/ropensci/magick/blob/master/tools/winlibs.R) :).
 
+
 ### Using an external CellID binary (optional)
 
 The `cell2()` function can be used to run any CellID binary directly from R, effectivley wrapping it.
@@ -136,12 +133,32 @@ Older CellID versions (< 1.4.6) may work, as long as the new features are not en
 
 Visit the CellID repository to find standalone installation instructions (links [above](https://github.com/darksideoftheshmoo/rcell2/blob/rcell2.cellid/README.md#branch-notes)).
 
+### CellID installation notes
+
+You can try out the CellID binary in the R package library directory,
+after installation of this package.
+
+Once you've installed the package, 
+the binary's path can be obtained with:
+
+```r
+system.file("bin/cell", package = "rcell2.cellid", mustWork = T)
+```
+
+It is automatically used by `cell2()`.
+
+However, if CellID's compilation fails, this package will still install.
+In that case you can compile the program yourself by visiting its repo, and following the README's instructions:
+
+* CellID 1.5+: https://github.com/darksideoftheshmoo/cellID-linux/tree/mask_mod
+* CellID 1.4.6: https://github.com/darksideoftheshmoo/cellID-linux
+
 ## Installing the package
 
-Install using `devtools`, directly from github repo:
+Install using `remotes`, directly from the github repo:
 
-```R
-devtools::install_github("darksideoftheshmoo/rcell2", ref = "rcell2.cellid")
+```r
+remotes::install_github("darksideoftheshmoo/rcell2-cellid")
 ```
 
 ## CellID compilation notes
@@ -173,13 +190,15 @@ For compiling the bundled `libtiff`, you may also require:
 
 # New tools in `rcell2`
 
-## _Tidy_ analysis framework for CellID's data
-
-Check out the master branch, or the [`rcell2.dev`](https://github.com/darksideoftheshmoo/rcell2/tree/rcell2.dev) branch.
+Besides the `rcell2.cellid` package, the following is new.
 
 ## R-Shiny and `magick` tools for cytometry data
 
-Check out the [`rcell2.magick`](https://github.com/darksideoftheshmoo/rcell2/tree/rcell2.magick) branch.
+Check out the [`rcell2.magick`](https://github.com/darksideoftheshmoo/rcell2-magick) repo.
+
+## _Tidy_ analysis framework for CellID's data
+
+Check out the master branch, or the [`rcell2.dev`](https://github.com/darksideoftheshmoo/rcell2/tree/rcell2.dev) branch.
 
 ## Hu Moment functions for raw cell segmentation data
 
