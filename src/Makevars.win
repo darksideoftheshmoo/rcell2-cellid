@@ -1,0 +1,56 @@
+## See IJtiff package for reference:
+## https://github.com/ropensci/ijtiff/blob/master/src/Makevars.win
+## https://github.com/ropensci/ijtiff/blob/master/tools/winlibs.R.
+
+##ifeq "$(WIN)" "64"
+##PKG_CPPFLAGS= -I../windows/libtiff-4.0.9/include
+##PKG_LIBS= -L../windows/libtiff-4.0.9/lib${R_ARCH} -ltiff -ljpeg -llzma -lz
+##else
+##PKG_LIBS= -ltiff
+##PKG_LIBS= -ltiff -ljpeg -llzma -lz
+##endif
+
+# Make value available to Makefile
+tiflibs=tiflibs
+export tiflibs
+tiflinks=-ltiff -ljpeg -lz
+export tiflinks
+
+# Set gcc as the C compiler (otherwise "cc" would not be found).
+CC=gcc
+export CC
+
+# Adding .PHONY to a target will prevent make from confusing the phony target with a file name. 
+# For example, if the file “clean” is created somehow elsewhere, "make clean" will still be run.
+.PHONY: all cellid tiflibs preclean cleanup
+
+# Define "all" targets as requiring "cellid" and "rbuildcleanup"
+all: cellid tiflibs cleanup
+
+# Define "cellid" target as requiring tiflibs, and building cellid using automake
+cellid: tiflibs
+	cd cellID && make
+	mv cellID/cell cell.exe
+	cd cellID && make clean
+
+# Forcing x64 version of the static library, chackable with ${R_ARCH}
+tiflibs: preclean
+	"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" "../tools/winlibs.R"
+	mkdir -p ../inst/tiff4
+	mv libtiff-4.2.0/ucrt64/lib ../inst/tiff4/lib
+	mv libtiff-4.2.0/ucrt64/include ../inst/tiff4/include
+
+# jbiglibs:
+# 	cd libjbig21 && make
+
+# jpeglibs:
+# 	cd libjpeg6b && ./configure
+# 	cd libjpeg6b && make
+
+preclean:
+	rm -rf libtiff-4.2.0
+	rm -rf ../inst/tiff4
+
+cleanup: tiflibs cellid
+	rm -rf libtiff-4.2.0
+	rm -rf ../inst/tiff4

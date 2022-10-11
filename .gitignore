@@ -1,0 +1,6 @@
+.Rhistory
+.RData
+.Rproj.user
+/.Rd2pdf*
+.DS_Store
+*.directory

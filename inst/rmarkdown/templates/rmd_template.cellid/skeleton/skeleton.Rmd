@@ -1,0 +1,1149 @@
+---
+title: "rcell2.cellid: CellID Workflow Template"
+author: "Nicolás Méndez"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float:
+      collapsed: false
+    toc_depth: 4
+    number_sections: false
+    smooth_scroll: false
+    code_folding: hide
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    toc_depth: 4
+    number_sections: true
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+urlcolor: blue
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "output/renders") })
+bibliography: references.bib
+---
+
+<!-- Download a copy of this file with rcell2::get_workflow_template() -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T,
+                      message = F, 
+                      # https://yihui.org/knitr/options/#chunk-options
+                      out.width = "100%")
+                      # https://stackoverflow.com/a/66753995
+                      # tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+knitr::opts_knit$set(root.dir = here::here())  #, base.dir = here::here())
+
+# library(rcell2)  # this package you are checking out :)
+library(rcell2.cellid)  # Advanced functionality: run CellID entirely in R.
+# library(rcell2.magick)  # Advanced functionality: filter data using Shiny and preview images with Magick.
+
+# library(magick)  # if you need it
+# library(utiles)  # if you need it, get this from: https://gitlab.com/naikymen/r_utils
+
+library(tidyverse)  # import numpy as np (?)
+```
+
+## Friendly reminders
+
+**Read the README**.md at rcell2's GitHub repo.
+
+**Preview pictures** with FIJI-ImageJ before you being, a simple Macro can be run to load virtual hyperstacks of any experiment:
+
+```{Java}
+// HyperStack para taguear
+run("Image Sequence...", 
+    "open=/path_to_your_r_libraries/4.2/rcell2.cellid/extdata/time_series_image_samples// file=(.*\\d.tif$) sort use");
+run("Stack to Hyperstack...", 
+    "order=xyczt(default) channels=73 slices=48 frames=3 display=Grayscale");
+```
+
+> Replace `path_to_your_r_libraries` and adjust the number of `channles`, `slices` and `frames` to your image set. 
+> 
+> Note: the dimensions names may be mismatched, because virtual stacks must be`xyczt` order (time is likely to end up as the "channels" dimension), but the order in which images are loaded depends on how their files are named (and thus ordered).
+
+La única restricción es que solo podemos tener 3 "dimensiones extra": `frame`, `plane`, y `channel`. Esa limitación es molesta cuando tenemos todo eso, y además tenemos las fotos y los `.out` de cellid (para el que necesitariamos una _cuarta_ dimensión).
+
+Otra aclaración: las fotos en el folder tendrían que estar ordenadas por "xyczt" para armar un virtual hyperstack. Ese casi nunca es el caso, entonces hacemos de cuenta, por ejemplo, que la dimensión "`c`" es el tiempo (porque las fotos se ordenan primero por t.frame), que "`z`" es la posición (porque las fotos se ordenan segundo por posicion), y que "`t`" es el canal (porque las fotos se ordenan último por channel).
+
+Si alguien sabe como reordenar fotos en un stack, que avise. Creo que se puede ¿reslice? ¿algo asi?
+
+## Minimal example
+
+A minimal usage example with:
+
+* Image filenames in time-course experiment "format": `BF_Position001_time01.tif`
+* Default CellID segmentation parameters.
+* The built-in CellID binary.
+
+> Note: this is only meant as a quick example, read on to learn more! and use the ?help ;)
+
+```{r}
+# Location of your image set
+data.dir <- system.file("extdata/time_series_image_samples/", package = "rcell2.cellid")
+
+# Optional: use this if you have images from Metamorph's MDA, you may need to rename them
+# rename_mda(images.path = images.path)
+
+# Optional: Define a set of parameters for CellID.
+# parameters.txt <- rcell2.cellid::parameters_write(rcell2.cellid::parameters_default())
+
+# Prepare image paths for CellID, with a default "file.pattern".
+
+cellid.args <- 
+  rcell2.cellid::arguments(path = data.dir
+                           # file.pattern = "^(BF)_Position(\\d+)_time(\\d+).tif$", bf_as_fl = T,  # Settings for a "BF only" experiment.
+                           # file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)().tif$"  # Settings for a single frame experiment.
+                           # parameters = parameters.txt  # Optional: include if defined previously.
+                           )
+# Run CellID
+cell2.out <- 
+  rcell2.cellid::cell2(arguments = cellid.args, 
+                       # cell.command = "~/Software/cellID-linux/cell",  # You may use an external executable.
+                       # dry = T,  # To test stuff without overwritting previous output files.
+                       output_coords_to_tsv = T  # Optional! Only works with newer CellID (>= 1.5).
+                       )
+```
+
+The output tables can be loaded with `cell.load.alt`.
+
+```{r}
+# Load output
+cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
+```
+
+Function `load_cell_data` from `rcell2` can load those tables as well, 
+and also the cell boundaries and interior pixels coordinates with `cell.load.boundaries`.
+
+```{r}
+# rcell2's main analysis package
+if(!require(rcell2)){
+   devtools::install_github("darksideoftheshmoo/rcell2", ref = "rcell2.dev")
+}
+
+# Load output
+cell_data <- rcell2::load_cell_data(path = data.dir)
+
+# Optional: load cell boundaries,
+# Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
+cell.boundaries <- 
+  rcell2::cell.load.boundaries(data.source = "masks.tsv",
+                               arguments = cellid.args,
+                               pixel.type = "b"
+                               )
+```
+
+Access the main output and plot:
+
+```{r}
+cdata <- cell.data$data
+
+cdata %>% ggplot(aes(a.tot, fft.stat)) + 
+  geom_point() + facet_grid(~pos)
+```
+
+Output variables are described by this documentation function:
+
+```{r}
+rcell2.cellid::cellid_output_descriptions(list.output = F)
+```
+
+Youmay want to check out the Shiny/Magick rcell2 analisys package:
+
+```{r}
+# rcell2's image manipulation and cytometry package
+if(!require(rcell2.magick)){
+   devtools::install_github("darksideoftheshmoo/rcell2", ref = "rcell2.magick")
+}
+
+# Images data.frame
+images <- cell.data$images
+
+# Pics
+cdata %>% filter(fft.stat < 0.3, el.p > 0.8) %>% 
+  rcell2.magick::magickCell(images)
+
+# Plot
+rcell2.magick::cellSpreadPlot(cdata, images)
+
+# App
+rcell2.magick::shinyCell(cdata, paths = images)
+```
+
+Puede ser conveniente guardarlo en un archivo Rdata.
+
+```{r}
+save.image("resultado_segmentacion.Rdata")
+```
+
+## Preprocessing
+
+### Renaming Metamorph MDA images
+
+Using Metamorph's _Multi-dimensional acquisition_ (MDA for short), may use file names different from the usual style (i.e `YFP_Position01_time1.tif`, and so on).
+
+`rename_mda` will help you renaming those weird file names into something more useful.
+
+```{r}
+images.path <- "~/Projects/PhD/data/uscope/multidimensional_exp-20211126-Far1NG-wt_y_dKar4/"
+rename_mda(images.path)
+```
+
+See `?rename_mda` for extra options.
+
+The defaults are useful for a three channel experiment, and file names looking like this: `far1_rtcc_exp16_thumb_w1LED-BF--YFPcube--cam_s17_t35.TIF`.
+
+```{r}
+formals(rename_mda)
+```
+
+These are easily adaptable to other use cases, for example you may change `channel.dict` to include other channels, in a different order.
+
+Note that the `ch` field must match the corresponding capture group in `identifier.pattern` exactly.
+
+### Check XY stage coordinates
+
+It may be a good idea to double check that the physical coordinates of your images
+match your expectations (i.e. the column/row pairs of each well in a microscopy plate).
+This information is stored in TIFF's metadata.
+
+It requires the ijtiff and XML package:
+
+> The xml2 package does not convert the attributes automatically,
+> so I stuck to the XML package. See tiff_plane_info's help and source for details.
+
+```{r}
+metamorph_pics_dir <- 
+  system.file("extdata/time_series_image_samples/", 
+              package = "rcell2.cellid")
+
+metamorph_pic <- paste0(metamorph_pics_dir, "/BF_Position001_time01.tif")
+
+pic_plane_info <- tiff_plane_info(path = metamorph_pic)
+
+pic_plane_info %>% 
+  filter(grepl("stage-position", id))
+```
+
+```{r}
+metamorph_pics <-
+  dir(path = metamorph_pics_dir, 
+      pattern = "BF.*\\d+.tif$",
+      full.names = T)
+
+plane_info_df <- setNames(metamorph_pics, basename(metamorph_pics)) %>% 
+  lapply(tiff_plane_info) %>% 
+  bind_rows(.id="image") %>% 
+  mutate(variable = make.names(id)) %>% 
+  filter(grepl("stage.position", variable)) %>% 
+  mutate(value = as.numeric(value)) %>% 
+  pivot_wider(id_cols = "image", names_from = "variable", values_from = "value")
+
+plane_info_df
+```
+
+Plot XY stage positions:
+
+```{r}
+ggplot(plane_info_df) +
+  geom_point(aes(stage.position.x, stage.position.y))
+```
+
+This is specially useful when tracing a path for positions in a many-well time-course experiment.
+
+The following code match the images' _position_ (Pos) to their microscope stage _physical_ XY coordinates,
+which are stored in the TIFF tags of the original images.
+
+It requires the `images` dataframe in `cell.data` to get the file names,
+_but_ you could also use `dir` to get the files by pattern, and `sub` to get the position IDs,
+independently of CellID.
+
+```{r}
+cid.arguments <- 
+  rcell2.cellid::arguments(
+    path = metamorph_pics_dir, 
+    file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$", 
+    bf_as_fl = T
+    )
+
+images <- rcell2.cellid::arguments_to_images(arguments = cid.arguments)
+```
+
+Add image metadata and replot the stage's "path":
+
+```{r}
+plane_info_df %>% 
+  left_join(select(images, image, pos, t.frame, channel)) %>% 
+  arrange(pos) %>% 
+  ggplot(aes(stage.position.x, stage.position.y, label = pos)) +
+  geom_path(aes(group = t.frame)) +
+  geom_text(size=10) +
+  facet_grid(t.frame~channel) +
+  scale_x_reverse() +
+  ggtitle("Coordenadas del stage")
+```
+
+Example crude code to handle the XML:
+
+> You should skip this! Unlessyou wish to suffer.
+
+```{r}
+pic <- "/data/Datos/2022-01-27-chequeo_cepas_far1/BF_Position001.tif"
+pic.tags <- ijtiff::read_tags(pic, frames = 1)
+pic.desc <- pic.tags$frame1$description
+
+data <- XML::xmlParse(pic.desc, useInternalNodes = TRUE)
+xml_data <- XML::xmlToList(data)
+
+plane_info <- xml_data$PlaneInfo
+
+xml_data_hasxy <- plane_info %>%
+  lapply(function(prop) isTRUE(prop[[".attrs"]][["id"]] %in% c("stage-position-x", "stage-position-y")) ) %>% 
+  unlist() %>% which()
+
+plane_info[xml_data_hasxy] %>% lapply(function(prop) list(id= prop[[".attrs"]][["id"]],
+                                                          value = prop[[".attrs"]][["value"]] )) %>% 
+  bind_rows()
+```
+
+```{r}
+tags <- images %>% filter(t.frame==min(t.frame), channel=="BF") %>% 
+  {split(.$file, .$pos)} %>% 
+  lapply(rcell2::read_tiff_tags)
+
+tags$`1`$frame1$description
+```
+
+```{r}
+tags <- tags %>% 
+  lapply(function(x) x[["frame1"]][["description"]]) %>% 
+  bind_rows(.id = "pos") %>% 
+  mutate(variable = make.names(variable)) %>% 
+  filter(variable %in% make.names(c("stage-position-x", "stage-position-y", "z-position")))
+
+tags <- tags %>%
+  pivot_wider(id_cols = "pos", names_from = "variable", values_from = "value") %>% 
+  mutate_all(as.numeric)
+```
+
+Then make a scatterplot:
+
+```{r}
+tags %>% arrange(pos) %>% 
+  ggplot(aes(x=stage.position.x, y=stage.position.y, label=pos)) +
+  geom_path() + 
+  geom_text(size=10) +
+  geom_point(color="red") +
+  scale_x_reverse() +
+  ggtitle("Coordenadas del stage")
+```
+
+
+### FFT filter on BF images
+
+#### Sequential
+
+Optionally, use ImageJ's bandpass FFT filter on the defocused brightfield images.
+
+Here is a wrapper that does most of this for you, calling ImageJ headlessly.
+
+Prepare new image directory with the subset of BF files:
+
+```{r}
+data.dir <- 
+  system.file("extdata/time_series_image_samples/", package = "rcell2.cellid")
+
+# Get image paths
+cellid.args <- rcell2.cellid::arguments(path = data.dir,
+                                        file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$") %>% 
+  filter(pos %in% good.pos)
+
+# Save BF files
+bf.files <- cellid.args %>%
+  select(bf, path) %>% with(paste0(path,"/",bf)) %>% unique()
+
+# Make a directory to put them in
+fft.bfs.subdirectory <- "bf_subset"
+fft.bfs.dir <- paste0(new.data.dir, "/", fft.bfs.subdirectory)
+dir.create(fft.bfs.dir)
+
+# Link them over
+file.symlink(from = normalizePath(bf.files),
+             to = paste0(dirname(bf.files[1]), "/", fft.bfs.subdirectory, "/", basename(bf.files)))
+```
+
+Run FFT filter:
+
+```{r}
+# This may take a while...
+imagej_fft_filter(pic.path = fft.bfs.dir)
+```
+
+Symlink the rest of the images (fluorescence imgs) to the filtered directory:
+
+```{r}
+# Get all files
+all.files <- cellid.args %>% 
+  with(paste0(path[1],"/", c(bf, image))) %>% unique()
+# And the difference with the BF vector
+the.rest <- setdiff(all.files, bf.files)
+# Symlink over to the directory of the FFT-filtered BFs
+if(length(all.files) == length(bf.files) + length(the.rest)){
+  file.symlink(from = normalizePath(the.rest),
+               to = paste0(dirname(the.rest[1]), "/bf_subset/filtered/", basename(the.rest)))
+}
+```
+
+
+#### Parallel
+
+```{r}
+# Get image paths
+cellid.args <- rcell2.cellid::arguments(path = new.data.dir,
+                                        file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$") %>% 
+  filter(pos %in% positions)
+```
+
+Split the BF files by position, and symlink them to different subdirectories:
+
+```{r}
+cellid.args.split <- split(cellid.args, ~pos)
+
+fft.bfs.subdirs <- list()
+
+for(i in seq_along(cellid.args.split)) {
+  # Save BF files
+  bf.files <- cellid.args.split[[i]] %>%
+    select(bf, path) %>% with(paste0(path,"/",bf)) %>% unique()
+  
+  # Make a directory to put them in
+  fft.bfs.subdirectory <- paste0("bf_subset_", i)
+  fft.bfs.dir <- paste0(new.data.dir, "/", fft.bfs.subdirectory)
+  dir.create(fft.bfs.dir)
+  
+  # Link them over
+  file.symlink(from = normalizePath(bf.files),
+               to = paste0(dirname(bf.files[1]), "/", fft.bfs.subdirectory, "/", basename(bf.files)))
+  
+  fft.bfs.subdirs[i] <- fft.bfs.dir
+}
+
+fft.bfs.subdirs
+```
+
+Run FFT filter in parallel, with one thread per subdirectory:
+
+```{r}
+n_cores <- parallel::detectCores() #- 1
+n_chunks <- length(fft.bfs.subdirs)
+
+# Make cluster
+cl <- parallel::makeCluster(
+  spec = min(n_chunks,n_cores), 
+  setup_strategy = "sequential"  #https://github.com/rstudio/rstudio/issues/6692
+)
+
+# This may take a while...
+doParallel::registerDoParallel(cl)
+foreach(fft.bfs.subdir=fft.bfs.subdirs, .packages = "rcell2.cellid") %dopar% {
+  imagej_fft_filter(pic.path = fft.bfs.subdir, imagej.path="~/Software/FIJI/Fiji.app/ImageJ-linux64")
+}
+parallel::stopCluster(cl)
+```
+
+Symlink filtered BFs in each sibdirectory to a single "filtered" images directory:
+
+```{r}
+filtered.bfs <- dir(paste0(fft.bfs.subdirs, "/filtered"), full.names = T)
+
+filtered.bfs.dir <- paste0(new.data.dir, "/fft_images_dataset/")
+dir.create(filtered.bfs.dir)
+
+result <- file.symlink(from = normalizePath(filtered.bfs), 
+                       to = paste0(filtered.bfs.dir, basename(filtered.bfs)))
+
+all(result)  # Check
+```
+
+Symlink the rest of the images (fluorescence imgs) to the filtered directory:
+
+```{r}
+# Get all files
+fl.files <- cellid.args %>% 
+  with(paste0(path, "/", image)) %>% unique()
+
+# Symlink over to the directory of the FFT-filtered BFs
+result <- file.symlink(from = normalizePath(fl.files),
+                       to = paste0(filtered.bfs.dir, basename(fl.files)))
+
+all(result)  # Check
+```
+
+Done!
+
+You can run CellID using this directory as a data.dir:
+
+```{r}
+normalizePath(filtered.bfs.dir)
+```
+
+
+## CellID
+
+### Parameters
+
+These are parameters that affect cell segmentation, tracking, and some corrections.
+
+#### Descriptions
+
+Description for parameters:
+
+```{r}
+rcell2.cellid::cellid_parameter_descriptions(list_format = F)
+```
+
+#### Example
+
+There is a helper function to prepare parameters more easily:
+
+```{r}
+parameters.list <- rcell2.cellid::parameters_default()
+
+parameters.list$max_split_over_minor
+```
+
+But, here is a valid, hand-made parameter list, with defaults:
+
+```{r}
+parameters.list <- list(
+  max_split_over_minor = 0.50,
+  max_dist_over_waist = 8.00,
+  max_pixels_per_cell = 2000,
+  min_pixels_per_cell = 75,
+  background_reject_factor = 0.75,
+  tracking_comparison = 0.20,
+  align_individual_cells = F,
+  align_fl_to_bf = T,
+  image_type = "brightfield",
+  bf_fl_mapping = "list"
+  )
+```
+
+Hay que guardar los parámetros en un archivo `parameters.txt`,
+para que más adelante CellID lo pueda usar.
+
+Para eso está la función `parameters_write()`, 
+que devuelve el path donde se guardó el archivo:
+
+<!-- to do: move this step into cell2() -->
+
+```{r}
+parameters.txt <- rcell2.cellid::parameters_write(parameters.list)
+
+parameters.txt
+```
+
+Este path es el que hay que pasarle a `arguments()` en la siguiente sección.
+
+Revisemos el contenido del `parameters.txt` que generamos recién:
+
+```{r}
+writeLines(readLines(parameters.txt))
+```
+
+
+### Images and Arguments
+
+Define the path of the original images:
+
+```{r}
+# Choose your own path!
+data.dir <- "/path/to/your/data"
+
+# Or, try the sample images:
+data.dir <- system.file("extdata/time_series_image_samples/", package = "rcell2.cellid")
+```
+
+`arguments()` produce un data.frame con información de las fotos para ejecutar CellID. Se genera con la función `arguments`.
+
+La opción más importante es `file.pattern` que es una expresión regular para encontrar archivos de imágenes en el `path`.
+
+Por defecto es:
+
+    "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
+
+Entre paréntesis están los "grupos de captura" de la expresión regular, donde se espera que esté la siguiente información:
+
+1. Canal.
+2. Número de posición.
+3. Número de tiempo.
+
+Para no usar tiempo solo hay que borrar la parte del tiempo, dejando un paréntesis vacío en su lugar `()`:
+
+    "^(BF|[A-Z]FP)_Position(\\d+)().tif$"
+
+Se puede "filtrar" posiciones y tiempos directo desde la regex, o posteriormente usando las funciones de R usuales. Para usar solo la posicion 2, y los tiempos 4, 2 y 3, la regex sería:
+
+    "^(BF|[A-Z]FP)_Position(?0+2)_time(?0+[423]).tif$"
+
+Noten el `0+?` enfrente del número, que indica que puede haber un cero o más frente al numerito de posición o tiempo en el nombre del archivo.
+
+#### File patterns
+
+Su `file.pattern` regex puede variar, por ejemplo si no hay tiempo y solo hay BFs y TFPs, usarian:
+
+* `file.pattern = "^(BF|TFP)_Position(\\d+)().tif$"`
+
+Adjust file patterns in `rcell2.cellid::arguments` and `rcell2.cellid::cell.load.alt`.
+Go through their help pages to learn about their parameters.
+
+Original images file pattern examples; choose one and comment the others:
+
+```{r}
+# Default value: all channels, no z-stack.
+arguments.file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
+
+# To consider z-stacks:
+arguments.file.pattern <- "^(BF|[A-Z]\d+)_Position(\d+)_time(\d+).tif$"
+
+# BF or TFP only, no t.frame info.
+arguments.file.pattern <- "^(BF|TFP)_Position(\\d+)().tif$"
+```
+
+#### Ejemplo simple
+
+Check that image file names are properly recognized:
+
+```{r}
+cellid.args <- rcell2.cellid::arguments(data.dir,
+                                        file.pattern = arguments.file.pattern,
+                                        parameters = parameters.txt)  # Parameters are specified here.
+
+cellid.args
+```
+
+Pueden seleccionar un subset de imagenes para procesar:
+
+```{r}
+cellid.args %>% filter(pos == 2, t.frame %in% c(4,2,3))
+```
+
+### Run segmentation
+
+La función `cell2` genera comandos para llamar a CellID por línea de comandos y los ejecuta en paralelo.
+
+La opción `dry = T` indica a la función hacer "todo" menos ejecutar CellID, e imprime los comandos que habría usado.
+
+Para correr los comandos, usen `dry = F` (aunque tambien pueden copiarlos y pegarlos en una terminal, si están en Linux o Mac OS).
+
+El parámetro `cell.command` es el path al ejecutable. En esta versión de `rcell2.cellid`,
+el binario se compila durante la instalación y se usa por defecto.
+
+```{r}
+rcell2.cellid::cell2(arguments = cellid.args,
+                     # dry = T,
+                     n_cores = 2)
+```
+
+### Load result
+
+Esto se hace con la función `rcell2::load_cell_data`:
+
+```{r}
+cell.data <- rcell2::load_cell_data(path = path)
+```
+
+Si no tienen ese paquete, pueden intentar con `cell.load.alt` (ver también una alternativa más abajo):
+
+> Nota: su `fluorescence.pattern` regex puede variar (ver la siguiente sección).
+
+```{r}
+cell.data <- rcell2.cellid::cell.load.alt(path = path)
+```
+
+`rcell2` can also load the cell boundaries and interior pixels coordinates,
+if either `output_coords_to_tsv` or `encode_cellID_in_pixels` were set to `TRUE`
+when CellID was run:
+
+```{r}
+cell.boundaries <- 
+  rcell2::cell.load.boundaries(data.source = "masks.tsv",
+                               arguments = cellid.args,
+                               pixel.type = "b"
+                               )
+```
+
+#### File pattern
+
+File patterns may vary, depending on what images were provided as input, and the identifiers in their file names.
+
+Fluorescent channel pattern examples for `cell.load.alt` and `parameter_scan`; choose one and comment the others:
+
+```{r}
+# Default value: all fluorescent tags, including Z-stack fluorescence channels.
+load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
+
+# Default: add "BF" as a possible channel (when CellID was run with bf_as_fl=TRUE)
+load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+|BF)_Position\\d+_time\\d+.tif$"
+
+# Same as defualt, but without t.frame information.
+load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+.tif$"
+```
+
+#### Variable descriptions
+
+To help understand CellID's output, we documented the columns in `cdata` in a function:
+
+```{r}
+rcell2.cellid::cellid_output_descriptions(list.output = F)
+```
+
+
+### Tuning parameters
+
+A veces querés probar muchos parámetros antes de correr CellID en todas las fotos.
+
+> Nota: esta sección del notebook usa variables definidas en secciones anteriores (i.e. patterns y paths).
+
+#### Setup combinations
+
+For each parameter variation, we need a new parameters file.
+
+In this example, only `background_reject_factor` is scanned:
+
+```{r}
+parameters.list <- rcell2.cellid::parameters_default(
+  background_reject_factor = seq(from=0, to=1.5, by = 0.3)
+)
+
+parameters.list$background_reject_factor
+```
+
+The list must now be expanded into a data.frame:
+
+```{r}
+parameters.df <- expand.grid(parameters.list)
+
+test.params <- 1:nrow(parameters.df)  # Record the amount of combinations
+
+parameters.df
+```
+
+> Note: You might want to select some rows from that table, in that case, simply filter it.
+
+> Note: `utiles::value.to.range` just converts a number to a vector centered on its value (see `base::seq`).
+
+Define working paths for parameter testing:
+
+* One with the images.
+* Another one for testing.
+
+```{r}
+test.dir <- "/tmp/images_directory/test.dir"
+```
+
+Now choose some *positions* (image sets) and *t.frame*s (time frames)
+to restrict the image test set to only some of them:
+
+```{r}
+# All positions and frames
+test.pos = cellid.args$pos %>% unique()
+test.frames = cellid.args$t.frame %>% unique()
+
+# Only a couple
+test.pos = 1:2
+test.frames = 1  # Note: t.frame might be "0 indexed" or not, this depends on the file naming
+
+subset(cellid.args,
+       pos %in% test.pos & t.frame %in% test.frames)
+```
+
+And the path to the CellID binary executable; choose one and comment the others:
+
+```{r}
+cell.command.path = "~/Software/cellID-linux/cell"
+
+cell.command.path = NULL # Use the built-in binary.
+```
+
+#### Test run (v2)
+
+> Now comes the magic part.
+> This script uses temporary directories to work on, 
+> and avoids messing up the main data directory, 
+> while running CellID in parallel for each parameter variation.
+
+Just run:
+
+```{r}
+results <- 
+  parameter_scan(parameters.df = parameters.df,
+                 test.dir = test.dir, 
+                 data.dir = data.dir, 
+                 test.positions = test.pos, 
+                 test.frames = test.frames, 
+                 file.pattern = arguments.file.pattern,  # See previous section "Images and Arguments".
+                 fluorescence.pattern = load.cell.channel.pattern,  # See previous section "Load result".
+                 cell.command = cell.command.path)
+```
+
+Rename the output for usage in the next sections:
+
+```{r}
+results.bound <- results
+```
+
+> You can skip the next section, it does the same thing, but without the abstraction.
+
+#### Test run (v1)
+
+Cleanup test directories:
+
+```{r}
+unlink(test.dir, recursive = T)
+dir.create(test.dir, recursive = T)
+```
+
+> Now comes the magic part. This script uses temporary directories to work on, and avoids messing up the main data directory, while running CellID in parallel for each parameter variation.
+
+Create a parallel backend:
+
+```{r}
+ncores <- parallel::detectCores() - 1
+cl <- parallel::makeCluster(ncores, setup_strategy = "sequential")
+# doParallel::registerDoParallel(cl)
+doSNOW::registerDoSNOW(cl)
+```
+
+Setup a progressbar and run CellID:
+
+```{r}
+ntasks <- length(test.params)
+pb <- txtProgressBar(max = ntasks, style = 3)
+progress <- function(n) setTxtProgressBar(pb, n)
+opts <- list(progress=progress)
+
+library(foreach)
+
+result <- 
+  foreach(test.param=test.params, #.export = c(".parameters.df",)
+          .options.snow=opts,
+          .packages = c("rcell2", "base", "dplyr")) %dopar% {
+    
+            # Get one parameter set
+            parameters.list.one <- parameters.df[test.param,]
+            
+            # Save parameters
+            parameters.txt <- rcell2.cellid::parameters_write(parameters.list.one, param.dir = test.dir)
+            
+            # Create arguments
+            cellid.args <- rcell2.cellid::arguments(data.dir,
+                                                    file.pattern = arguments.file.pattern,
+                                                    parameters = parameters.txt)
+            # Subset only one position
+            # cellid.args.one <- cellid.args[cellid.args$pos %in% test.pos, ]
+            cellid.args.one <- subset(cellid.args, 
+                                      pos %in% test.pos & t.frame %in% test.frames)
+            
+            # Prepare a temp dir for each cellid run
+            tmp.path <- tempfile(pattern = "dir", tmpdir = test.dir)
+            dir.create(tmp.path)
+            
+            # Create shortcuts to the original images
+            apply(cellid.args.one, 1, function(i){
+              file.symlink(from = paste0(i["path"], "/",
+                                         c(i["image"],i["bf"])),
+                           to = paste0(tmp.path, "/", 
+                                       c(i["image"], i["bf"]))
+                     )
+            })
+        
+            
+            # Regenerate arguments for the new tmp path
+            cellid.args.tmp <- rcell2.cellid::arguments(tmp.path,
+                                                        file.pattern = arguments.file.pattern,
+                                                        parameters = parameters.txt)
+            # Run cellid
+            cellid.out <- rcell2.cellid::cell2(arguments = cellid.args.tmp, 
+                                               cell.command = cell.command.path)
+            
+            # Load output
+            cell.data <- rcell2.cellid::cell.load.alt(
+              tmp.path,
+              fluorescence.pattern = load.cell.channel.pattern
+              )
+            
+            
+            # Now compute some average "pseudo-metrics" about the segmentation.
+            
+            # "roughness" function copied from the seewave package
+            # https://cran.r-project.org/web/packages/seewave/index.html
+            roughness <- function(x, std=FALSE){
+              if(std) x <- x/max(x)
+              deriv2 <- diff(x, 1, 2)
+              roughness <- sum(deriv2^2, na.rm=TRUE)
+              return(roughness)
+            } 
+            # This variation takes the sqrt of roughness and divides by total length
+            # To correct for extra accumulated roughness in cells detected
+            # across more t.frames.
+            roughness2 <- function(x, std=FALSE){
+              if(std) x <- x/max(x)
+              deriv2 <- diff(x, 1, 2)
+              roughness <- sum(deriv2^2, na.rm=TRUE)
+              roughness.norm <- sqrt(roughness)/length(x)
+              # roughness <- sum(abs(deriv2), na.rm=TRUE)
+              # roughness.norm <- (roughness)/length(x)
+              return(roughness.norm)
+            } 
+            
+            # Compute the summary numbers
+            fft <- mean(cell.data$data$fft.stat)
+            el.p <- mean(cell.data$data$el.p)
+            ucids <- length(unique(cell.data$data$ucid)) # Number of found cells
+            persistence <- nrow(cell.data$data) / ucids  # Average frames per cell
+            roughness <- cell.data$data %>% group_by(ucid) %>% 
+              summarise(roughness = roughness(a.tot)) %>% 
+              with(roughness) %>% mean(na.rm = T)
+            roughness2 <- cell.data$data %>% group_by(ucid) %>% 
+              summarise(roughness2 = roughness2(a.tot)) %>% 
+              with(roughness2) %>% mean(na.rm = T)
+            
+            
+            # Keep only the image paths dataframe
+            # And the "metrics"
+            result <- 
+              cell.data$images %>% filter(is.out) %>% 
+              mutate(parameters = parameters.txt,
+                     fft = fft,
+                     el.p = el.p,
+                     ucids = ucids,
+                     persistence,
+                     roughness,
+                     roughness2
+                     )
+            
+            return(result)
+  }
+
+close(pb)
+parallel::stopCluster(cl)
+```
+
+Bind the result:
+
+```{r}
+results.bound <- result %>% 
+    bind_rows(.id = "id") %>%
+    mutate(id = as.integer(id))
+
+results.bound
+# saveRDS(results.bound, tempfile(pattern = "results", tmpdir = test.dir, fileext = ".RDS"))
+```
+
+
+```{r}
+# results.bound <- readRDS(paste0(test.dir, "/results.bound.RDS"))
+```
+
+#### Plot summary statistics
+
+A few "summary" quantities are calculated for each run:
+
+* fft
+* el.p
+* ucids
+* persistence
+* roughness
+* roughness2
+
+```{r}
+results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
+  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
+  ggplot() +
+  geom_label(aes(persistence, el.p/fft, label = id,
+                 color = as.ordered(background_reject_factor))) +
+  ggtitle("Avg. frames per cell (persistence) VS 'el.p/fft' per parameter variation") +
+  theme_minimal() + scale_color_discrete()
+
+results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
+  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
+  ggplot() +
+  geom_label(aes(persistence, el.p/fft, label = id,
+                 color = as.ordered(max_split_over_minor)),
+             alpha = .7, fill = "NA") +
+  ggtitle("Avg. frames per cell (persistence) VS 'el.p/fft' per parameter variation") +
+  theme_minimal() + scale_color_discrete()
+```
+
+
+```{r}
+results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
+  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
+  ggplot() +
+  geom_label(aes(el.p, fft, label = id,
+                 color = as.ordered(background_reject_factor))) +
+  ggtitle("Avg. el.p VS Avg. fft.stat per parameter variation") +
+  theme_minimal() + scale_color_discrete()
+
+results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
+  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
+  ggplot() +
+  geom_label(aes(roughness, persistence, label = paste0(id, "=", background_reject_factor),
+                 color = as.ordered(background_reject_factor))) +
+  ggtitle("Avg. roughness per cell VS Avg. frames per cell (persistence) per parameter variation") +
+  theme_minimal() + scale_color_discrete()
+
+results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
+  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
+  ggplot() +
+  geom_label(aes(roughness2, persistence, label = paste0(id, "=", background_reject_factor),
+                 color = as.ordered(background_reject_factor))) +
+  ggtitle("Avg. roughness2 per cell VS Avg. frames per cell (persistence) per parameter variation") +
+  theme_minimal() + scale_color_discrete()
+```
+
+
+#### Review stacks in ImageJ
+
+##### Auto mode
+
+Make TIFF stacks for a particular channel, and prepare a copy-paste-ready ImageJ Macro, to load them as Hyperstacks.
+
+The stacks are annotated with the parameters used for each segmentation, and other metadata (position, time frame, and channel).
+
+```{r}
+stack.paths <- 
+  make_scan_stacks(results.bound = results.bound, test.dir = test.dir, stack.channels = "BF.out")
+```
+
+> Just copy paste the macro to a new macro window in ImageJ, and hit run! The stack should be loaded automagically.
+
+Paths and macros are saved in the output:
+
+```{r}
+str(stack.paths)
+```
+
+> For reference, the functions original code is below (but no longer updated).
+
+##### Make tiff stacks
+
+Make TIFF stacks for each channel and cleanup:
+
+```{r}
+stack.paths <- results.bound %>% 
+  
+  filter(channel == "BF.out") %>% 
+  
+  arrange(channel, id, t.frame, pos) %>% split(~channel+pos) %>% 
+  lapply(function(images){
+    # images <- stack.paths[[1]]
+    stack.name <- paste0(
+        test.dir, "/", images$channel[1], "_stack-pos_", images$pos[1], #"-time", images$t.frame[1],
+        ".tif"
+        )
+    
+    # images %>% 
+    #   dplyr::arrange(channel, t.frame, pos, id) %>% 
+    #   with(file) %>% 
+    #   magick::image_read() %>% 
+    #   magick::image_write(path=stack.name)
+    
+    images.files <- images %>% 
+      dplyr::arrange(channel, t.frame, pos, id) %>% 
+      with(file)
+  
+    images.params <- images %>% 
+      dplyr::arrange(channel, t.frame, pos, id) %>% 
+      with(parameters) %>% 
+      sapply(read_file) %>% 
+      unname()
+    
+    images.params <- sapply(images.params, function(images.params.pos){
+      st <- strsplit(images.params.pos, "\\n")[[1]]
+      mx <- max(nchar(st))
+      st.padded <- stringr::str_pad(st, width = mx, side = "right")
+      st.pasted <- paste(st.padded, collapse = "\n")
+      return(st.pasted)
+    })
+    
+    images.files %>% 
+      magick::image_read() %>% 
+      magick::image_annotate(images.params, boxcolor = "white", color = "black", size = 10,
+                             font = "Hack") %>% 
+      magick::image_convert(colorspace = "Gray", matte = F) %>% 
+      magick::image_write(path=stack.name, format = "tiff", depth = 8)
+                          # quality = 100,
+                          # flatten = TRUE, 
+                          # compression = "None")
+    
+    # img <- ijtiff::read_tif(path = stack.name)
+    # ijtiff::write_tif(img = img, path = stack.na  me, overwrite = TRUE)
+    
+    return(stack.name)
+  })
+
+stack.paths  # The stacks are saved to these paths
+```
+
+
+###### Macro
+
+Generate a macro to inspect segmentation results in a Hyperstack, 
+using z-slices for positions, and channels for parameter variants.
+
+Choose a stack:
+
+```{r}
+stack.path <- stack.paths$BF.out.34
+```
+
+Copy this chunk's output to ImageJ's macro window:
+
+```{r}
+n_ch <- length(test.params)
+n_z <- length(test.pos)
+n_t <- length(test.frames)
+
+glue::glue(
+  '// Macro',
+  paste0('open("', stack.path, '");'),
+  'run("Stack to Hyperstack...",',
+  '"order=xyczt(default) channels=" + {n_ch} +',
+  '" slices=" + {n_z} +',
+  '" frames=" + {n_t} +',
+  '" display=Grayscale");',
+  .sep = "\n"
+) %>% cat()
+```
+
+#### Final parameter set
+
+Esto es para los BFs pasados por el FFT filter.
+
+Abajo de 0.8 vi algunos fantasmitas "persistentes"; 
+choricitos al costado de las células.
+
+```{r}
+parameters.list <- rcell2.cellid::parameters_default(
+  background_reject_factor = 0.8,
+  
+  max_split_over_minor = 0.6,
+  
+  max_dist_over_waist = 6,
+  
+  max_pixels_per_cell = 3500,
+  
+  treat_brightfield_as_fluorescence_also = T
+)
+```
+
+> TODO: nombrar los stacks por parameter modificado
+
+## Data analysis
+
+Helping with data analysis is `rcell2`'s purpose.
+
+Installation instructions for `rcell2` and `rcell2.magick` packages can be found [here](https://github.com/darksideoftheshmoo/rcell2/tree/master#installing-the-package) and [here](https://github.com/darksideoftheshmoo/rcell2/tree/rcell2.magick#installing-the-package).
+

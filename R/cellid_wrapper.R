@@ -1,0 +1,1262 @@
+#' Cell-ID output descriptions
+#' 
+#' @export
+#' @param list.output Return the descriptions as a named list (TRUE), or as a data.frame (FALSE).
+#' 
+cellid_output_descriptions <- function(list.output=T){
+  descs <- read.csv(sep = "\t", 
+                    file = system.file("output_descriptions2.txt", package = "rcell2.cellid"))
+  
+  descs <- descs[!(is.na(descs$Variable.Name) | descs$Variable.Name == ""), -1:-2]
+  
+  if(list.output){
+    descs.list <- as.list(descs$Description)
+    names(descs.list) <- descs$Variable.Name
+  return(descs.list)
+  } else {
+    return(descs)
+  }
+}
+
+#' Cell-ID parameter descriptions
+#' 
+#' @param list_format If TRUE then format the dataframe into a named list
+#' @export
+#' 
+cellid_parameter_descriptions <- function(list_format=T){
+  
+  warning("Warning: not all CellID input parameters are [well] documented.")
+  
+  descs <- read.csv(sep = "\t", 
+                    file = system.file("parameters_description.tsv", package = "rcell2.cellid"))
+  
+  descs <- descs[!(is.na(descs[[1]]) | descs[[1]] == ""),]
+  
+  if(!isTRUE(list_format)) return(descs)
+  
+  descs.split <- split(descs, ~parameter)
+  descs.list <- lapply(descs.split, function(d) setNames(c(d), names(d)))
+  
+  return(descs.list)
+}
+
+# #' Correr Cell-ID desde R usando .C()
+# #'
+# #' @param args el comando de cellid entero, tal como se ejecutaria en bash "cell -p ..."
+# #' @param debug_flag Set to 0 to disable CellID printf messages.
+# # @useDynLib rcell2 CellID
+# #' @export
+# #' @return Exit code from CellID
+# cellid <- function(args, debug_flag=0){
+# 
+#   # args <- "~/Software/cellID-linux/cell -p /home/nicomic/Projects/Colman/HD/scripts/cellMagick/data/images/parameters.txt -b /tmp/Rtmp7fjlFo/file2b401093d715 -f /tmp/Rtmp7fjlFo/file2b402742f6ef -o /home/nicomic/Projects/Colman/HD/uscope/20200130_Nico_screen_act1_yfp/1/Position001/out"
+#   argv <- strsplit(args, " ")[[1]]
+#   argc <- length(argv)
+#   
+#   if(debug_flag != 0) print("Printing argv and argc before .C() call to CellID.")
+#   if(debug_flag != 0) print(argv)
+#   if(debug_flag != 0) print(argc)
+# 
+#   exit_code <- 0
+#   
+#   if(exit_code != 1) stop(paste("CellID is not bundled in this branch, see master_cellid", exit_code))
+#   
+#   return(exit_code)
+# }
+
+#' Function to run CellID
+#'
+#' @param arguments An argument data.frame, as built by \code{rcell2.cellid::arguments}.
+#' @param cell.command By default \code{NULL}, to use the built-in binary. Otherwise a path to a CellID binary executable (get if from https://github.com/darksideoftheshmoo/cellID-linux).
+#' @param n_cores Number of cores to use for position-wise parallelization,internally capped to number of positions in \code{arguments}. Set to 1 to disable parallelization. If NULL, defaults to available cores - 1.
+#' @param dry Do everything without actually running CellID, print the commands that would have been issued.
+#' @param debug_flag Set to 0 to disable CellID printf messages (builtin CellID only).
+#' @param label_cells_in_bf Set to TRUE to enable labeling of cells with their CellID in the BF output image using number characters (CellID option '-l', default FALSE).
+#' @param encode_cellID_in_pixels Set to TRUE to write cell interior and boundary pixels with intensity-encoded CellIDs and blank the rest of the image (CellID option '-s').
+#' @param fill_interior_pixels Set to TRUE to fill each cell interior area in the output image file with intensity-labeled pixels (CellID option '-i').
+#' @param output_coords_to_tsv Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (CellID option '-m').
+#' @param save.logs Set to TRUE to save CellID logs to text files, into the output directory of their corresponding position.
+#' @param verbose Print startup messages.
+#' @return A dataframe with one column indicating the issued commands and exit codes (in the command.output column). If the execution was sucessful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the CellID output, typically located at the images path.
+# @examples
+# cell(cell.args, path = path)
+#' @import purrr dplyr stringr tidyr doParallel readr parallel
+#' @importFrom foreach foreach %dopar% %do%
+#' @rawNamespace import(foreach, except = c("when", "accumulate"))
+#' @importFrom purrr map
+#' @export
+cell2 <- function(arguments,
+                  cell.command = NULL,
+                  n_cores = NULL, 
+                  debug_flag=0,
+                  dry = F,
+                  encode_cellID_in_pixels = F,
+                  fill_interior_pixels = F,
+                  label_cells_in_bf = F,
+                  output_coords_to_tsv = F,
+                  save.logs = T, verbose=T){
+  
+  if(F){
+    # For testing (NOT RUN)
+    n_cores = 2
+    debug_flag=0
+    dry = F
+    label_cells_in_bf = F
+    fill_interior_pixels = F
+    output_coords_to_tsv = F
+    encode_cellID_in_pixels = F
+    save.logs = T
+  }
+  
+  # CellID path setup
+  if(is.null(cell.command)){
+    tryCatch(
+      expr = {
+        if(verbose) cat("\nUsing built-in CellID binary. Printing CellID's help message:\n")
+        cell.command <- system.file(c("bin/cell", "bin/x64/cell.exe"), package = "rcell2.cellid", mustWork = T)[1]
+        system(paste(cell.command, "-h"), ignore.stdout = !verbose)
+        if(verbose) cat("\n\n")
+      },
+      error = function(e) {
+        print("cell2 error:")
+        print(e)
+        stop("Couldn't use the builtin CellID, please specify a path to an external executable.")
+      })
+  } else {
+    if(verbose) cat("\nUsing custom CellID binary. Printing CellID's help message:\n")
+    warning("Custom CellID binary selected. Keep in mind that rcell2.cellid::cell2 is meant to wrap our updated version.")
+    system(paste(cell.command, "-h"), ignore.stdout = !verbose)
+    if(verbose) cat("\n\n")
+  }
+  # Check the path
+  stopifnot(file.exists(cell.command))
+  
+  # Get some position and t.frame info
+  positions <- arguments$pos %>% unique()
+  n_positions <- positions %>% length()
+  
+  # Create output directories
+  for(d in unique(arguments$output)) dir.create(d, showWarnings = F)
+  
+  # Run CellID ####
+  
+  # Prepare parallel backend if requested
+  if(is.null(n_cores)) n_cores <- parallel::detectCores() - 1
+  # Use parallel backend only if there are two or more cores
+  if(n_cores >= 2){
+    # Choose parallel foreach operator
+    `%do_op%` <- foreach::`%dopar%`
+    
+    # Prepare cluster logfile
+    cl.outfile <- tempfile(pattern = "dopar", 
+                           # tmpdir = "/tmp", 
+                           fileext = ".log")
+    cat(paste("---- cell2: writing logs to file:", cl.outfile))
+    
+    # Make cluster
+    cl <- parallel::makeCluster(
+      spec = min(n_positions,n_cores), 
+      outfile = cl.outfile, # outfile = NULL
+      setup_strategy = "sequential"  #https://github.com/rstudio/rstudio/issues/6692
+    )
+    
+    # Export arguments dataframe to cluster
+    parallel::clusterExport(cl, "arguments", envir = environment())
+    
+    # Register cluster
+    doParallel::registerDoParallel(cl)
+  } else {
+    # Choose sequential foreach operator
+    `%do_op%` <- foreach::`%do%`
+  }
+  
+  # Iterate over positions  
+  sent_commands <- foreach::foreach(pos=positions) %do_op% {
+    # Get arguments for current position
+    arguments_pos <- arguments[arguments$pos == pos,]
+    
+    # Prepare text files paths
+    bf_rcell2 <- tempfile(tmpdir = arguments_pos$output[1],
+                          fileext = ".txt",
+                          pattern = "bf_rcell2.")
+    fl_rcell2 <- tempfile(tmpdir = arguments_pos$output[1],
+                          fileext = ".txt",
+                          pattern = "fl_rcell2")
+    
+    # Image path vectors
+    bf.imgs <- paste0(arguments_pos$path, "/", arguments_pos$bf)
+    fl.imgs <- paste0(arguments_pos$path, "/", arguments_pos$image)
+    
+    # Check file existence
+    stopifnot(all(
+      file.exists(bf.imgs, fl.imgs)
+    ))
+    
+    # Write image lists to text files
+    base::write(x = bf.imgs, file = bf_rcell2)
+    base::write(x = fl.imgs, file = fl_rcell2)
+
+    # if(is.null(cell.command)) cell.command <- system.file("cell", package = "rcell2", mustWork = T)
+    if(is.null(cell.command)) stop("\nError: cell.command must point to an existing CellID binary on your system.")
+    
+    # Build CellID command arguments
+    command.args <- paste0(
+      " -b ", bf_rcell2,
+      " -f ", fl_rcell2,
+      " -o ", paste0(normalizePath(arguments_pos$output[1]), "/out"),
+      " -p ", arguments_pos$parameters[1],
+      {if(label_cells_in_bf) " -l" else ""},
+      {if(output_coords_to_tsv) " -t" else ""},
+      {if(encode_cellID_in_pixels) " -m" else ""},
+      {if(fill_interior_pixels) " -i" else ""}
+    )
+    
+    # Paste to the binary's path
+    command <- paste0(normalizePath(cell.command),
+                      command.args
+    )
+    
+    # Default is to print messages to console
+    cellid.log <- ""
+    cellid.err <- ""
+    
+    # Otherwise, write command and outputs to log files
+    if(save.logs){
+      # Save parameters
+      cellid.pars <- arguments_pos$parameters[1]
+      file.copy(from = cellid.pars, to = paste0(arguments_pos$output[1], "/"),
+                overwrite = T)
+      # Save cellid standard output
+      cellid.log <- tempfile(tmpdir = arguments_pos$output[1],
+                             fileext = ".txt",
+                             pattern = "cellid_log.")
+      # Save cellid standard error
+      cellid.err <- tempfile(tmpdir = arguments_pos$output[1],
+                             fileext = ".txt",
+                             pattern = "cellid_error.")
+      # Save cellid system command
+      cellid.cmd <- tempfile(tmpdir = arguments_pos$output[1],
+                             fileext = ".txt",
+                             pattern = "cellid_cmd.")
+      write(x = c("# Cell-ID command:\n\n", command, "\n\n"),
+            file = cellid.cmd)
+    } 
+    
+    # Skip execution if "dry" mode was selected
+    if(!dry) {
+      # Otherwise, execute CellID
+      command.output <- system2(command = normalizePath(cell.command),
+                                args = command.args,
+                                stdout = cellid.log,
+                                stderr = cellid.err,
+                                wait = T)
+      
+    } else {
+      command.output = NULL
+    }
+    
+    cat(paste0("---- cell2: Done with position ", pos, "\n "))
+    
+    return(
+      list(
+        command.output = command.output,
+        command = command,
+        cellid.log = cellid.log,
+        cellid.err = cellid.err
+      )
+    )
+  }
+  
+  # Close cluster
+  if(n_cores > 1){
+    parallel::stopCluster(cl)
+  }
+  
+  # Prepare output
+  output <- dplyr::bind_rows(sent_commands)
+  
+  # Check if CellID's exit codes are weird
+  if(!dry){
+    if(all(output$command.output == 0)){
+      cat("\nDone, please examine logs if anything seems strange :)")
+    } else {
+      cat("\nDone, please examine logs immediately! some exit codes signaled errors :(")
+    }
+  }
+  
+  return(output)
+}
+
+#' foreach and parLapply cluster test
+#' 
+#' @keywords internal
+#' @import parallel doParallel
+#' @importFrom foreach %dopar%
+cluster_test <- function(){
+  cl <- parallel::makeCluster(2)
+  
+  doParallel::registerDoParallel(cl)
+  
+  # Prueba con base
+  parallel::parLapply(cl, list(1,2), function(x) print(x))
+  
+  # Prueba con foreach
+  foreach::foreach(x=list(1,2)) %dopar% print(x)
+  
+  parallel::stopCluster(cl)
+}
+
+#' Obtener argumentos para CellID
+#' 
+#' @details 
+#' 
+#' All 4 regex groups are mandatory, but they may be left empty to exclude a field.
+#' For instance, \code{t.frame} may be left as empty parenthesis \code{()},
+#' but always preserving group order defined by \code{file.pattern.groups.order}.
+#' 
+#' If you only have BF images, consider setting \code{bf_as_fl = T}.
+#' 
+#' The "pos" and "channel" regex groups must always match position and channel identifiers in the file name, respectively.
+#' 
+#' Here are some example \code{file.pattern} regular expressions, when \code{file.pattern.groups.order = c("ch", "pos", "t.frame")}:
+#' 
+#' - No Z planes, no time (note the empty parentheses): \code{file.pattern = "^(BF|[TYR]FP)_Position(\\d+)().tif$"}
+#' 
+#' - No Z planes, with time: \code{file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"}
+#' 
+#' - With Z planes and time: \code{file.pattern = "^(BF|[TYR]FP|[TYR]\\d{2})_Position(\\d+)_time(\\d+).tif$"}
+#' 
+#' Note that "Z planes" will be processed by CellID the same way as other channels.
+#' More importantly, CellID distinguishes and groups image channels using the first 3 letters in the file name,
+#' which limits planes to 100 per channel letter (R00 to R99).
+#'
+#' @param path Directory where images are stored, full path.
+#' @param parameters Path to the parameters file or a data.frame with "pos" (position number) and "parameter" (path) columns. Defaults to \code{parameters_write()}.
+#' @param BF.pattern Regex pattern to detect BF images only. Defaults to: \code{"^BF"}
+#' @param file.pattern Regex pattern for all tif files, with one group for each of \code{c("ch", "pos", "t.frame")} in \code{file.pattern.groups.order}. Uses \code{"^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"} by default. To omit time, use an empty group for the t.frame in the regex, for example: \code{"^(BF|[A-Z]FP)_Position(\\d+)().tif$"}.
+#' To consider Z-stacks, use something like "^(BF|[A-Z]\\d+)_Position(\\d+)_time(\\d+).tif$"
+#' @param file.pattern.groups.order A character vector of components \code{c("ch", "z", "pos", "t.frame")} with order corresponding to the order of groups in \code{file.pattern}.
+#' @param output.dir.basename Basename for the CellID output directories for each position.
+#' @param tiff.ext Regex pattern for the tif file extension.
+#' @param bf_as_fl If TRUE, BF paths will be used as FL paths. This allows for BF-only experiments.
+#' @return A data.frame with all the information needed to run CellID
+#' @import dplyr tidyr
+# @examples
+# cell.args <- cellArgs(path = path)
+#' @export
+arguments <- function(path,
+                      parameters=rcell2.cellid::parameters_write(),
+                      BF.pattern = "^BF",
+                      # file.pattern = "^(BF|[A-Z]FP)()_Position(\\d+)_time(\\d+).tif$",
+                      # file.pattern.groups.order = c("ch", "z", "pos", "t.frame"),
+                      file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$",
+                      file.pattern.groups.order = c("ch", "pos", "t.frame"),
+                      output.dir.basename = "Position",
+                      # out.dir = "out",
+                      tiff.ext = "tif$",
+                      bf_as_fl=F){
+  
+  if(!identical(sort(file.pattern.groups.order),
+                sort(c("ch", "pos", "t.frame")))) 
+    stop('arguments error: file.pattern.groups.order must contain c("ch", "pos", "t.frame") in a correct order.')
+  
+  path <- normalizePath(path)
+  
+  pic_files <- dir(path, pattern = file.pattern)
+  if(length(pic_files) == 0) stop(paste("arguments error: no image files retrieved using file pattern:", file.pattern))
+  
+  pics_df <- data.frame(image = pic_files,
+                        path = path) %>% 
+    tidyr::extract(col = image, 
+                   into = file.pattern.groups.order,
+                   regex = file.pattern, 
+                   remove = F)
+  
+  # Get BFs: All BFs are BFs
+  brihtfield_pics <- pics_df %>% 
+    dplyr::filter(str_detect(string = image,
+                             pattern = BF.pattern)) %>% 
+    dplyr::rename(bf = image) %>% 
+    dplyr::select(pos, t.frame, bf)
+  
+  # Get FLs: Use BFs as brightfields?
+  if(isTRUE(bf_as_fl)){
+    # Simple:
+    fluor_pics <- pics_df
+    
+    # Warn user of potential unintended usage of option
+    found_fl <- any(with(pics_df, str_detect(string = image,
+                                             pattern = BF.pattern, 
+                                             negate = T)))
+    if(found_fl) warning("arguments warning: BF as FL option enabled, but some FL files were found. Please check if this is what you need.")
+  } else {
+    # Else, all non-BFs are fluor images:
+    fluor_pics <- pics_df %>% 
+      filter(str_detect(string = image,
+                        pattern = BF.pattern, 
+                        negate = T))
+  }
+  
+  # Checks
+  if(nrow(brihtfield_pics) == 0) stop("arguments error: Brightfield images missing, Check your directories and file.pattern.")
+  if(nrow(fluor_pics) == 0) stop("arguments error: Fluorescence images missing, but BFs were found. Check your directories, file.pattern, and consider setting bf_as_fl.")
+  
+  # Bind df's
+  arguments.df <- dplyr::left_join(
+    fluor_pics,
+    brihtfield_pics,
+    by = c("pos", "t.frame")
+  )
+  
+  # Check for missing BFs
+  if(any(is.na(arguments.df$bf))){
+    filter(arguments.df, is.na(bf)) %>% print()
+    stop("arguments error: there are missing brightfield images")
+  }
+  
+  # Add output column and arrange by position and t.frame
+  arguments.df.out <- arguments.df %>% 
+    mutate(output = paste0(path, "/", output.dir.basename, pos)) %>% 
+    mutate(pos = as.integer(pos),
+           t.frame = as.integer(t.frame)) %>% 
+    arrange(pos, t.frame)
+  
+  # Recycle parameters if lenght is 1
+  if(length(parameters) == 1 & is.atomic(parameters)){
+    arguments.df.out$parameters <- parameters
+  } else {
+  # Else bind to the passed parameters data.frame
+    arguments.df.out <- left_join(arguments.df.out,
+                                  dplyr::select(parameters, pos, parameters),
+                                  by = "pos")
+  }
+  
+  # Normalize parameters' paths
+  arguments.df.out <- arguments.df.out %>% mutate(parameters = normalizePath(parameters))
+  
+  if(all(is.na(arguments.df.out$t.frame))){
+    warning("arguments warning: No t.frame data extracted, replacing all NAs with '1'. Check your directories and file.pattern if this is unexpected.")
+    arguments.df.out$t.frame <- 1
+  }
+  
+  if(any(is.na(arguments.df.out)) | any(arguments.df.out == "")){
+    print(arguments.df.out)
+    stop("arguments error: at least one of the values in the arguments.df dataframe is missing or blank, check your directories and file.pattern")
+  }
+  
+  return(arguments.df.out)
+}
+
+#' Default parameters list for Cell-ID
+#' 
+#' Returns a list of key-value pairs, for the default Cell-ID parameters.
+#' It's output will tipically be used by \code{parameters_write}.
+#' 
+#' @details 
+#' 
+#' Documentation for each parameter can be found at: https://github.com/darksideoftheshmoo/cellID-linux#parameters
+#' 
+#' Boolean values are for "flag" type parameters
+#' which enable a feature when present (eg. "align_fl_to_bf"),
+#' or, if absent, indicate default behavior.
+#' 
+#' Other parameters have values
+#' which must end up separated from names by a space " "
+#' in the parameters.txt file format that Cell-ID uses:
+#' 
+#' \preformatted{
+#' max_split_over_minor 0.5
+#' max_dist_over_waist 8
+#' max_pixels_per_cell 2000
+#' min_pixels_per_cell 75
+#' background_reject_factor 0.75
+#' tracking_comparison 0.2
+#' align_fl_to_bf
+#' image_type brightfield
+#' bf_fl_mapping list
+#' }
+#' 
+#' @param max_split_over_minor Default: \code{0.50} For every combination of two pixels on the boundary, Cell-ID calculates the distance along the boundary path divided by the Euclidean distance between them. The maximum value of this ratio is larger for cells with a “figure-eight” shape that were pinched in some part than for circular cells. If the maximum value is above a user-defined threshold (which defaults to max_dist_over_waist=6), then the cell is split into two cells at the location of the pinch. After a split, if the Euclidean distance divided by the length of the minor axis of either of the new cells is greater than a user-defined value (which defaults to max_split_over_minor=0.5), then the two cells are re-grouped as a single cell. Thus, to perform the split we require that the two new cells have a generally circular shape and are not too elongated, as would be the case if the previous split was not over two cells, but over a cell and its mating projection.
+#' @param max_dist_over_waist Default: \code{8.00} For every combination of two pixels on the boundary, Cell-ID calculates the distance along the boundary path divided by the Euclidean distance between them. The maximum value of this ratio is larger for cells with a “figure-eight” shape that were pinched in some part than for circular cells. If the maximum value is above a user-defined threshold (which defaults to max_dist_over_waist=6), then the cell is split into two cells at the location of the pinch. After a split, if the Euclidean distance divided by the length of the minor axis of either of the new cells is greater than a user-defined value (which defaults to max_split_over_minor=0.5), then the two cells are re-grouped as a single cell. Thus, to perform the split we require that the two new cells have a generally circular shape and are not too elongated, as would be the case if the previous split was not over two cells, but over a cell and its mating projection.
+#' @param max_pixels_per_cell Default: \code{2000} Area limits per cell (upper bound, in pixels).
+#' @param min_pixels_per_cell Default: \code{75} Area limits per cell (lower bound, in pixels).
+#' @param background_reject_factor Default: \code{0.75} CellID's code makes an initial decision about the graylevels of the boundary pixels. To do this it takes the mean position of all the graylevels in the images and subtracts Z standard deviations. It then starts by considering all gray levels below this value as being parts of the cell borders. This value Z is the parameter background_reject_factor. Brightfield images taken slightly out of focus may do better with with higher values (ie, higher values will better avoid spurious cells), but if the cell boundaries in the image are too narrow, a smaller value may be necessary--which might increase the level of background.
+#' @param tracking_comparison Default: \code{0.20} Cell-ID attempts to track cells over time. The value of this parameter is the minimal fractional overlap between two cells in consecutive time points for them to be considered the same cell. The default value is 0.2. Also named \"I_over_U_for_match\" in CellID's cell.c and segment.c files.
+#' @param align_individual_cells Default: \code{F} Allow wiggling between the brightfield and fluorescence images.
+#' @param align_fl_to_bf Default: \code{F} Frame alignment. Cell-ID can perform image registrations, moving the the frame in XY to align it to a reference image. If “align FL to BF” is selected the bright field image is used as reference. If “align FL to first” is selected the first fluorescence image is used as reference. These options are especially useful when sampling different positions, as repositioning of the microscope stage might introduce some displacement between consecutive images.
+#' @param align_fl_to_first Default: \code{F} To-do: document or link to explanation.
+#' @param image_type Default: \code{"brightfield"} To-do: document or link to explanation.
+#' @param bf_fl_mapping Default: \code{"list"} Possible values: "list", "time". "bf_fl_mapping" option description (guessed from code, mask_mod branch). The mapping between brightfield and fluorescence images can be made by acquisition time, or derived from the order in the list of paths passed as command line options "-b" and "-f" to cell. If the order is by "list", then the paths must be grouped and ordered first by t.frame (ascending) and then by channel. If the order is by "time", cell derives the BF-FL mapping from the acquisition time in the TIFF metadata.
+#' @param treat_brightfield_as_fluorescence_also Default: \code{F} Calculate all the fluorescence images variables on the bright field image as if it were a fluorescence image. This is potentially a good idea since it allows a good way to reject spurious cells. For example, the average value of the boundary pixels in good cells will be lower than the background level, but not so for spurious cells, etc.
+#' @return A nice list of named parameters, input for \code{parameters_write}.
+#' 
+#' @export
+#' 
+#' @seealso \link[rcell2.cellid]{parameters_write}, \link[rcell2.cellid]{arguments}
+#' 
+parameters_default <- function(
+  max_split_over_minor = 0.50,
+  max_dist_over_waist = 8.00,
+  max_pixels_per_cell = 2000,
+  min_pixels_per_cell = 75,
+  background_reject_factor = 0.75,
+  tracking_comparison = 0.20,
+  align_individual_cells = F,
+  align_fl_to_bf = F,
+  align_fl_to_first = F,
+  image_type = "brightfield",
+  bf_fl_mapping = "list",
+  treat_brightfield_as_fluorescence_also = F){
+  
+  return(list(
+    max_split_over_minor = max_split_over_minor,
+    max_dist_over_waist = max_dist_over_waist,
+    max_pixels_per_cell = max_pixels_per_cell,
+    min_pixels_per_cell = min_pixels_per_cell,
+    background_reject_factor = background_reject_factor,
+    tracking_comparison = tracking_comparison,
+    align_individual_cells = align_individual_cells,
+    align_fl_to_bf = align_fl_to_bf,
+    align_fl_to_first = align_fl_to_first,
+    image_type = image_type,
+    bf_fl_mapping = bf_fl_mapping,
+    treat_brightfield_as_fluorescence_also = treat_brightfield_as_fluorescence_also
+  ))
+}
+
+#' Write parameters to a [temporary] file
+#' 
+#' Parses a \code{parameters.list} object from \code{parameters_default},
+#' and writes its contents to a Cell-ID friendly plain text file.
+#' 
+#' @param parameters.list a parameters list for Cell-ID (like one from parameters_default)
+#' @param param.dir directory where parameter files will be written.
+#' @param param.file a file name for the parameters file.
+#' @return A path to the text file where parameters where written.
+#' 
+#' @export
+#' 
+#' @seealso \link[rcell2.cellid]{parameters_default}, \link[rcell2.cellid]{arguments}
+#' 
+parameters_write <- function(parameters.list = rcell2.cellid::parameters_default(), 
+                             param.dir = NULL,
+                             param.file = NULL){
+  
+  # Print target directory if NULL
+  if(is.null(param.dir)) param.dir <- base::tempdir()
+  if(is.null(param.dir) & !is.null(param.file)) cat(paste0("\nSaving parameters file to: ", param.dir, "\n"))
+  
+  # Check if directory exists
+  param.dir <- normalizePath(param.dir, mustWork = T)
+  
+  if(is.null(param.file)){
+    param.file <- tempfile(tmpdir = param.dir, pattern = "parameters_", fileext = ".txt")
+    cat(paste0("\nSaving parameters file to: ", param.file, "\n"))
+  } else {
+    param.file <- paste(param.dir, param.file, sep = "/")
+  }
+  
+  # Process the list into a valid parameter list
+  # converting values to character type
+  param_array <- 
+    sapply(seq_along(parameters.list), function(i) {
+      # For each parameter, get its name and value
+      item_val <- parameters.list[[i]]
+      item_name <- names(parameters.list)[i]
+      
+      # Boolean values are for "flag" type parameters
+      # Which enable a feature when present (eg. "align_fl_to_bf")
+      if(isTRUE(item_val))
+        r <- item_name
+      # And, if absent, indicate default behavior:
+      else if(isFALSE(item_val))
+        r <- NA
+      # Other parameters have values
+      # which must be separated from names by a space " "
+      else
+        r <- paste0(item_name, " ", item_val)
+      
+      # return "r" to sapply
+      return(r)
+    })
+  
+  # Filter any NAs (which come from FALSE flag-type parameters)
+  param_array <- param_array[!is.na(param_array)]
+  
+  # Write to the parameter file
+  write(x = param_array, file = param.file)
+  
+  return(param.file)
+}
+
+
+#' Cargar el output de cell-id
+#'
+#' @param path Path to CellID's output directory, tipically also the images directory.
+#' @param pdata Path to metadata CSV file.
+#' @param position.pattern Regex describing what the position string looks like (default ".*Position(\\d+).*") including a capturing group for the position ID number (coerced to integer).
+#' @param fluorescence.pattern Regex describing what the fluorescence/channel ID string looks like (default "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"). There must be only one capturing group, ant it must be for the channel identifier.
+#' @param ucid.zero.pad Amount of decimal digits for the cellID (defaults 4, corresponding to a maximum of 9.999 cellIDs and 9999 positions).
+#' @param append.posfix String appended to the channel ID extracted by `fluorescence.pattern` (`NULL` by default, but "FP" is usual).
+#' @param ... Arguments passed on to \code{load_out_all}. Patterns for "out" files, fluorescence channel, and other options may be changed here.
+#' @inheritDotParams load_out_all
+#' @return A list of dataframes: data (CellID data), images (images metadata and paths), image_maping (extra mapping metadata from CellID: BF to FL correspondence, channel flag, bf_as_fl flag, and one-letter channel encoding).
+# @examples
+# cell.data <- cell.load(path = path, pdata = pdata)
+#' @import dplyr stringr tidyr readr
+#' @importFrom purrr map
+#' @export
+cell.load.alt <- function(path,
+                          pdata = NULL,
+                          position.pattern = ".*Position(\\d+).*",
+                          # fluorescence.pattern = "^([GCYRT]FP)_Position\\d+.tif$",
+                          # fluorescence.pattern = "^(BF|[GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$",
+                          fluorescence.pattern = "^(BF|[GCYRT]FP|[GCYRT]\\d+)_Position\\d+.*.tif$",
+                          ucid.zero.pad = 4,
+                          append.posfix = NULL,
+                          ...){
+  
+  path <- normalizePath(path, mustWork = T)
+  
+  if(F){
+    library(tidyverse)
+    path <- "/run/media/nicomic/ACLN1/ACL/Uscope/datos_RtCC/2022-03-08-rtcc-far1-cepas-redescongeladas/multidimensional_exp/renamed"
+    position.pattern = ".*Position(\\d+).*"
+    fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
+    ucid.zero.pad = 4
+    append.posfix = NULL
+    cell.data <- cell.load.alt(path = path)
+  }
+
+  # Cargar datos out_all y juntar en un solo dataframe usando metadata de "out_bf_fl_mapping"
+  cat("\n\nLoading CellID output files...\n")
+  d.list <- load_out_all(path = path,
+                           position.pattern = position.pattern,
+                           fluorescence.pattern = fluorescence.pattern,
+                           ...)  # https://stackoverflow.com/questions/40794780/r-functions-passing-arguments-with-ellipsis/40794874
+  
+  # Create ucid column
+  cat("\rCreating ucid column...                            ")
+  d.list$d <- d.list$d %>%
+    # By padding to an invariant number of digits, cells from positions as 90 and 9 _could_ have the same UCID.
+    # The next lines fix that bug, which would cells to not be filtered correctly, and be plotted anyways, or other problems.
+    # Also, the padding should not be very large, or it will "overflow" R's integer class.
+    # To-do: replace the following code with str_pad
+    mutate(cellid.pad = ucid.zero.pad - nchar(as.character(cellID))) %>%
+    mutate(
+      ucid = as.integer(
+        paste0(pos,
+               sapply(cellid.pad, FUN = function(pad) paste0(rep(x="0", 
+                                                                 times=max(0, pad)), 
+                                                             collapse = "")),
+               cellID))) %>% 
+    select(ucid, tidyselect::everything())
+  
+  if(any(d.list$d$cellid.pad < 0))
+    stop("cellID too large to pad, increase ucid.zero.pad (and check for integer overflow).")
+
+  # Delethe the cellid.pad column
+  d.list$d$cellid.pad <- NULL
+  
+  # ellipse.perim = perimeter of theoretical ellipse, calculated using each
+  # cell's axis values.
+  # el.p = ratio of ellipse perim over the perimeter measured by cellID.
+  # If this number is small ( < ~0.7) it's probably not a cell.
+  cat("\rCreating el.p column...                            ")
+  d.list$d <- dplyr::mutate(d.list$d,
+                            ellipse.perim = pi *
+                              (3 * (maj.axis / 2 + min.axis / 2) -
+                                 sqrt((3 * maj.axis / 2 + min.axis / 2) *
+                                        (maj.axis / 2 + 3 * min.axis / 2))),
+
+                            el.p = ellipse.perim / perim)
+
+  # Mergear con pdata
+  # if(exists("pdata", inherits = F)){
+  cat("\rJoining pdata if specified...")
+  if(!is.null(pdata)){
+    pdata <- readr::read_csv(pdata) %>% mutate(pos = pos %>% as.numeric)
+    d.list$d <- d.list$d %>% left_join(pdata, by = "pos")
+    cat(" and it was :)                            ")
+  } else cat(" but it was not :(                            ")
+
+
+  # Create paths dataframe and add three-letter code for channel
+  cat("\rCreating image paths dataframe...                            ")
+  paths <- d.list$d.map
+  if(!is.null(append.posfix)){
+    paths <- mutate(paths, channel = paste0(toupper(channel), append.posfix))
+  }
+
+  # Bind paths dataframe it with itself, to get entries for BF as well.
+  paths <- dplyr::bind_rows(
+    paths %>%  # Get FL image paths
+      select(pos, t.frame, channel, fluor) %>%
+      rename(file = fluor),
+    
+    paths %>%  # Get BF image paths
+      select(pos, t.frame, channel, bright) %>%
+      rename(file = bright) %>%
+      mutate(channel = "BF") %>% 
+      unique()  # There may be BF path duplicates in the "bright" column, so keep the unique set
+  ) %>%
+    mutate(path = dirname(file),  # Add the directory path
+           is.out = FALSE)        # Add the is.out column
+
+  paths <- bind_rows(paths,
+                     paths %>%  # bind it with part of itself, out files are named exactly the same, but with an extra ".out.tif"
+                       mutate(file = paste0(file, ".out.tif"),
+                              channel = paste0(channel, ".out"),
+                              is.out = TRUE)) %>%
+    mutate(image = basename(file))
+
+  d.list$d.paths <- paths
+  
+  # Make output list
+  cell.data <- list(data = d.list$d,
+                    images = d.list$d.paths,
+                    mapping = d.list$d.map,
+                    channels = unique(d.list$flag.channel.mapping),
+                    variable_descriptions = cellid_output_descriptions())
+  
+  cat("\rDone loading CellID data!                            \n")
+  return(cell.data)
+}
+
+
+#' Una función que lea un .csv y les agregue una columna con un id del archivo (pos)
+#' @keywords internal
+#' @import stringr dplyr
+read_tsv.con.pos <- function(.nombre.archivo, .carpeta, position.pattern, col_types = "c"){
+  cat(paste0("\rReading: ", .nombre.archivo), "\033[K")
+  
+  .archivo <- normalizePath(paste0(.carpeta, "/", .nombre.archivo))
+  .pos <- stringr::str_replace(.nombre.archivo, position.pattern, "\\1") %>% as.numeric()
+  
+  d <-  readr::read_tsv(.archivo, col_types = col_types, trim_ws = T) %>%
+    # "pos", "t.frame" y "flag" estan bf_fl_mapping y en out_all
+    mutate(pos = as.integer(.pos),  # La columna de ID es "pos"
+           t.frame = as.integer(t.frame),
+           flag = as.integer(flag))
+    # el resto de las columnas que no se comparten y deberian ser enteras
+    # se convierten en load_out_all()
+  
+  
+  if("con.vol_1" %in% names(d)) {
+    cat(paste0("\nRemoving 'con.vol_1' column from position: ", 
+               .pos, 
+               ". Use CellID version > 1.4.6 to stop seeing this message.\n"))
+    d <- dplyr::select(d, -con.vol_1)
+  }
+  
+  con.vol.dupes <- startsWith(names(d), "con.vol")
+  if(sum(con.vol.dupes) > 1){
+    first <- names(d)[which(con.vol.dupes)][1]
+    dupes <- names(d)[which(con.vol.dupes)][-1]
+    dupes <- paste(dupes, collapse = ", ")
+    
+    cat(paste0("\nRemoving '", dupes, "' column(s) from position: ", 
+               .pos, 
+               ". Use CellID version > 1.4.6 to stop seeing this message.\n"))
+    # browser()
+    colnames(d)[which(con.vol.dupes)[1]] <- "con.vol"
+    d[which(con.vol.dupes)[-1]] <- NULL
+  }
+  
+  return(d)
+}
+
+#' Una función para leer y combinar todos los archivos "out".
+#'
+#' @inheritParams cell.load.alt
+#' @param out_file_pattern Regex matching CellID's main output file.
+#' @param out_mapping_pattern Regex matching CellID's image mapping output file.
+#' @param fix_id_columns Whether apply the \code{fix_id_columns_fun} summary function to problematic ID columns (with non-unique vales per cell across channels).
+#' @param fix_id_columns_fun Summary function for \code{fix_id_columns}, uses dplyr's \code{first} by default (thereby using the value of the first channel).
+#' @import dplyr tidyr readr
+#' @importFrom purrr map
+#' @importFrom data.table setDT dcast setDF
+#' @return A list of two dataframes: `d` contains the actual output, and `out.map` contains image paths and metadata.
+#' @keywords internal
+load_out_all <- function(path,
+                         position.pattern = ".*Position(\\d+).*",
+                         out_file_pattern = "^out_all$",
+                         out_mapping_pattern = "^out_bf_fl_mapping$",
+                         fluorescence.pattern = ".*(BF|[A-Z]FP)_Position.*",
+                         fix_id_columns=F,
+                         fix_id_columns_fun=dplyr::first){
+  
+  
+  # Migrated from cell.load()
+  .nombre.archivos <- list.files(path = path, pattern = out_file_pattern, recursive = T, include.dirs = T)  # paths de los "out_all"
+  .nombre.archivos.map <- list.files(path = path, pattern = out_mapping_pattern, recursive = T, include.dirs = T)  # paths de los "bf_fl_mapping"
+  # A bit of error handling
+  if(length(.nombre.archivos) == 0) 
+    stop("Error in load_out_all: no CellID output files found, check your path, options and files.")
+  if(length(.nombre.archivos.map) == 0) 
+    stop("Error in load_out_all: no CellID mapping files found, check your path, options and files.")
+  if(length(.nombre.archivos) != length(.nombre.archivos.map)) 
+    stop("Error in load_out_all: different amount of mapping and cellid output files.")
+  
+  # Cargo y junto los "out_all"
+  cat("\rLoading datasets...\033[K")
+  d.out <- purrr::map(.x = .nombre.archivos,
+                      .f = read_tsv.con.pos, 
+                      .carpeta = path,
+                      # col_types = "iiiiiddddddddddddddddddddddddddddddddddddddddddddddddddd", # types: 5 int columns, 51 double columns
+                      col_types = readr::cols(.default = "d"), # types: all double, convert later
+                      position.pattern = position.pattern) %>%
+    bind_rows() %>% 
+    mutate(cellID = as.integer(cellID))
+  
+  cat("\n Done loading 'out_all' files!\n")
+
+  # # Cargo y junto los "out_bf_fl_mapping"
+  cat("\rLoading mapping...              ")
+  d.map <- purrr::map(.x = .nombre.archivos.map,
+                      .f = read_tsv.con.pos,  # Una función para leer los archivos "out" y agregarles "pos" segun la carpeta que los contiene
+                      .carpeta = path,
+                      col_types = "ciicl",  # types: 2 char columns, 2 int columns, 1 logical column
+                      position.pattern = position.pattern) %>%
+    bind_rows() %>%
+    mutate(channel = str_replace(string = basename(fluor),
+                                 pattern = fluorescence.pattern,
+                                 replacement = "\\1")) %>%
+    mutate(channel = tolower(channel))
+  
+  # keep flag-channel mapping for later...
+  flag.channel.mapping <- unique(dplyr::select(d.map, flag, channel))
+  
+  # Check amount of flags VS amount of extracted channel names
+  flag.ch.check <- length(unique(flag.channel.mapping$flag)) == length(unique(flag.channel.mapping$channel))
+  if(!flag.ch.check) 
+    stop(
+      "Error in load_out_all: number of flags does not match extracted channel names.\nCheck your 'fluorescence.pattern'\n\n",
+      paste0("Flags: \n", paste(unique(flag.channel.mapping$flag), collapse = "\n"), "\n\n"),
+      paste0("Channels: \n", paste(unique(flag.channel.mapping$channel), collapse = "\n"), "\n\n")
+    )
+  
+  cat("\n Done loading 'bf_fl_mapping' files!\n")
+  avail.ch <- paste(flag.channel.mapping$channel, flag.channel.mapping$flag, sep = "=", collapse = ", ")
+  cat(paste("    Final channel-flag mapping:", avail.ch, "\n"))
+
+  # Return join (discard flag variable)
+  cat("\rJoining data and mapping...\033[K")
+  d.out.map <- dplyr::left_join(
+      d.out,
+      unique(select(d.map, flag, t.frame , pos, channel)),
+      by = c("flag", "t.frame", "pos")
+    ) %>%
+    select(-flag)
+  
+  # Data table leftjoin tests
+  if(F){
+    mapping <- unique(select(d.map, flag, t.frame , pos, channel))
+    data.table::setDT(mapping)
+    data.table::setDT(d.out)
+    r <- d.out[mapping, on = c("flag", "t.frame", "pos")]
+  }
+  
+  if(nrow(d.out.map) > nrow(d.out)) 
+    stop("Error at load_out_all: while joining output and mapping, at least one output row matche multiple mappings.")
+  
+  # Add f.tot columns to data
+  d.out.map <- mutate(d.out.map,
+                      f = f.tot - (a.tot * f.bg),
+                      cf = f / a.tot,
+                      f.loc = f.tot - (f.local.bg * a.tot),
+                      cf.loc = f.loc / a.tot)
+  
+  # d.out.map <- filter(d.out.map, cellID==1)  # test one cell
+  
+  
+  # Variables that should not change across fluroescence channels are used as IDs
+  cell_idcols <- c("cellID", "t.frame", "pos")
+  id_cols = c("cellID",
+              # flag,  # dropped above
+              "t.frame",
+              "time",
+              "pos",
+              "xpos",
+              "ypos",
+              "a.tot",
+              "num.pix",
+              "fft.stat",
+              "perim",
+              "maj.axis",
+              "min.axis",
+              "rot.vol",
+              "con.vol",
+              "a.tot.p1",  # should be moved from the id_cols, issue #32
+              "a.tot.m1",
+              "a.tot.m2",
+              "a.tot.m3",
+              # a.local.bg,  # moved from the id_cols, issue #32
+              "a.local",
+              # a.local2.bg,  # moved from the id_cols, issue #32
+              "a.local2",
+              "a.surf",
+              # con.vol_1,  # duplicated, removed by read_tsv.con.pos and in recent CellID versions
+              "sphere.vol")
+
+  id_cols_notcell <- setdiff(id_cols, cell_idcols)
+  
+  values_from = c("f.tot",
+                  "f", 
+                  "cf",
+                  "f.loc",
+                  "cf.loc",
+                  "f.nucl",
+                  "a.nucl",
+                  "a.vacuole",
+                  "f.vacuole",
+                  "a.local.bg", # moved from the id_cols, issue #32
+                  "a.local2.bg",  # moved from the id_cols, issue #32
+                  "f.bg",
+                  "f.tot.p1",
+                  "f.tot.m1",
+                  "f.tot.m2",
+                  "f.tot.m3",
+                  "xpos.nucl",
+                  "ypos.nucl",
+                  "f.nucl1",
+                  "f.nucl.tag1",
+                  "a.nucl1",
+                  "f.nucl2",
+                  "f.nucl.tag2",
+                  "a.nucl2",
+                  "f.nucl3",
+                  "f.nucl.tag3",
+                  "a.nucl3",
+                  "f.nucl4",
+                  "f.nucl.tag4",
+                  "a.nucl4",
+                  "f.nucl5",
+                  "f.nucl.tag5",
+                  "a.nucl5",
+                  "f.nucl6",
+                  "f.nucl.tag6",
+                  "a.nucl6",
+                  "f.local.bg",
+                  "f.local2.bg")
+  
+  # browser()
+  cat("\rChecking ID column uniqueness...\033[K")
+  
+
+  
+  # Check if "id columns" are really the same within each observation
+  id_cols_check <- d.out.map[,id_cols] %>% group_by_at(.vars = cell_idcols) %>% 
+    summarise_all(.funs = function(x) length(unique(x)) == 1) %>% 
+    arrange(pos, cellID, t.frame)
+  
+  id_cols_check$any_bad <- !apply(id_cols_check[,id_cols_notcell], 
+                                  MARGIN = 1, 
+                                  FUN = all)  
+
+  if(any(id_cols_check$any_bad)){
+    
+    which_bad <- id_cols_check %>%
+      filter(any_bad) %>% .[,id_cols_notcell] %>% {split(., 1:nrow(.))} %>% 
+      lapply(FUN = function(x) {
+        which_bad_idx <- which(!x)
+        
+        # Handle all-good columns with NA value (shouldnt be necessary but whatever).
+        if (length(which_bad_idx) == 0) {
+          which_bad <- c(NA_character_)
+        } else {
+          which_bad <- c(id_cols_notcell[which_bad_idx])
+        }
+        
+        return(which_bad)
+      })
+    
+    # Unlist!
+    which_bad <- which_bad %>% unlist() %>% unique()
+    
+    # Fix the problem
+    if (length(which_bad) > 0) {
+      # Prepare warning text
+      warning_text <- paste(
+        "Columns [",
+        paste(which_bad, collapse = ", "), 
+        "] are not ID columns, they have different values across channels of the same cell."
+      )
+      
+      # Choose how to handle the problem
+      if(!fix_id_columns){
+        # Warn the user
+        warning(paste(warning_text, "Treating these variables to value columns (colnames in cdata will change!).\n"))
+        # Remove "bad" columns from the "id" vector
+        id_cols <- id_cols[!id_cols %in% which_bad]
+        # And add "bad" columns to the "values" vector
+        values_from <- unique(c(values_from, which_bad))
+      } else {
+        # Warn the user
+        warning(paste(warning_text, "Applying the 'fix_id_columns_fun' summary function to the problematic ID columns.\n"))
+        # Use the "fix_id_columns_fun" summary function to "fix" the ID variables with non-unique values
+        d.out.map <- d.out.map %>% group_by_at(.vars = cell_idcols) %>% 
+          arrange(channel) %>% 
+          mutate_at(.vars = id_cols, .funs = fix_id_columns_fun) %>% ungroup()
+      }
+    }
+  }
+  
+  
+  # Right now the out_all is in a "long" format for the "channel" variable.
+  # Spread it to match expectations:
+  cat("\rSpreading data from channels...\033[K")
+  
+  # Replacing pivot_wider with dcast (it is 2x faster)
+  # cdata <- d.out.map %>%
+  #   tidyr::pivot_wider(
+  #     # Names for fluorescence columns come from the "channel" variable
+  #     names_from = channel, names_sep = ".",
+  #     id_cols = all_of(id_cols),
+  #     values_from = all_of(values_from)
+  #     )
+  
+  # New long to wide reshaping, with data.table:
+  dcast_formula_lhs <- paste(collapse = " + ", id_cols)  # Using "cell_idcols" instead of "id_cols" is much faster, but the omitted columns would be lost
+  dcast_formula_rhs <- "channel"
+  dcast_formula <- paste0(dcast_formula_lhs, " ~ ", dcast_formula_rhs)
+  dcast_values <- values_from
+  # Reshape:
+  data.table::setDT(d.out.map)
+  cdata <- data.table::dcast(
+    data = d.out.map, 
+    formula = as.formula(dcast_formula), 
+    value.var = dcast_values, sep = "."
+  )
+  data.table::setDF(cdata)
+  
+  # Check row number against expectation
+  check_row_n <- nrow(cdata) == nrow(d.out.map)/length(unique(d.out.map$channel))
+  if(!check_row_n) warning("Casting fluorescence columns produced the wrong number of rows.")
+  
+  cat("\rPreparing output...\033[K")
+  # Unnecesary with DT dcast
+  # cdata <- mutate(cdata, 
+  #                 cellID = as.integer(cellID),
+  #                 t.frame = as.integer(t.frame))
+
+  # Prepare output list
+  d.list <- list(
+    "d" = cdata,
+    "d.map" = d.map,
+    "flag.channel.mapping" = flag.channel.mapping
+    )
+  
+  # Check uniqueness of ucid-t.frame combinations
+  if(nrow(unique(cdata[,c("cellID", "pos", "t.frame")])) < nrow(cdata)){
+    
+    cat("\rFailed ucid-t.frame uniqueness check, dumping to RDS...\033[K")
+    dump.file <- tempfile(fileext = ".RDS")
+    saveRDS(d.list, dump.file)
+    
+    test.df <- cdata[,c("cellID", "pos", "t.frame")]
+    test.df.list <- split(test.df, test.df$pos)
+    test.res <- 
+      lapply(test.df.list, function(d){
+        nrow(unique(d)) < nrow(d)
+      }) %>% unlist()
+    
+    stop(paste(
+      "\nERROR: There are repeated cellID's in the out_all file! Dumped data to:",
+      dump.file,
+      "Problematic positions:", paste(names(test.res[test.res]), collapse = " ")
+      )
+    )
+  }
+  
+  # Return
+  return(d.list)
+}
+
+#' Print rcellid arguments summaries
+#' 
+#' A function to print some summaries, to check cellArgs2 output.
+#' 
+#' @param arguments The "arguments" dataframe, output from \code{rcell2.cellid::arguments()}.
+#' @import dplyr
+#' @export
+arguments_summary <- function(arguments){
+  arguments %>% group_by(ch) %>% summarise(n_count = n(), .groups = "drop") %>% print()
+  arguments %>% select(bf) %>% summarise(unique_BF = "", n_count = length(unique(bf)), .groups = "drop") %>% print()
+  arguments %>% group_by(t.frame) %>% summarise(n_count = n(), .groups = "drop") %>% print()
+  arguments %>% group_by(pos) %>% summarise(n_count = n(), .groups = "drop") %>% print()
+}
+
+#' Make and "images" dataframe from "arguments" dataframe
+#' 
+#' The images dataframe is needed by many rcell2 functions. If it is not available from the output of \code{load_cell_data} or \code{cell.load.alt}, then this function can help.
+#' 
+#' It essentially does a pivot_longer of the arguments.
+#' 
+#' @param arguments The "arguments" dataframe, output from \code{rcell2.cellid::arguments()}.
+#' 
+#' @return A data.frame similar to \code{cell.load.alt()$images}.
+#' @import dplyr
+#' @export
+arguments_to_images <- function(arguments){
+  images <- 
+    dplyr::bind_rows(
+      arguments %>% select(pos, t.frame, path, bf) %>% 
+        unique() %>% mutate(ch = "BF") %>% rename(image = bf),
+      arguments %>% select(pos, t.frame, path, image, ch)
+    ) %>% 
+    mutate(file = paste0(path, "/", image),
+           is.out = F) %>% 
+    select(pos, t.frame, ch, file, path, is.out, image) %>% 
+    rename(channel = ch) #%>% 
+    # mutate(t.frame = t.frame - min(t.frame))
+  
+  images
+}
+
+#' Pipe
+#'
+#' purrr's pipe operator
+#'
+#' @importFrom purrr %>%
+#' @name %>%
+#' @rdname pipe
+#' @param lhs,rhs specify what lhs and rhs are
+# @examples
+#' @keywords internal
+#' # some examples if you want to highlight the usage in the package
+NULL
+
+
+#' Image file renamer for Metamorph MDA
+#' 
+#' MDA: "Multi dimensional acquisition" app in Metamorph.
+#' 
+#' Uses regex groups to extract channel, position and time information from file names, and uses it to stitch new and friendlyer names.
+#' These are used to copy or link image files to a target directory.
+#' 
+#' For example, \code{far1_rtcc_exp16_thumb_w1LED-BF--YFPcube--cam_s17_t35.TIF} can be converted to \code{BF_Position17_time35.tif}.
+#' 
+#' The \code{identifier.pattern} is a key parameter. There must be three groups, one for each of the three information types: channel, position and time.
+#' The defaults are useful for a file name such as \code{far1_rtcc_exp16_thumb_w1LED-BF--YFPcube--cam_s17_t35.TIF}, in which the channel is identified by a "w", 
+#' position by an "s", and time by a "t".
+#' 
+#' The order in which this information appears in the file name is specified in \code{identifier.info}. 
+#' If you wish to add a prefix to each field in the final file name, name the elements in this vector. 
+#' For example, the default \code{c("ch", Position="pos", time="t.frame")} indicates that channel has no prefix,
+#' the "pos" field will be prefixed by "Position", and the "t.frame" field will be prefixed by "time".
+#' Then, for example, a new file name could look like this: \code{BF_Position1_time3.tif}.
+#' 
+#' Channel names will be translated according to the rows in \code{channel.dict} (see the parameter's description).
+#' These are easily adaptable to other use cases, for example you may change \code{channel.dict} to include more, less or other channels, in whatever order.
+#' Note that the values in the \code{ch} column must exactly match the strings captured by the corresponding capture group in \code{identifier.pattern}.
+#' For example, the channel in the original file names may be integers from 1 to 3, which are captured and matched with dplyr's left_join to the \code{channel.dict} data frame.
+#' Then, the value in \code{ch.name} is used to build the final file name.
+#' 
+#' **Limitations**: In the original file names, the identifiers for each field can only be integers.
+#'
+#' examples 
+#' images.path <- "~/Projects/PhD/data/uscope/multidimensional_exp-20211126-Far1NG-wt_y_dKar4/"
+#' rename_mda(images.path, rename.function = file.copy)
+#' 
+#' @import dplyr
+#' @param images.path Path to the directory containing the images output by Meramorph MDA.
+#' @param rename.path Path to the target directory. If \code{NULL} (the default) images are sent to a "renamed" subdirectory of \code{images.path}.
+#' @param rename.function Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function.
+#' @param identifier.pattern Regex defining gropus for each part of the name.
+#' @param identifier.info Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. Names in this vector are prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).
+#' @param channel.maping.df A dataframe with two columns: "ch" holding the original channel names in the source files, and "ch.name" with the new names for each channel.
+#' @param file.ext File extension to use in the final file name, such as: ".tif".
+#' @param skip.thumbs.pat A regex pattern to filter files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.
+#' @param cleanup.first Set to TRUE to remove all files within the \code{rename.path} directory. FALSE by default.
+#' @param ... Further arguments passed onto \code{rename.function}.
+#' @export
+#' @return Invisibly returns a list with the rename.path (output directory), and a data.frame with the output from the renaming function (see the \code{rename.function} parameter's description) and name conversions.
+#' @import stringr dplyr
+rename_mda <- function(images.path, 
+                       rename.path = NULL, 
+                       rename.function = file.symlink, 
+                       identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$", 
+                       identifier.info = c("ch", Position="pos", time="t.frame"),
+                       channel.maping.df = data.frame(ch=1:3, ch.name=c("BF", "YFP", "TFP")),
+                       file.ext=".tif",
+                       skip.thumbs.pat = ".*thumb.*",
+                       cleanup.first=F,
+                       ...
+                       ){
+  
+  # Checks
+  stopifnot(all(identifier.info %in% c("ch", "pos", "t.frame")))
+  
+  # Get file names
+  image.files <- dir(images.path, pattern = identifier.pattern, full.names = T)
+  
+  # Skip thumbnails
+  if(!is.null(skip.thumbs.pat)) image.files <- image.files[!grepl(skip.thumbs.pat, basename(image.files))]
+  
+  # Extract groups
+  images.info <- stringr::str_match(basename(image.files), identifier.pattern)[,-1]
+  
+  # Cleanup and convert to dataframe
+  images.info <- apply(images.info, 2, as.numeric)
+  colnames(images.info) <- identifier.info
+  images.info <- as.data.frame(images.info)
+  
+  # Checks
+  stopifnot(nrow(channel.maping.df) == length(unique(images.info$ch)))
+  
+  # Join extracted image info to the channel mapping data.frame
+  images.info <- dplyr::left_join(images.info, channel.maping.df, by = "ch")
+  
+  # Add file name and path
+  images.info$path <- images.path
+  images.info$file <- image.files
+  
+  # Check if rename path was specified, use the images path otherwise
+  if(is.null(rename.path)) rename.path <- paste0(images.path, "/renamed")
+  
+  if(cleanup.first){
+    # Delete all files recursively
+    unlink(paste0(rename.path, "/*"), recursive = T)
+  }
+  
+  # Create output directory
+  dir.create(rename.path, showWarnings = F, recursive = T)
+  
+  # Make new names and paths
+  images.info$rename.path <- rename.path
+  images.info$rename.file <- paste0(
+    
+    # ifelse(nzchar(names(identifier.info[identifier.info=="ch"])), "_", ""),
+    names(identifier.info[identifier.info=="ch"]),
+    images.info$ch.name,
+    "_",
+    
+    names(identifier.info[identifier.info=="pos"]),
+    images.info$pos,
+    "_",
+    
+    names(identifier.info[identifier.info=="t.frame"]),
+    images.info$t.frame,
+    
+    file.ext
+  )
+  
+  # Rename
+  status <- rename.function(from = normalizePath(images.info$file), 
+                            to = paste0(rename.path, "/", images.info$rename.file),
+                            ...)
+  
+  # Add status column to image into
+  images.info$status <- status
+  
+  if(any(!status)) 
+    warning("At least some files were not renamed, see warnings!")
+  else
+    cat(paste("It seems the renaming went well :) check your output directory at:", rename.path))
+  
+  return(invisible(list(
+    rename.path=rename.path,
+    status=images.info
+  )))
+}

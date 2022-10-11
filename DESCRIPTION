@@ -1,0 +1,49 @@
+Package: rcell2.cellid
+Title: CellID bundled in R for the rcell2 package: CellID Data Analysis Inside the Tidyverse.
+Version: 0.0.3
+Authors@R: 
+    c(person(given = "German",
+           family = "Beldorati Stark",
+           role = c("aut"),
+           email = "gerbeldo@gmail.com"),
+      person(given = "Nicolás",
+           family = "Agustín Méndez",
+           role = c("aut", "cre"),
+           email = "nmendez.ar@gmail.com"),
+      person(given = "Andreas",
+           family = "Constantinou",
+           role = c("aut"),
+           email = "indie_heights@hotmail.com"),
+      person(given = "Alan",
+           family = "Bush",
+           role = c("aut"),
+           email = "email@example.com"))
+Description: Generate cellID data entirely within R.
+    This package includes the CellID program source, and wraps it in a single R function "cell2", while providing additional functions to prepare its input, test parameters, load it's output, etc.
+    To analyze CellID's data, we susgest using our related packages: "rcell2" for a tidy analysisi framework, and "rcell2.magick" for manipulating data using shiny apps, and images with R's magick package.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.1
+Depends:
+    R (>= 3.6)
+biocViews:
+Imports:
+    data.table (>= 1.14.2),
+    doParallel (>= 1.0.17),
+    dplyr (>= 1.0.8),
+    foreach (>= 1.5.2),
+    parallel,
+    purrr (>= 0.3.4),
+    readr (>= 2.1.2),
+    rlang (>= 1.0.2),
+    stringr (>= 1.4.0),
+    tibble (>= 3.1.6),
+    tidyr (>= 1.2.0)
+Suggests:
+    skimr (>= 2.1.3),
+    tidyverse (>= 1.3.1),
+    rcell2,
+    rcell2.magick,
+    ijtiff,
+    XML

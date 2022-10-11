@@ -1,0 +1,59 @@
+#' Get "PlaneInfo" from a TIFF's tags (metadata)
+#' 
+#' @description 
+#' 
+#' This function parses the XML metadata in Metamprph's TIFF image files,
+#' and retrieves the "plane info" elements, containing information on
+#' position, exposure, etc.
+#' 
+#' Only the first frame's information will be shown. Use this function once per frame.
+#' 
+#' This function requires:
+#' 
+#' * xmlToList from the XML package.
+#' 
+#' * read_tags from the ijtiff package.
+#' 
+#' @inheritParams ijtiff::read_tags
+#' @inheritDotParams XML::xmlToList
+#'
+#' @return A dataframe with "prop" values of the TIFF's PlaneInfo metadata.
+#' @export
+#'
+tiff_plane_info <- function(path, frames = 1, ...) {
+  # @importFrom XML xmlToList
+  # @importFrom ijtiff read_tags
+  
+  if (length(frames) > 1) {
+    warning("tiff_plane_info: only the first frame's information will be shown. Use this function once per frame.")
+    frames <- frames[1]
+  }
+  
+  if(!require(XML)){
+    warning("tiff_plane_info requires xmlToList from the XML package, which is not installed.")
+    return(NULL)
+  }
+  
+  if(!require(ijtiff)){
+    warning("tiff_plane_info requires read_tags from the ijtiff package, which is not installed.")
+    return(NULL)
+  }
+  
+  pic.tags <- ijtiff::read_tags(path = path, frames = frames)
+  
+  # Get metamorph's XML
+  pic.description <- pic.tags$frame1$description
+  
+  if(is.null(pic.description)){
+    warning("tiff_plane_info: Metamorph's plane-info XML metadata was not found in the TIFF's tags.")
+    return(NULL)
+  }
+  
+  description.xml <- XML::xmlToList(pic.description, ...)
+  
+  plane_info <- description.xml$PlaneInfo %>% 
+    lapply(function(prop) prop$.attrs) %>% 
+    bind_rows(.id = "prop_type")
+  
+  return(plane_info)
+}
