@@ -89,7 +89,7 @@ We do our best to support the three main OSes: Linux, Mac OS, and Windows.
 
 If something goes wrong, please [drop an issue](https://github.com/darksideoftheshmoo/rcell2/issues).
 
-### GNU-Linux (Ubuntu, Arch, etc.)
+#### GNU-Linux (Ubuntu, Arch, etc.)
 
 Use your package manager to install some development libraries.
 You will most likely only need `libtiff` and some standard C libraries.
@@ -108,7 +108,7 @@ Notes:
 * We suggest you try installing `libtiff` in your system it first, as explained above. It is the simpler alternative.
 * When compiling the bundled `libtiff` with `cmake`, CellID is linked to the `libtiff` library _statically_. For this purpose we needed those extra dynamic links to `zstd`, `liblzma`, `libjpeg`, `libz`, and `libwebp` (which become system dependencies).
 
-### Mac OS
+#### Mac OS
 
 You will most likely only need `libtiff` for this package, and `imagemagick` for `rcell2.magick`. Install [Homebrew](https://brew.sh/) and run `brew install libtiff`.
 
@@ -116,7 +116,7 @@ If brew's `libtiff` does not work, use `brew` to install the dependencies listed
 
 Trying to install source packages in _Catalina_ will prompt users to install <!-- (¿xcode?)--> command line developer tools such as `make`, which may be required.
 
-### Windows
+#### Windows
 
 The package automatically downloads and links the `libtiff` library.
 
@@ -124,7 +124,7 @@ You need to install `Rtools`: https://cran.r-project.org/bin/windows/Rtools/
 
 We thank the devs of the [ijtiff](https://github.com/ropensci/ijtiff) package for [this](https://github.com/ropensci/magick/blob/master/tools/winlibs.R) :).
 
-## Installing the package
+### Installing the package
 
 Install `rcell2.cellid`, directly from the github repo, using `remotes`: 
 
@@ -132,11 +132,11 @@ Install `rcell2.cellid`, directly from the github repo, using `remotes`:
 remotes::install_github("darksideoftheshmoo/rcell2-cellid")
 ```
 
-## Installation notes on Cell-ID
+### Cell-ID installation notes
 
 Extra information about the bundled Cell-ID.
 
-### Using an external CellID binary (optional)
+#### Using an external CellID binary (optional)
 
 The `cell2()` function can be used to run any CellID binary directly from R, effectivley wrapping it.
 
@@ -146,7 +146,7 @@ Older Cell-ID versions (< 1.4.6) may work, as long as the new features are not e
 
 Visit the Cell-ID repository to find standalone installation instructions (links [above](https://github.com/darksideoftheshmoo/rcell2/blob/rcell2.cellid/README.md#branch-notes)).
 
-### CellID installation notes
+#### CellID installation notes
 
 You can try out the Cell-ID binary in the R package library directory,
 after installation of this package.
@@ -166,7 +166,7 @@ In that case you can compile the program yourself by visiting its repo, and foll
 * CellID 1.5+: https://github.com/darksideoftheshmoo/cellID-linux/tree/mask_mod
 * CellID 1.4.6: https://github.com/darksideoftheshmoo/cellID-linux
 
-## CellID compilation notes
+#### CellID compilation notes
 
 CellID is a C program, compiled during package installation, and is linked to several dynamic libraries.
 
