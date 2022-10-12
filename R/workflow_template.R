@@ -20,7 +20,7 @@ get_workflow_template_cellid <- function(
   if(file.exists(workflow.file)){
     file.copy(from = workflow.file, to = file_name)
   } else {
-    download.file(url = paste0("https://raw.githubusercontent.com/darksideoftheshmoo/rcell2/rcell2.cellid/",
+    download.file(url = paste0("https://raw.githubusercontent.com/darksideoftheshmoo/rcell2-cellid/main/",
                                "inst/rmarkdown/templates/rmd_template.cellid/skeleton/skeleton.Rmd"), 
                   destfile = file_name)
   }
