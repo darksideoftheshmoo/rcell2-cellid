@@ -313,7 +313,7 @@ int main(int argc, char *argv[]){
   opterr = 0;  // https://stackoverflow.com/a/24331449/11524079
   optind = 1;  // https://stackoverflow.com/a/25937743/11524079
 
-  while((opt = getopt(argc, argv, "p:b:f:o:limtwh")) != -1) {
+  while((opt = getopt(argc, argv, "p:b:f:o:D:F:limtwh")) != -1) {
     printf("Parsing getopt options\n");
     switch(opt) {
     case 'p':
@@ -333,13 +333,25 @@ int main(int argc, char *argv[]){
        printf("%s\n", optarg);
       fluor_list_file=optarg;
       break;
-
+      
     case 'o':
        printf(" - output_prefix: ");
        printf("%s\n", optarg);
       output_basename=optarg;
       break;
 
+    case 'D':
+      printf(" - dark file list: ");
+      printf("%s\n", optarg);
+      dark_list_file=optarg;
+      break;
+      
+    case 'F':
+      printf(" - flat file list: ");
+      printf("%s\n", optarg);
+      flat_list_file=optarg;
+      break;
+      
     case 'l':
        printf(" - Label cells in BF.\n");
        if(fill_interior==0) label_cells=1;

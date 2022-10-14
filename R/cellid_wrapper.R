@@ -108,7 +108,7 @@ cell2 <- function(arguments,
     save.logs = T
   }
   
-  # CellID path setup
+  # CellID path setup ####
   if(is.null(cell.command)){
     tryCatch(
       expr = {
@@ -135,12 +135,10 @@ cell2 <- function(arguments,
   positions <- arguments$pos %>% unique()
   n_positions <- positions %>% length()
   
-  # Create output directories
+  # Create output directories ####
   for(d in unique(arguments$output)) dir.create(d, showWarnings = F)
   
-  # Run CellID ####
-  
-  # Prepare parallel backend if requested
+  # Prepare parallel backend if requested ####
   if(is.null(n_cores)) n_cores <- parallel::detectCores() - 1
   # Use parallel backend only if there are two or more cores
   if(n_cores >= 2){
@@ -170,18 +168,31 @@ cell2 <- function(arguments,
     `%do_op%` <- foreach::`%do%`
   }
   
+  # Run CellID ####
   # Iterate over positions  
   sent_commands <- foreach::foreach(pos=positions) %do_op% {
     # Get arguments for current position
     arguments_pos <- arguments[arguments$pos == pos,]
     
+    # Get the path to the parameters
+    parameters <- arguments_pos$parameters[1]
+    
+    # Make output path with file prefix
+    output_prefix <- paste0(normalizePath(arguments_pos$output[1]), "/out")
+    
     # Prepare text files paths
     bf_rcell2 <- tempfile(tmpdir = arguments_pos$output[1],
                           fileext = ".txt",
-                          pattern = "bf_rcell2.")
+                          pattern = "bf_rcell2-")
     fl_rcell2 <- tempfile(tmpdir = arguments_pos$output[1],
                           fileext = ".txt",
-                          pattern = "fl_rcell2")
+                          pattern = "fl_rcell2-")
+    dark <- tempfile(tmpdir = arguments_pos$output[1],
+                     fileext = ".txt",
+                     pattern = "dark-")
+    flat <- tempfile(tmpdir = arguments_pos$output[1],
+                     fileext = ".txt",
+                     pattern = "flat-")
     
     # Image path vectors
     bf.imgs <- paste0(arguments_pos$path, "/", arguments_pos$bf)
@@ -195,20 +206,41 @@ cell2 <- function(arguments,
     # Write image lists to text files
     base::write(x = bf.imgs, file = bf_rcell2)
     base::write(x = fl.imgs, file = fl_rcell2)
-
-    # if(is.null(cell.command)) cell.command <- system.file("cell", package = "rcell2", mustWork = T)
+    
+    # Write dark correction image lists to a text file
+    use_dark <- "dark" %in% names(arguments_pos)
+    if(use_dark) {
+      if(verbose) cat(paste0("\nUsing dark image corrections from file: ", dark, "\n"))
+      dark.imgs <- paste0(arguments_pos$path, "/", arguments_pos$dark)
+      base::write(x = dark.imgs, file = dark)
+    }
+    
+    # Write flat correction image lists to a text file
+    use_flat <- "flat" %in% names(arguments_pos)
+    if(use_flat) {
+      if(verbose) cat(paste0("\nUsing flat image corrections from file: ", flat, "\n"))
+      flat.imgs <- paste0(arguments_pos$path, "/", arguments_pos$flat)
+      base::write(x = flat.imgs, file = flat)
+    }
+    
+    # Check cell path again (not really needed i guess)
     if(is.null(cell.command)) stop("\nError: cell.command must point to an existing CellID binary on your system.")
     
-    # Build CellID command arguments
+    # Build the arguments for the CellID command
     command.args <- paste0(
+      # Mandatory arguments
       " -b ", bf_rcell2,
       " -f ", fl_rcell2,
-      " -o ", paste0(normalizePath(arguments_pos$output[1]), "/out"),
-      " -p ", arguments_pos$parameters[1],
-      {if(label_cells_in_bf) " -l" else ""},
-      {if(output_coords_to_tsv) " -t" else ""},
+      " -o ", output_prefix,
+      " -p ", parameters,
+      # Correction files
+      {if(use_dark) paste0(" -D ", dark) else ""},
+      {if(use_flat) paste0(" -F ", flat) else ""},
+      # Flags
+      {if(label_cells_in_bf)       " -l" else ""},
+      {if(output_coords_to_tsv)    " -t" else ""},
       {if(encode_cellID_in_pixels) " -m" else ""},
-      {if(fill_interior_pixels) " -i" else ""}
+      {if(fill_interior_pixels)    " -i" else ""}
     )
     
     # Paste to the binary's path
@@ -229,15 +261,15 @@ cell2 <- function(arguments,
       # Save cellid standard output
       cellid.log <- tempfile(tmpdir = arguments_pos$output[1],
                              fileext = ".txt",
-                             pattern = "cellid_log.")
+                             pattern = "cellid_log-")
       # Save cellid standard error
       cellid.err <- tempfile(tmpdir = arguments_pos$output[1],
                              fileext = ".txt",
-                             pattern = "cellid_error.")
+                             pattern = "cellid_error-")
       # Save cellid system command
       cellid.cmd <- tempfile(tmpdir = arguments_pos$output[1],
                              fileext = ".txt",
-                             pattern = "cellid_cmd.")
+                             pattern = "cellid_cmd-")
       write(x = c("# Cell-ID command:\n\n", command, "\n\n"),
             file = cellid.cmd)
     } 
@@ -267,12 +299,12 @@ cell2 <- function(arguments,
     )
   }
   
-  # Close cluster
+  # Close cluster ####
   if(n_cores > 1){
     parallel::stopCluster(cl)
   }
   
-  # Prepare output
+  # Prepare output ####
   output <- dplyr::bind_rows(sent_commands)
   
   # Check if CellID's exit codes are weird
@@ -339,6 +371,8 @@ cluster_test <- function(){
 #' @param output.dir.basename Basename for the CellID output directories for each position.
 #' @param tiff.ext Regex pattern for the tif file extension.
 #' @param bf_as_fl If TRUE, BF paths will be used as FL paths. This allows for BF-only experiments.
+#' @param dark_pattern A regular expression which matches only "dark correction" tiff files in the path; and has a single capturing group for the channel ID. Cell-ID will subtract this background image to the images of corresponding fluorescent channels. Note: exposure times must be equal, otherwise no correction is done (with no warning).
+#' @param flat_pattern A regular expression which matches only "flat correction" tiff files in the path; and has a single capturing group for the channel ID. With thses images, Cell-ID will attempt to correct for uneven illumination, on the corresponding fluorescent channels.
 #' @return A data.frame with all the information needed to run CellID
 #' @import dplyr tidyr
 # @examples
@@ -354,17 +388,25 @@ arguments <- function(path,
                       output.dir.basename = "Position",
                       # out.dir = "out",
                       tiff.ext = "tif$",
-                      bf_as_fl=F){
+                      bf_as_fl=F,
+                      dark_pattern="^(BF|[A-Z]FP)_dark.tif$",
+                      flat_pattern="^(BF|[A-Z]FP)_flat.tif$"
+                      ){
   
   if(!identical(sort(file.pattern.groups.order),
                 sort(c("ch", "pos", "t.frame")))) 
-    stop('arguments error: file.pattern.groups.order must contain c("ch", "pos", "t.frame") in a correct order.')
+    stop('arguments error: file.pattern.groups.order must contain "ch", "pos", and "t.frame" (in an appropriate order).')
   
+  # Normalize the images path
   path <- normalizePath(path)
   
+  # Make images dataframe ####
+  # List images at the path
   pic_files <- dir(path, pattern = file.pattern)
+  # Make a simple first check
   if(length(pic_files) == 0) stop(paste("arguments error: no image files retrieved using file pattern:", file.pattern))
   
+  # Extract channle, position, and frame information.
   pics_df <- data.frame(image = pic_files,
                         path = path) %>% 
     tidyr::extract(col = image, 
@@ -414,13 +456,15 @@ arguments <- function(path,
     stop("arguments error: there are missing brightfield images")
   }
   
-  # Add output column and arrange by position and t.frame
+  # Add output column ####
+  # and arrange by position and t.frame
   arguments.df.out <- arguments.df %>% 
     mutate(output = paste0(path, "/", output.dir.basename, pos)) %>% 
     mutate(pos = as.integer(pos),
            t.frame = as.integer(t.frame)) %>% 
     arrange(pos, t.frame)
   
+  # Add parameters column ####
   # Recycle parameters if lenght is 1
   if(length(parameters) == 1 & is.atomic(parameters)){
     arguments.df.out$parameters <- parameters
@@ -430,10 +474,53 @@ arguments <- function(path,
                                   dplyr::select(parameters, pos, parameters),
                                   by = "pos")
   }
-  
   # Normalize parameters' paths
-  arguments.df.out <- arguments.df.out %>% mutate(parameters = normalizePath(parameters))
+  arguments.df.out <- arguments.df.out %>% 
+    mutate(parameters = normalizePath(parameters))
   
+  # Get correction files ####
+  
+  # List dark files
+  dark_files <- dir(path, pattern = dark_pattern)
+  if(length(dark_files) > 0){
+    # Prepare DF
+    dark_channels <- data.frame(dark = dark_files,
+                                ch = sub(dark_pattern, "\\1", dark_files))
+    # Compare correction channels with image channels 
+    if(!setequal(dark_channels$ch, arguments.df.out$ch)){
+      warning(paste("\narguments warning: got dark channels '", unique(dark_channels$ch), 
+                    "', but expected '", unique(arguments.df.out$ch), "'.",
+                    "This may cause unexpected behaviour!\n",
+                    collapse = " "))
+    }
+    # Add columnt to arguments
+    arguments.df.out <- 
+      dplyr::left_join(arguments.df.out,
+                       dark_channels,
+                       by="ch")
+  }
+  
+  # List flat files
+  flat_files <- dir(path, pattern = flat_pattern)
+  if(length(flat_files) > 0){
+    # Prepare DF
+    flat_channels <- data.frame(flat = flat_files,
+                                ch = sub(flat_pattern, "\\1", flat_files))
+    # Compare correction channels with image channels 
+    if(!setequal(flat_channels$ch, arguments.df.out$ch)){
+      warning(paste("\narguments warning: got flat channels for'", unique(flat_channels$ch), 
+                    "', but expected '", unique(arguments.df.out$ch), "'.",
+                    "This may cause unexpected behaviour!\n",
+                    collapse = " "))
+    }
+    # Add columnt to arguments
+    arguments.df.out <- 
+      dplyr::left_join(arguments.df.out,
+                       flat_channels,
+                       by="ch")
+  }
+  
+  # Final checks ####
   if(all(is.na(arguments.df.out$t.frame))){
     warning("arguments warning: No t.frame data extracted, replacing all NAs with '1'. Check your directories and file.pattern if this is unexpected.")
     arguments.df.out$t.frame <- 1
