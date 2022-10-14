@@ -161,6 +161,8 @@ int main(int argc, char *argv[]){
 
   char *s;
   char *s2;
+  char *s3;
+  char *s4;
   char line[500];
   char line2[500];
   char line3[500];
@@ -1305,14 +1307,34 @@ int main(int argc, char *argv[]){
     //the current image and is also closest in time.
     j_min=-1;
     dt_min=-1;
-    c0=(fluor_files[i])[0];
-    c1=(fluor_files[i])[1];
-    c2=(fluor_files[i])[2];
+    
+    //rcell2: the following was bugged.
+    // c0=(fluor_files[i])[0];
+    // c1=(fluor_files[i])[1];
+    // c2=(fluor_files[i])[2];
+    
+    //rcell2: replaced the bug by this:
+    s3=fluor_files[i];
+    s4=s3;
+    while ((*s3)!='\0'){
+      if((*s3)=='/'){
+        s4=(s3+1);
+      }
+      s3++;
+    }
+    //rcell2: s4 now points to first location after last "/" in name (copied from below).
+    //rcell2: save the first three charachters of the basename.
+    c0=s4[0];
+    c1=s4[1];
+    c2=s4[2];
+    
     for(j=0;j<n_flat;j++){
       //Only consider images with the current three-character prefix.
       //But don't assume that these images are necessarily the same
       //directory, so go to the end of the directory information in the
       //name.
+      // printf("Checking if flat file '%s' can be used for the current image\n", flat_files[j]);
+      
       s=flat_files[j];
       s2=s;
       while ((*s)!='\0'){
@@ -1322,11 +1344,13 @@ int main(int argc, char *argv[]){
           s++;
       }
       //s2 now points to first location after last "/" in name.
+      
       //Make sure name is more than three letters.
       if ((*s2)=='\0') continue;
       if ((*(s2+1))=='\0') continue;
       if ((*(s2+2))=='\0') continue;
       if ((c0==s2[0])&&(c1==s2[1])&&(c2==s2[2])){
+          // printf("Found a flattening image with matching channel prefix.\n");
           dt=abs((d_cur-flat_d[j])*seconds_per_day+(t_cur-flat_t[j]));
           //Note we converted time to seconds from milliseconds above
           if ((dt_min<0)||(dt<dt_min)){
@@ -1336,15 +1360,15 @@ int main(int argc, char *argv[]){
       }
     }
     if (j_min<0){
-      printf("Not doing any flattening correction.\n");
+      printf("No suitable flattening correction files found, not doing any flattening correction.\n");
     }else{
-      printf("Correcting with should-be-flat image %s\n",
-         flat_files[j_min]);
+      printf("Correcting with should-be-flat image %s\n", flat_files[j_min]);
       //Calculate new corrections
-      if (flat_cur!=j_min){ //We haven't done this correction yet
+      if (flat_cur!=j_min){ //We haven't done this correction yet (note: flat_cur is initialized as "-1").
           flat_cur=j_min;
-          //See if correction was already written to disk
-          s=flat_files[flat_cur]; //Remove directory information
+          
+          //Remove directory information
+          s=flat_files[flat_cur]; 
           s2=s;
           while ((*s)!='\0'){
             if((*s)=='/'){
@@ -1352,6 +1376,9 @@ int main(int argc, char *argv[]){
             }
             s++;
           }
+          //s2 now points to first location after last "/" in name.
+          
+          //See if correction was already written to disk
           strcpy(line,s2);
           strcat(line,".corrections.tif");
           free(flat_cors);
