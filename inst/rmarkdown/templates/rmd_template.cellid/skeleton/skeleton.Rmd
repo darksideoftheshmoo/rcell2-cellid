@@ -23,25 +23,24 @@ knit: (function(inputFile, encoding) {
 bibliography: references.bib
 ---
 
-<!-- Download a copy of this file with rcell2::get_workflow_template() -->
+<!-- Download a copy of this file with rcell2.cellid::get_workflow_template_cellid() -->
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = T,
-                      message = F, 
+# Set chunk options
+knitr::opts_chunk$set(echo = T, message = F, out.width = "100%")
                       # https://yihui.org/knitr/options/#chunk-options
-                      out.width = "100%")
                       # https://stackoverflow.com/a/66753995
                       # tidy.opts = list(width.cutoff = 60), tidy = TRUE)
-knitr::opts_knit$set(root.dir = here::here())  #, base.dir = here::here())
 
-# library(rcell2)  # this package you are checking out :)
-library(rcell2.cellid)  # Advanced functionality: run CellID entirely in R.
-# library(rcell2.magick)  # Advanced functionality: filter data using Shiny and preview images with Magick.
+# Set knit options
+knitr::opts_knit$set(root.dir = here::here())
 
-# library(magick)  # if you need it
-# library(utiles)  # if you need it, get this from: https://gitlab.com/naikymen/r_utils
+library(rcell2.cellid)    # Run CellID entirely in R.
+# library(rcell2)         # Load Cell-ID's output
+# library(rcell2.magick)  # Filter data using Shiny and preview images with Magick.
 
 library(tidyverse)  # import numpy as np (?)
+# library(magick)  # if you need it
 ```
 
 ## Friendly reminders
@@ -50,7 +49,7 @@ library(tidyverse)  # import numpy as np (?)
 
 **Preview pictures** with FIJI-ImageJ before you being, a simple Macro can be run to load virtual hyperstacks of any experiment:
 
-```{Java}
+```
 // HyperStack para taguear
 run("Image Sequence...", 
     "open=/path_to_your_r_libraries/4.2/rcell2.cellid/extdata/time_series_image_samples// file=(.*\\d.tif$) sort use");
@@ -78,13 +77,20 @@ A minimal usage example with:
 
 > Note: this is only meant as a quick example, read on to learn more! and use the ?help ;)
 
-The example requires sample images from the `rcell2.examples` package. 
-Install it first, directly from GitHub:
+### Image directory
+
+First point R to the folder containing the images.
+
+If you already have an appropriate dataset, specify the path like this:
 
 ```{r}
 # Location of your image set
 data.dir <- "/path/to/your/data"
+```
 
+Otherwise, install and use the "examples" package:
+
+```{r}
 if(!require(remotes)){
   # Install the "remotes" package if not found:
   install.packages("remotes")
@@ -98,37 +104,51 @@ if(!require(rcell2.examples)){
 # Or use the example images
 data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
                         package = "rcell2.examples")
+```
 
-# List files
+List image files:
+
+```{r}
 dir(data.dir)
 ```
 
-Run the example:
+### Run Cell-ID and load the output
+
+Optional: uncomment the following if you have images from Metamorph's MDA, you may need to rename them.
 
 ```{r}
-# Optional: uncomment the following if you have images from Metamorph's MDA, you may need to rename them
 # rename_mda(images.path = data.dir)
+```
 
-# Optional: Define a set of parameters for CellID.
+
+Optional: customize parameters for CellID.
+
+```{r}
 # parameters.txt <- rcell2.cellid::parameters_write(rcell2.cellid::parameters_default())
+```
 
-# Prepare image paths for CellID, with a default "file.pattern".
 
+Prepare image paths for CellID, with a default "file.pattern":
+
+```{r}
 cellid.args <- 
   rcell2.cellid::arguments(path = data.dir
                            # file.pattern = "^(BF)_Position(\\d+)_time(\\d+).tif$", bf_as_fl = T,  # Settings for a "BF only" experiment.
                            # file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)().tif$"  # Settings for a single frame experiment.
                            # parameters = parameters.txt  # Optional: include if defined previously.
                            )
-# Run CellID
+```
+
+Run CellID with the built-in executable:
+
+```{r}
 cell2.out <- 
   rcell2.cellid::cell2(arguments = cellid.args, 
                        # cell.command = "~/Software/cellID-linux/cell",  # You may use an external executable.
-                       # dry = T,  # To test stuff without overwritting previous output files.
                        output_coords_to_tsv = T  # Optional! Only works with newer CellID (>= 1.5).
                        )
 
-# Chech the output messages:
+# Check the output messages:
 cell2.out
 ```
 
@@ -139,13 +159,15 @@ The output tables can be loaded with `cell.load.alt`.
 cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
 ```
 
+### Alternatives
+
 Function `load_cell_data` from `rcell2` can load those tables as well, 
 and also the cell boundaries and interior pixels coordinates with `cell.load.boundaries`.
 
 ```{r}
 # rcell2's main analysis package
 if(!require(rcell2)){
-   devtools::install_github("darksideoftheshmoo/rcell2", ref = "rcell2.dev")
+   devtools::install_github("darksideoftheshmoo/rcell2")
 }
 
 # Load output
@@ -160,7 +182,9 @@ cell.boundaries <-
                                )
 ```
 
-Access the main output and plot:
+### Understanding the data
+
+Access the main output data and plot:
 
 ```{r}
 cdata <- cell.data$data
@@ -175,7 +199,21 @@ Output variables are described by this documentation function:
 rcell2.cellid::cellid_output_descriptions(list.output = F)
 ```
 
-Youmay want to check out the Shiny/Magick rcell2 analisys package:
+We recommend saving the current state at this point:
+
+```{r}
+save.image("01-segmentation_results.Rdata")
+```
+
+The workspace image may be restored later on:
+
+```{r}
+load("01-segmentation_results.Rdata")
+```
+
+### Advanced tools
+
+You may want to check out the Shiny/Magick rcell2 analisys package:
 
 ```{r}
 # rcell2's image manipulation and cytometry package
@@ -195,12 +233,6 @@ rcell2.magick::cellSpreadPlot(cdata, images)
 
 # App
 rcell2.magick::shinyCell(cdata, paths = images)
-```
-
-Puede ser conveniente guardarlo en un archivo Rdata.
-
-```{r}
-save.image("resultado_segmentacion.Rdata")
 ```
 
 ## Preprocessing
