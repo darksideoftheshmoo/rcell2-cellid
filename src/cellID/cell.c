@@ -1616,8 +1616,11 @@ int main(int argc, char *argv[]){
       //images, and each i shows up in update_list_of_found_cells() below
 
       printf("Doing new cell search.\n");
-      printf("New brightfield image: %s.\n",phase_files[j_cur]);fflush(stdout);
-
+      printf("----------------------------------------------------\n");
+      printf("New brightfield image: %s.\n",phase_files[j_cur]);
+      printf("----------------------------------------------------\n");
+      fflush(stdout);
+      
       if(bf_fl_mapping==bf_fl_mapping_time){
         JulianToYMD(ph_d[j_cur],&year,&month,&day);
         Int_To_Hours_Minutes_Seconds(ph_t[j_cur],&hours,&minutes,&seconds);
