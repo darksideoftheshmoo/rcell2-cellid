@@ -43,6 +43,12 @@ library(tidyverse)  # import numpy as np (?)
 # library(magick)  # if you need it
 ```
 
+
+## Friendly reminder
+
+- **Read the help page** of functions before using them. Open help pages with R's `?` (e.g. `?arguments`).
+- **Read the README**.md at rcell2's [GitHub repo](https://github.com/darksideoftheshmoo/rcell2/).
+
 ## Minimal example
 
 A minimal usage example with:
@@ -88,7 +94,7 @@ List image files:
 dir(data.dir)
 ```
 
-### Run Cell-ID and load the output
+### Prepare arguments for Cell-ID
 
 Optional: uncomment the following if you have images from Metamorph's MDA, you may need to rename them.
 
@@ -113,31 +119,11 @@ cellid.args <-
                            )
 ```
 
-Run CellID with the built-in executable:
+### Preview images
 
-```{r}
-cell2.out <- 
-  rcell2.cellid::cell2(arguments = cellid.args, 
-                       # cell.command = "~/Software/cellID-linux/cell",  # You may use an external executable.
-                       output_coords_to_tsv = T  # Optional! Only works with newer CellID (>= 1.5).
-                       )
+Open your images with FIJI-ImageJ before you begin.
 
-# Check the output messages:
-cell2.out
-```
-
-The output tables can be loaded with `cell.load.alt`.
-
-```{r}
-# Load output
-cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
-```
-
-
-### Friendly reminders
-
-- **Read the README**.md at rcell2's GitHub repo and the help page of each function using R's `?`.
-- **Preview images** with FIJI-ImageJ before you begin. No analysis package exists (yet) that can replace a researcher's visual assesment.
+No analysis package exists (yet) that can replace a researcher's visual assesment.
 
 A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment:
 
@@ -173,6 +159,30 @@ A fourth dimension would be needed, but Hyperstacks only provide 3. Alternativel
 open another virtual hyperstack for the output images, and browse them in-sync.
 
 <!-- Si alguien sabe como reordenar fotos en un stack, que avise. Creo que se puede ¿reslice? ¿algo asi? -->
+
+
+### Run Cell-ID and load the output
+
+Run CellID with the built-in executable:
+
+```{r}
+cell2.out <- 
+  rcell2.cellid::cell2(arguments = cellid.args, 
+                       # cell.command = "~/Software/cellID-linux/cell",  # You may use an external executable.
+                       output_coords_to_tsv = T  # Optional! Only works with newer CellID (>= 1.5).
+                       )
+
+# Check the output messages:
+cell2.out
+```
+
+The output tables can be loaded with `cell.load.alt`.
+
+```{r}
+# Load output
+cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
+```
+
 
 ### Alternatives
 
