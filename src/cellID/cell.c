@@ -998,6 +998,7 @@ int main(int argc, char *argv[]){
       //only do the correction once and we don't want to have them sitting
       //around in memory probably.)
       exposure[i]=get_exposure(dark_files[i]);
+      printf("Found %s with exposure time: %f\n", dark_files[i], exposure[i]);
       i++;
     }
     fclose(fp_in);
@@ -1255,17 +1256,27 @@ int main(int argc, char *argv[]){
     printf("----------------------------------------------------\n");
     printf("New Fluorescence image: %s.\n",fluor_files[i]);
     printf("----------------------------------------------------\n");
-    free(fl);
-
+    fflush(stdout);  // https://stackoverflow.com/a/9469827
+    
     //Load dark image to subtract for this exposure time
+    free(fl);
     free(dark);
     dark=NULL;
+    // Use dark correction on this FL image 
+    // only if there is a dark image 
+    // with the same exposure time
+    // rcell2 TO-DO: this should simply obey the dark file list.
     t_exposure=get_exposure(fluor_files[i]);
+    printf("Current fluor file exposure time: %f\n", t_exposure);
     for(j=0;j<n_dark;j++){
+      //if (fabs(t_exposure-exposure[j])<0.001){
+      printf("Checking dark file %s with exposure time: %f\n", basename(dark_files[j]), exposure[j]);
       if (t_exposure==exposure[j]){
-          dark=get_data_from_tif_file(dark_files[j],0,NULL,&xmax_new,&ymax_new);
-          printf("Correcting with dark image %s\n",dark_files[j]);
-          break;
+        printf("Correcting with dark image %s\n",dark_files[j]); fflush(stdout);
+        dark=get_data_from_tif_file(dark_files[j],0,NULL,&xmax_new,&ymax_new);
+        break;
+      } else {
+        printf("Skipping dark correction with file %s. Exposure times were not equal.\n",dark_files[j]);
       }
     }
 
