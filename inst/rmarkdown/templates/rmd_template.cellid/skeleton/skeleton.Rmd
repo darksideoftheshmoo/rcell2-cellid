@@ -43,30 +43,6 @@ library(tidyverse)  # import numpy as np (?)
 # library(magick)  # if you need it
 ```
 
-## Friendly reminders
-
-**Read the README**.md at rcell2's GitHub repo.
-
-**Preview pictures** with FIJI-ImageJ before you being, a simple Macro can be run to load virtual hyperstacks of any experiment:
-
-```
-// HyperStack para taguear
-run("Image Sequence...", 
-    "open=/path_to_your_r_libraries/4.2/rcell2.cellid/extdata/time_series_image_samples// file=(.*\\d.tif$) sort use");
-run("Stack to Hyperstack...", 
-    "order=xyczt(default) channels=73 slices=48 frames=3 display=Grayscale");
-```
-
-> Replace `path_to_your_r_libraries` and adjust the number of `channles`, `slices` and `frames` to your image set. 
-> 
-> Note: the dimensions names may be mismatched, because virtual stacks must be`xyczt` order (time is likely to end up as the "channels" dimension), but the order in which images are loaded depends on how their files are named (and thus ordered).
-
-La única restricción es que solo podemos tener 3 "dimensiones extra": `frame`, `plane`, y `channel`. Esa limitación es molesta cuando tenemos todo eso, y además tenemos las fotos y los `.out` de cellid (para el que necesitariamos una _cuarta_ dimensión).
-
-Otra aclaración: las fotos en el folder tendrían que estar ordenadas por "xyczt" para armar un virtual hyperstack. Ese casi nunca es el caso, entonces hacemos de cuenta, por ejemplo, que la dimensión "`c`" es el tiempo (porque las fotos se ordenan primero por t.frame), que "`z`" es la posición (porque las fotos se ordenan segundo por posicion), y que "`t`" es el canal (porque las fotos se ordenan último por channel).
-
-Si alguien sabe como reordenar fotos en un stack, que avise. Creo que se puede ¿reslice? ¿algo asi?
-
 ## Minimal example
 
 A minimal usage example with:
@@ -120,13 +96,11 @@ Optional: uncomment the following if you have images from Metamorph's MDA, you m
 # rename_mda(images.path = data.dir)
 ```
 
-
 Optional: customize parameters for CellID.
 
 ```{r}
 # parameters.txt <- rcell2.cellid::parameters_write(rcell2.cellid::parameters_default())
 ```
-
 
 Prepare image paths for CellID, with a default "file.pattern":
 
@@ -158,6 +132,47 @@ The output tables can be loaded with `cell.load.alt`.
 # Load output
 cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
 ```
+
+
+### Friendly reminders
+
+- **Read the README**.md at rcell2's GitHub repo and the help page of each function using R's `?`.
+- **Preview images** with FIJI-ImageJ before you begin. No analysis package exists (yet) that can replace a researcher's visual assesment.
+
+A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment:
+
+> Note: this macro uses a "file" pattern that only matches input images (and not ".out")
+> in a tipically-named set of images.
+
+```{r}
+n_axis1 <- length(unique(cellid.args$t.frame))
+n_axis2 <- length(unique(cellid.args$pos))
+n_axis3 <- length(unique(cellid.args$ch))
+
+# Add 1 to include the BF images as a possible channel
+n_axis3 <- n_axis3 + 1
+
+macro <- glue::glue(
+  '// Macro',
+  'run("Image Sequence...", "open={data.dir} file=(.*\\\\d.tif$) sort use");',
+  'run("Stack to Hyperstack...", "order=xyczt(default) channels={n_axis1} slices={n_axis2} frames={n_axis3} display=Grayscale");',
+  .sep = "\n"
+)
+
+cat(macro)
+```
+
+> Note: the dimensions names may be mismatched between R and the macro. This is because 
+virtual stacks must be in `xyczt` order (time is likely to end up as the "channels" dimension), 
+but the order in which the "Image Sequence..." is loaded depends on how their files are named.
+
+The only restriction of this approach is that only "3" dimensions are available for
+browsing: `frame`, `plane`, and `channel`. This is relevant if you wish to browse
+segmentation results (which adds another dimension to the set: original vs "out").
+A fourth dimension would be needed, but Hyperstacks only provide 3. Alternatively, 
+open another virtual hyperstack for the output images, and browse them in-sync.
+
+<!-- Si alguien sabe como reordenar fotos en un stack, que avise. Creo que se puede ¿reslice? ¿algo asi? -->
 
 ### Alternatives
 
