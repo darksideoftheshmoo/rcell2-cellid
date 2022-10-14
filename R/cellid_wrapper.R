@@ -372,7 +372,7 @@ cluster_test <- function(){
 #' @param tiff.ext Regex pattern for the tif file extension.
 #' @param bf_as_fl If TRUE, BF paths will be used as FL paths. This allows for BF-only experiments.
 #' @param dark_pattern A regular expression which matches only "dark correction" tiff files in the path; and has a single capturing group for the channel ID. If the exposure times match, Cell-ID will subtract this background image to fluorescent images (disregarding channel). Note: if the exposure of an FL image does not match any dark images, the correction is skipped without a warning.
-#' @param flat_pattern A regular expression which matches only "flat correction" tiff files in the path; and has a single capturing group for the channel ID. With thses images, Cell-ID will attempt to correct for uneven illumination, on the corresponding fluorescent channels.
+#' @param flat_pattern A regular expression which matches only "flat correction" tiff files in the path; and has a single capturing group for the channel ID. With thses images, Cell-ID will attempt to correct for uneven illumination, on the corresponding fluorescent channels. Note: Cell-ID matches images to corrections using the three-letter prefix, and uses only the correction closest in time to the current FL image.
 #' @return A data.frame with all the information needed to run CellID
 #' @import dplyr tidyr
 # @examples
