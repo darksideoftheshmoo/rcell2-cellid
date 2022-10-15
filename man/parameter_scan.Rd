@@ -6,39 +6,40 @@
 \usage{
 parameter_scan(
   parameters.df,
+  scan.arguments,
   data.dir,
   test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"),
     mustWork = F),
-  test.positions,
-  test.frames,
-  file.pattern = "^(BF|[A-Z]FP)_Position(\\\\d+)_time(\\\\d+).tif$",
   fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\\\d+)_Position\\\\d+_time\\\\d+.tif$",
-  cell.command = NULL,
-  n_cores = NULL,
-  verbose = FALSE
+  ...
 )
 }
 \arguments{
-\item{parameters.df}{}
+\item{parameters.df}{Dataframe with one combination of parameters per row.}
 
-\item{data.dir}{}
+\item{scan.arguments}{Output from \code{arguments}, filtered to your scanning needs.}
 
-\item{test.dir}{}
+\item{data.dir}{Path to the original images.}
 
-\item{test.positions}{}
-
-\item{test.frames}{}
-
-\item{file.pattern}{Regex pattern for all tif files, with one group for each of \code{c("ch", "pos", "t.frame")} in \code{file.pattern.groups.order}. Uses \code{"^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"} by default. To omit time, use an empty group for the t.frame in the regex, for example: \code{"^(BF|[A-Z]FP)_Position(\\d+)().tif$"}.
-To consider Z-stacks, use something like "^(BF|[A-Z]\\d+)_Position(\\d+)_time(\\d+).tif$"}
+\item{test.dir}{Working directory for the parameter scan.}
 
 \item{fluorescence.pattern}{Regex describing what the fluorescence/channel ID string looks like (default "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"). There must be only one capturing group, ant it must be for the channel identifier.}
 
-\item{cell.command}{By default \code{NULL}, to use the built-in binary. Otherwise a path to a CellID binary executable (get if from https://github.com/darksideoftheshmoo/cellID-linux).}
-
-\item{n_cores}{Number of cores to use for position-wise parallelization,internally capped to number of positions in \code{arguments}. Set to 1 to disable parallelization. If NULL, defaults to available cores - 1.}
-
-\item{verbose}{Print startup messages.}
+\item{...}{
+  Arguments passed on to \code{\link[=cell2]{cell2}}
+  \describe{
+    \item{\code{arguments}}{An argument data.frame, as built by \code{rcell2.cellid::arguments}.}
+    \item{\code{cell.command}}{By default \code{NULL}, to use the built-in binary. Otherwise a path to a CellID binary executable (get if from https://github.com/darksideoftheshmoo/cellID-linux).}
+    \item{\code{n_cores}}{Number of cores to use for position-wise parallelization,internally capped to number of positions in \code{arguments}. Set to 1 to disable parallelization. If NULL, defaults to available cores - 1.}
+    \item{\code{dry}}{Do everything without actually running CellID, print the commands that would have been issued.}
+    \item{\code{debug_flag}}{Set to 0 to disable CellID printf messages (builtin CellID only).}
+    \item{\code{label_cells_in_bf}}{Set to TRUE to enable labeling of cells with their CellID in the BF output image using number characters (CellID option '-l', default FALSE).}
+    \item{\code{encode_cellID_in_pixels}}{Set to TRUE to write cell interior and boundary pixels with intensity-encoded CellIDs and blank the rest of the image (CellID option '-s').}
+    \item{\code{fill_interior_pixels}}{Set to TRUE to fill each cell interior area in the output image file with intensity-labeled pixels (CellID option '-i').}
+    \item{\code{output_coords_to_tsv}}{Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (CellID option '-m').}
+    \item{\code{save.logs}}{Set to TRUE to save CellID logs to text files, into the output directory of their corresponding position.}
+    \item{\code{verbose}}{Print startup messages.}
+  }}
 }
 \value{
 Data frame with the results. To use it, have a look at the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.

@@ -919,22 +919,22 @@ parameters.df
 
 > Note: `utiles::value.to.range` just converts a number to a vector centered on its value (see `base::seq`).
 
-Now choose some *positions* (image sets) and *t.frame*s (time frames)
-to restrict the image test set to only some of them:
+#### Image set
+
+Choose which image sets in `cellid.args` you wish to use for the parameter scan.
+
+For example, choose some *positions* (image sets) and *t.frame*s (time frames)
+to restrict the image test set to only some of them.
 
 ```{r}
-# All positions and frames:
-
 test.pos = cellid.args$pos %>% unique()
 test.frames = cellid.args$t.frame %>% unique()
 
-# Only a couple:
+# Filter cellid.args to choose image sets for the scan
+scan.arguments <- cellid.args %>% 
+  subset(pos %in% test.pos & t.frame %in% test.frames)
 
-# test.pos = 1:2
-# test.frames = 1  # Note: t.frame might be "0 indexed" or not, this depends on the file naming
-
-subset(cellid.args,
-       pos %in% test.pos & t.frame %in% test.frames)
+scan.arguments
 ```
 
 #### Automatic scan
@@ -949,11 +949,9 @@ Just run:
 ```{r}
 scan.results <- 
   parameter_scan(parameters.df = parameters.df,
+                 scan.arguments = cellid.args.scan,
                  test.dir = test.dir, 
                  data.dir = data.dir, 
-                 test.positions = test.pos, 
-                 test.frames = test.frames, 
-                 file.pattern = arguments.file.pattern,  # See previous section "Images and Arguments".
                  fluorescence.pattern = load.cell.channel.pattern)  # See previous section "Load result".
 ```
 

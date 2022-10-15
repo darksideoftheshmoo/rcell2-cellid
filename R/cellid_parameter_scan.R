@@ -16,15 +16,12 @@
 #' 
 #' roughness2: This variation takes the sqrt of roughness and divides by total length. To correct for extra accumulated roughness in cells detected across more t.frames.
 #'
-#' @param parameters.df 
-#' @param data.dir 
-#' @param test.dir 
-#' @param test.positions 
-#' @param test.frames 
-#' @inheritParams cell2
-#' @inheritParams arguments
+#' @param parameters.df Dataframe with one combination of parameters per row.
+#' @param scan.arguments Output from \code{arguments}, filtered to your scanning needs.
+#' @param data.dir Path to the original images.
+#' @param test.dir Working directory for the parameter scan.
 #' @inheritParams cell.load.alt
-#' @inheritParams n_cores
+#' @inheritDotParams cell2
 #'
 #' @rawNamespace import(foreach, except = c("when", "accumulate"))
 #' @return Data frame with the results. To use it, have a look at the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.
@@ -32,19 +29,15 @@
 #'
 #' @examples Have a look at the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.
 parameter_scan <- function(parameters.df, 
+                           scan.arguments,
                            data.dir, 
-                           #test.dir = "/tmp/images_directory/test.dir", 
-                           test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"), mustWork = F), 
-                           test.positions, 
-                           test.frames, 
-                           file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$",
+                           test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"),
+                                                    mustWork = F), 
                            fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$",
-                           cell.command = NULL, n_cores = NULL, verbose = FALSE) {
+                           ...) {
   
   # Record the amount of combinations
   test.params <- 1:nrow(parameters.df)
-  # Rename this
-  test.pos <- test.positions
   
   # Clean test directory
   unlink(test.dir, recursive = T)
@@ -63,49 +56,50 @@ parameter_scan <- function(parameters.df,
   progress <- function(n) setTxtProgressBar(pb, n)
   opts <- list(progress=progress)
   
+  # Test
+  test.param=test.params[1]
+  
+  # Run scan
   result <- 
     foreach(test.param=test.params, #.export = c(".parameters.df",)
             .options.snow=opts,
             .packages = c("rcell2", "base", "dplyr")) %dopar% {
-              
-              # Get one parameter set
-              parameters.list.one <- parameters.df[test.param,]
-              
-              # Save parameters
-              parameters.txt <- rcell2.cellid::parameters_write(parameters.list.one, param.dir = test.dir)
-              
-              # Create arguments
-              cellid.args <- rcell2.cellid::arguments(path = data.dir,
-                                                      file.pattern = file.pattern,
-                                                      parameters = parameters.txt)
-              # Subset only one position
-              # cellid.args.one <- cellid.args[cellid.args$pos %in% test.pos, ]
-              cellid.args.one <- subset(cellid.args, 
-                                        pos %in% test.pos & t.frame %in% test.frames)
               
               # Prepare a temp dir for each cellid run
               tmp.path <- tempfile(pattern = "dir", tmpdir = test.dir)
               dir.create(tmp.path)
               
               # Create shortcuts to the original images
-              apply(cellid.args.one, 1, function(i){
+              apply(scan.arguments, MARGIN = 1, function(i){
+                # From the original path to the new temporary directory
                 file.symlink(from = paste0(i["path"], "/",
                                            c(i["image"],i["bf"])),
-                             to = paste0(tmp.path, "/", 
-                                         c(i["image"], i["bf"]))
+                             to =   paste0(tmp.path, "/", 
+                                           c(i["image"], i["bf"]))
                 )
               })
               
+              # Get one parameter set
+              parameters.list.one <- parameters.df[test.param,]
               
-              # Regenerate arguments for the new tmp path
-              cellid.args.tmp <- rcell2.cellid::arguments(tmp.path,
-                                                          file.pattern = file.pattern,
-                                                          parameters = parameters.txt)
-              # Run cellid
-              cellid.out <- rcell2.cellid::cell2(arguments = cellid.args.tmp, 
-                                                 cell.command = cell.command, 
-                                                 n_cores = n_cores,
-                                                 verbose = verbose)
+              # Save parameters to tmpdir
+              parameters.txt <- rcell2.cellid::parameters_write(parameters.list.one, 
+                                                                param.dir = test.dir)
+              
+              # Copy original arguments
+              cellid.args.tmp <- scan.arguments  # Assume it has been filtered already
+              
+              # Replace parameters with current ones
+              cellid.args.tmp$parameters <- parameters.txt
+              
+              # Replace the original base paths
+              cellid.args.tmp$path <- tmp.path
+              cellid.args.tmp$output <- paste(tmp.path, 
+                                              basename(cellid.args.tmp$output),
+                                              sep = "/")
+              
+              # Run Cell-ID
+              cellid.out <- rcell2.cellid::cell2(arguments = cellid.args.tmp, verbose = F, ...)
               
               # Load output
               cell.data <- rcell2.cellid::cell.load.alt(
