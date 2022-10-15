@@ -1027,8 +1027,6 @@ results.bound %>% filter(channel == "BF.out", t.frame == 0) %>%
 
 #### Review result in ImageJ
 
-##### Prepare stakcs
-
 Make TIFF stacks for a particular channel.
 
 The stacks are annotated with the parameters used for each segmentation, and other metadata (position, time frame, and channel).
@@ -1056,103 +1054,12 @@ stack.paths$stack.paths
 
 > For reference, the functions original code is below (but no longer updated).
 
-##### Make tiff stacks
-
-Make TIFF stacks for each channel and cleanup:
-
-```{r}
-stack.paths <- results.bound %>% 
-  
-  filter(channel == "BF.out") %>% 
-  
-  arrange(channel, id, t.frame, pos) %>% split(~channel+pos) %>% 
-  lapply(function(images){
-    # images <- stack.paths[[1]]
-    stack.name <- paste0(
-        test.dir, "/", images$channel[1], "_stack-pos_", images$pos[1], #"-time", images$t.frame[1],
-        ".tif"
-        )
-    
-    # images %>% 
-    #   dplyr::arrange(channel, t.frame, pos, id) %>% 
-    #   with(file) %>% 
-    #   magick::image_read() %>% 
-    #   magick::image_write(path=stack.name)
-    
-    images.files <- images %>% 
-      dplyr::arrange(channel, t.frame, pos, id) %>% 
-      with(file)
-  
-    images.params <- images %>% 
-      dplyr::arrange(channel, t.frame, pos, id) %>% 
-      with(parameters) %>% 
-      sapply(read_file) %>% 
-      unname()
-    
-    images.params <- sapply(images.params, function(images.params.pos){
-      st <- strsplit(images.params.pos, "\\n")[[1]]
-      mx <- max(nchar(st))
-      st.padded <- stringr::str_pad(st, width = mx, side = "right")
-      st.pasted <- paste(st.padded, collapse = "\n")
-      return(st.pasted)
-    })
-    
-    images.files %>% 
-      magick::image_read() %>% 
-      magick::image_annotate(images.params, boxcolor = "white", color = "black", size = 10,
-                             font = "Hack") %>% 
-      magick::image_convert(colorspace = "Gray", matte = F) %>% 
-      magick::image_write(path=stack.name, format = "tiff", depth = 8)
-                          # quality = 100,
-                          # flatten = TRUE, 
-                          # compression = "None")
-    
-    # img <- ijtiff::read_tif(path = stack.name)
-    # ijtiff::write_tif(img = img, path = stack.na  me, overwrite = TRUE)
-    
-    return(stack.name)
-  })
-
-stack.paths  # The stacks are saved to these paths
-```
-
-
-###### Macro
-
-Generate a macro to inspect segmentation results in a Hyperstack, 
-using z-slices for positions, and channels for parameter variants.
-
-Choose a stack:
-
-```{r}
-stack.path <- stack.paths$BF.out.34
-```
-
-Copy this chunk's output to ImageJ's macro window:
-
-```{r}
-n_ch <- length(test.params)
-n_z <- length(test.pos)
-n_t <- length(test.frames)
-
-glue::glue(
-  '// Macro',
-  paste0('open("', stack.path, '");'),
-  'run("Stack to Hyperstack...",',
-  '"order=xyczt(default) channels=" + {n_ch} +',
-  '" slices=" + {n_z} +',
-  '" frames=" + {n_t} +',
-  '" display=Grayscale");',
-  .sep = "\n"
-) %>% cat()
-```
-
 #### Final parameter set
 
-Esto es para los BFs pasados por el FFT filter.
+This parameter set was chosen for FFT-filtered BFs.
 
-Abajo de 0.8 vi algunos fantasmitas "persistentes"; 
-choricitos al costado de las células.
+Under 0.8 background_reject_factor, there were some "persisten" _ghosts_;
+elongated _chorizos_ on the sides of cells.
 
 ```{r}
 parameters.list <- rcell2.cellid::parameters_default(
@@ -1168,7 +1075,7 @@ parameters.list <- rcell2.cellid::parameters_default(
 )
 ```
 
-> TODO: nombrar los stacks por parameter modificado
+<!-- TODO: nombrar los stacks por parameter modificado -->
 
 ## Data analysis
 
