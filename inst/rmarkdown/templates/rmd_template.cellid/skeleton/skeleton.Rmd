@@ -961,7 +961,7 @@ Get the output dataframe:
 results.bound <- scan.results$results.bound
 ```
 
-> You can skip the next section, it does the same thing, but without the abstraction.
+> Have a look at the function's source code if you like, its hopefully well commented.
 
 #### Plot summary
 
@@ -1039,8 +1039,9 @@ stack.paths <-
                    test.dir = test.dir, 
                    stack.channels = "BF.out")
 ```
+> Have a look at the function's source code if you like, its hopefully well commented.
 
-> Just copy paste the macro to a new macro window in ImageJ, and hit run! The stack should be loaded automagically.
+Now copy paste the macro to a new macro window in ImageJ, and hit run! The stack should be loaded automagically.
 
 Paths and macros are saved in the output:
 
