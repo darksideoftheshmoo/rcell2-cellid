@@ -1053,8 +1053,6 @@ stack.paths$imagej.macros
 stack.paths$stack.paths
 ```
 
-> For reference, the functions original code is below (but no longer updated).
-
 #### Final parameter set
 
 This parameter set was chosen for FFT-filtered BFs.
