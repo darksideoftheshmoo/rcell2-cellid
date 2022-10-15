@@ -7,7 +7,8 @@
 parameter_scan(
   parameters.df,
   data.dir,
-  test.dir = "/tmp/images_directory/test.dir",
+  test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"),
+    mustWork = F),
   test.positions,
   test.frames,
   file.pattern = "^(BF|[A-Z]FP)_Position(\\\\d+)_time(\\\\d+).tif$",

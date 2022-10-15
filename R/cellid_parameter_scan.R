@@ -33,7 +33,8 @@
 #' @examples Have a look at the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.
 parameter_scan <- function(parameters.df, 
                            data.dir, 
-                           test.dir = "/tmp/images_directory/test.dir", 
+                           #test.dir = "/tmp/images_directory/test.dir", 
+                           test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"), mustWork = F), 
                            test.positions, 
                            test.frames, 
                            file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$",
