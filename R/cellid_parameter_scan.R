@@ -176,17 +176,25 @@ parameter_scan <- function(parameters.df,
     bind_rows(.id = "id") %>%
     mutate(id = as.integer(id))
   
-  # saveRDS(results.bound, tempfile(pattern = "results", tmpdir = test.dir, fileext = ".RDS"))
-  return(results.bound)
+  # Prepare output  
+  output_list <- list(
+    results.bound=results.bound,
+    test.params=test.params,
+    test.pos=test.pos,
+    test.frames=test.frames
+  )
+  
+  # Chin-pum!
+  return(output_list)
 }
 
 
 #' Make TIFF stacks for reviewing the result of parameter scans in ImageJ
 #'
-#' @param results.bound The result from \code{parameter_scan}.
+#' @param scan.results The full result from \code{parameter_scan}.
 #' @param test.dir Temporary directory into which stacks should be saved.
 #' @param stack.channels Vector of channels which should be stacked.
-#' @param annotation.font Font for the annotations. A monospaced font is recommended.
+#' @param annotation.font Font for the annotations. A mono-spaced font is recommended.
 #'
 #' @return A list with paths to the stacks, and 
 #' @export
@@ -194,13 +202,16 @@ parameter_scan <- function(parameters.df,
 #' @import magick
 #' @import dplyr
 #'
-make_scan_stacks <- function(results.bound, 
+make_scan_stacks <- function(scan.results, 
                              test.dir,
                              stack.channels = "BF.out", 
                              annotation.font = "Hack") {
   
-  # Number of parameter conbinations
-  test.params <- length(unique(results.bound$parameters))
+  # Load results
+  results.bound <- scan.results$results.bound
+  test.params <- scan.results$test.params
+  test.pos <- scan.results$test.pos
+  test.frames <- scan.results$test.frames
   
   # Make stacks
   stack.paths <- results.bound %>% 

@@ -947,7 +947,7 @@ subset(cellid.args,
 Just run:
 
 ```{r}
-results <- 
+scan.results <- 
   parameter_scan(parameters.df = parameters.df,
                  test.dir = test.dir, 
                  data.dir = data.dir, 
@@ -957,180 +957,13 @@ results <-
                  fluorescence.pattern = load.cell.channel.pattern)  # See previous section "Load result".
 ```
 
-Rename the output for usage in the next sections:
+Get the output dataframe:
 
 ```{r}
-results.bound <- results
+results.bound <- scan.results$results.bound
 ```
 
 > You can skip the next section, it does the same thing, but without the abstraction.
-
-#### Manual scan
-
-Save the amount of combinations to a variable:
-
-```{r}
-test.params <- 1:nrow(parameters.df)  # Record the amount of combinations
-```
-
-Cleanup test directories:
-
-```{r}
-unlink(test.dir, recursive = T)
-dir.create(test.dir, recursive = T)
-```
-
-And the path to the CellID binary executable; choose one and comment the others:
-
-```{r}
-# Custom inary:
-# cell.command.path = "~/Software/cellID-linux/cell"
-
-# Built-in binary:
-cell.command.path = NULL
-```
-
-> Now comes the magic part. This script uses temporary directories to work on, and avoids messing up the main data directory, while running CellID in parallel for each parameter variation.
-
-Create a parallel backend:
-
-```{r}
-ncores <- parallel::detectCores() - 1
-cl <- parallel::makeCluster(ncores, setup_strategy = "sequential")
-# doParallel::registerDoParallel(cl)
-doSNOW::registerDoSNOW(cl)
-```
-
-Setup a progressbar and run CellID:
-
-```{r}
-ntasks <- length(test.params)
-pb <- txtProgressBar(max = ntasks, style = 3)
-progress <- function(n) setTxtProgressBar(pb, n)
-opts <- list(progress=progress)
-
-library(foreach)
-
-result <- 
-  foreach(test.param=test.params, #.export = c(".parameters.df",)
-          .options.snow=opts,
-          .packages = c("rcell2", "base", "dplyr")) %dopar% {
-    
-            # Get one parameter set
-            parameters.list.one <- parameters.df[test.param,]
-            
-            # Save parameters
-            parameters.txt <- rcell2.cellid::parameters_write(parameters.list.one, param.dir = test.dir)
-            
-            # Create arguments
-            cellid.args <- rcell2.cellid::arguments(data.dir,
-                                                    file.pattern = arguments.file.pattern,
-                                                    parameters = parameters.txt)
-            # Subset only one position
-            # cellid.args.one <- cellid.args[cellid.args$pos %in% test.pos, ]
-            cellid.args.one <- subset(cellid.args, 
-                                      pos %in% test.pos & t.frame %in% test.frames)
-            
-            # Prepare a temp dir for each cellid run
-            tmp.path <- tempfile(pattern = "dir", tmpdir = test.dir)
-            dir.create(tmp.path)
-            
-            # Create shortcuts to the original images
-            apply(cellid.args.one, 1, function(i){
-              file.symlink(from = paste0(i["path"], "/",
-                                         c(i["image"],i["bf"])),
-                           to = paste0(tmp.path, "/", 
-                                       c(i["image"], i["bf"]))
-                     )
-            })
-        
-            
-            # Regenerate arguments for the new tmp path
-            cellid.args.tmp <- rcell2.cellid::arguments(tmp.path,
-                                                        file.pattern = arguments.file.pattern,
-                                                        parameters = parameters.txt)
-            # Run cellid
-            cellid.out <- rcell2.cellid::cell2(arguments = cellid.args.tmp, 
-                                               cell.command = cell.command.path)
-            
-            # Load output
-            cell.data <- rcell2.cellid::cell.load.alt(
-              tmp.path,
-              fluorescence.pattern = load.cell.channel.pattern
-              )
-            
-            
-            # Now compute some average "pseudo-metrics" about the segmentation.
-            
-            # "roughness" function copied from the seewave package
-            # https://cran.r-project.org/web/packages/seewave/index.html
-            roughness <- function(x, std=FALSE){
-              if(std) x <- x/max(x)
-              deriv2 <- diff(x, 1, 2)
-              roughness <- sum(deriv2^2, na.rm=TRUE)
-              return(roughness)
-            } 
-            # This variation takes the sqrt of roughness and divides by total length
-            # To correct for extra accumulated roughness in cells detected
-            # across more t.frames.
-            roughness2 <- function(x, std=FALSE){
-              if(std) x <- x/max(x)
-              deriv2 <- diff(x, 1, 2)
-              roughness <- sum(deriv2^2, na.rm=TRUE)
-              roughness.norm <- sqrt(roughness)/length(x)
-              # roughness <- sum(abs(deriv2), na.rm=TRUE)
-              # roughness.norm <- (roughness)/length(x)
-              return(roughness.norm)
-            } 
-            
-            # Compute the summary numbers
-            fft <- mean(cell.data$data$fft.stat)
-            el.p <- mean(cell.data$data$el.p)
-            ucids <- length(unique(cell.data$data$ucid)) # Number of found cells
-            persistence <- nrow(cell.data$data) / ucids  # Average frames per cell
-            roughness <- cell.data$data %>% group_by(ucid) %>% 
-              summarise(roughness = roughness(a.tot)) %>% 
-              with(roughness) %>% mean(na.rm = T)
-            roughness2 <- cell.data$data %>% group_by(ucid) %>% 
-              summarise(roughness2 = roughness2(a.tot)) %>% 
-              with(roughness2) %>% mean(na.rm = T)
-            
-            
-            # Keep only the image paths dataframe
-            # And the "metrics"
-            result <- 
-              cell.data$images %>% filter(is.out) %>% 
-              mutate(parameters = parameters.txt,
-                     fft = fft,
-                     el.p = el.p,
-                     ucids = ucids,
-                     persistence,
-                     roughness,
-                     roughness2
-                     )
-            
-            return(result)
-  }
-
-close(pb)
-parallel::stopCluster(cl)
-```
-
-Bind the result:
-
-```{r}
-results.bound <- result %>% 
-    bind_rows(.id = "id") %>%
-    mutate(id = as.integer(id))
-
-results.bound
-# saveRDS(results.bound, tempfile(pattern = "results", tmpdir = test.dir, fileext = ".RDS"))
-```
-
-
-```{r}
-# results.bound <- readRDS(paste0(test.dir, "/results.bound.RDS"))
-```
 
 #### Plot summary
 
@@ -1206,7 +1039,7 @@ A copy-paste-ready ImageJ Macro will be printed out, to easily load them as virt
 
 ```{r}
 stack.paths <- 
-  make_scan_stacks(results.bound = results.bound, 
+  make_scan_stacks(scan.results = scan.results, 
                    test.dir = test.dir, 
                    stack.channels = "BF.out")
 ```

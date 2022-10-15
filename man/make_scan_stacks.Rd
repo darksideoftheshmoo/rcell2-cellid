@@ -5,20 +5,20 @@
 \title{Make TIFF stacks for reviewing the result of parameter scans in ImageJ}
 \usage{
 make_scan_stacks(
-  results.bound,
+  scan.results,
   test.dir,
   stack.channels = "BF.out",
   annotation.font = "Hack"
 )
 }
 \arguments{
-\item{results.bound}{The result from \code{parameter_scan}.}
+\item{scan.results}{The full result from \code{parameter_scan}.}
 
 \item{test.dir}{Temporary directory into which stacks should be saved.}
 
 \item{stack.channels}{Vector of channels which should be stacked.}
 
-\item{annotation.font}{Font for the annotations. A monospaced font is recommended.}
+\item{annotation.font}{Font for the annotations. A mono-spaced font is recommended.}
 }
 \value{
 A list with paths to the stacks, and
