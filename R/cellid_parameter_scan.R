@@ -33,7 +33,7 @@ parameter_scan <- function(parameters.df,
                            data.dir, 
                            test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"),
                                                     mustWork = F), 
-                           fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$",
+                           fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+(?:_time\\d+)?.tif$",
                            ...) {
   
   # Record the amount of combinations

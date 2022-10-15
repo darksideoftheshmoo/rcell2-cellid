@@ -103,7 +103,7 @@ Optional: uncomment the following if you have images from Metamorph's MDA, you m
 # rename_mda(images.path = data.dir)
 ```
 
-Optional: customize parameters for CellID.
+Optional: customize parameters for CellID (details below).
 
 ```{r}
 # parameters.txt <- rcell2.cellid::parameters_write(rcell2.cellid::parameters_default())
@@ -887,10 +887,6 @@ arguments.file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
 # Get full image list
 cellid.args <- rcell2.cellid::arguments(data.dir,
                                         file.pattern = arguments.file.pattern)
-
-
-# Default value: all fluorescent tags, including Z-stack fluorescence channels.
-load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
 ```
 
 #### Parameter combinations
@@ -951,8 +947,7 @@ scan.results <-
   parameter_scan(parameters.df = parameters.df,
                  scan.arguments = cellid.args.scan,
                  test.dir = test.dir, 
-                 data.dir = data.dir, 
-                 fluorescence.pattern = load.cell.channel.pattern)  # See previous section "Load result".
+                 data.dir = data.dir)
 ```
 
 Get the output dataframe:
