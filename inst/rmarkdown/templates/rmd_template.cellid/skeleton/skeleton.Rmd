@@ -643,7 +643,7 @@ normalizePath(filtered.bfs.dir)
 
 ### Parameters
 
-These are parameters that affect cell segmentation, tracking, and some corrections.
+Configure the Cell-ID parameters that affect cell segmentation, tracking, and some corrections.
 
 #### Descriptions
 
@@ -653,17 +653,18 @@ Description for parameters:
 rcell2.cellid::cellid_parameter_descriptions(list_format = F)
 ```
 
-#### Example
+#### Example parameters
 
 There is a helper function to prepare parameters more easily:
 
 ```{r}
-parameters.list <- rcell2.cellid::parameters_default()
+parameters.list <- 
+  rcell2.cellid::parameters_default(background_reject_factor = 0.8)
 
 parameters.list$max_split_over_minor
 ```
 
-But, here is a valid, hand-made parameter list, with defaults:
+But, here is a valid, hand-made parameter list, with the same defaults:
 
 ```{r}
 parameters.list <- list(
@@ -680,13 +681,13 @@ parameters.list <- list(
   )
 ```
 
-Hay que guardar los parámetros en un archivo `parameters.txt`,
-para que más adelante CellID lo pueda usar.
+Parameters must be written to a `parameters.txt` plain text file with the proper syntax,
+which Cell-ID will read later on.
 
-Para eso está la función `parameters_write()`, 
-que devuelve el path donde se guardó el archivo:
+For this purpose, you may use the `parameters_write()` function. It writes the parameters,
+and returns the path where it was saved.
 
-<!-- to do: move this step into cell2() -->
+<!-- to do: consider moving this step into cell2() -->
 
 ```{r}
 parameters.txt <- rcell2.cellid::parameters_write(parameters.list)
@@ -858,9 +859,7 @@ rcell2.cellid::cellid_output_descriptions(list.output = F)
 
 ### Tuning parameters
 
-A veces querés probar muchos parámetros antes de correr CellID en todas las fotos.
-
-> Nota: esta sección del notebook usa variables definidas en secciones anteriores (i.e. patterns y paths).
+Sometimes we want to test out many parameter combinations fefor running Cell-ID in the full dataset.
 
 #### Example setup
 
@@ -878,7 +877,7 @@ data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
                         package = "rcell2.examples")
 ```
 
-Setup arguments and patterns as usual:
+Setup arguments and patterns as usual (if not done already):
 
 ```{r}
 # Default value: all channels, no z-stack.
@@ -911,9 +910,7 @@ parameters.df <- expand.grid(parameters.list)
 parameters.df
 ```
 
-> Note: You might want to select some rows from that table, in that case, simply filter it.
-
-> Note: `utiles::value.to.range` just converts a number to a vector centered on its value (see `base::seq`).
+> Note: You might want to select some rows from that table. In that case, simply filter it.
 
 #### Image set
 
@@ -945,9 +942,7 @@ Just run:
 ```{r}
 scan.results <- 
   parameter_scan(parameters.df = parameters.df,
-                 scan.arguments = cellid.args.scan,
-                 test.dir = test.dir, 
-                 data.dir = data.dir)
+                 scan.arguments = cellid.args.scan)
 ```
 
 Get the output dataframe:

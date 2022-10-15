@@ -7,7 +7,6 @@
 parameter_scan(
   parameters.df,
   scan.arguments,
-  data.dir,
   test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"),
     mustWork = F),
   fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\\\d+)_Position\\\\d+(?:_time\\\\d+)?.tif$",
@@ -18,8 +17,6 @@ parameter_scan(
 \item{parameters.df}{Dataframe with one combination of parameters per row.}
 
 \item{scan.arguments}{Output from \code{arguments}, filtered to your scanning needs.}
-
-\item{data.dir}{Path to the original images.}
 
 \item{test.dir}{Working directory for the parameter scan.}
 

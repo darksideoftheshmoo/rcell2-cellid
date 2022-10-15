@@ -18,7 +18,6 @@
 #'
 #' @param parameters.df Dataframe with one combination of parameters per row.
 #' @param scan.arguments Output from \code{arguments}, filtered to your scanning needs.
-#' @param data.dir Path to the original images.
 #' @param test.dir Working directory for the parameter scan.
 #' @inheritParams cell.load.alt
 #' @inheritDotParams cell2
@@ -30,7 +29,6 @@
 #' @examples Have a look at the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.
 parameter_scan <- function(parameters.df, 
                            scan.arguments,
-                           data.dir, 
                            test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"),
                                                     mustWork = F), 
                            fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+(?:_time\\d+)?.tif$",
