@@ -43,6 +43,7 @@ library(tidyverse)  # import numpy as np (?)
 # library(magick)  # if you need it
 ```
 
+# Introduction
 
 ## Friendly reminder
 
@@ -260,7 +261,12 @@ rcell2.magick::cellSpreadPlot(cdata, images)
 rcell2.magick::shinyCell(cdata, paths = images)
 ```
 
+# Full usage guide
+
 ## Preprocessing
+
+The following sections may help improve the result of the segmentation,
+and to catch severe issues early on.
 
 ### Renaming Metamorph MDA images
 
@@ -431,6 +437,47 @@ tags %>% arrange(pos) %>%
 ```
 
 
+### Preview images
+
+Open your images with FIJI-ImageJ before you begin.
+
+No analysis package exists (yet) that can replace a researcher's visual assesment.
+
+A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment.
+
+> Note: this macro uses a "file" pattern that only matches input images (and not ".out")
+> in a tipically-named set of images.
+
+```{r}
+n_axis1 <- length(unique(cellid.args$t.frame))
+n_axis2 <- length(unique(cellid.args$pos))
+n_axis3 <- length(unique(cellid.args$ch))
+
+# Add 1 to include the BF images as a possible channel
+n_axis3 <- n_axis3 + 1
+
+macro <- glue::glue(
+  '// Macro',
+  'run("Image Sequence...", "open={data.dir} file=(.*\\\\d.tif$) sort use");',
+  'run("Stack to Hyperstack...", "order=xyczt(default) channels={n_axis1} slices={n_axis2} frames={n_axis3} display=Grayscale");',
+  .sep = "\n"
+)
+
+cat(macro)
+```
+
+> Note: the dimensions names may be mismatched between R and the macro. This is because 
+virtual stacks must be in `xyczt` order (time is likely to end up as the "channels" dimension), 
+but the order in which the "Image Sequence..." is loaded depends on how their files are named.
+
+The only restriction of this approach is that only "3" dimensions are available for
+browsing: `frame`, `plane`, and `channel`. This is relevant if you wish to browse
+segmentation results (which adds another dimension to the set: original vs "out").
+A fourth dimension would be needed, but Hyperstacks only provide 3. Alternatively, 
+open another virtual hyperstack for the output images, and browse them in-sync.
+
+<!-- Si alguien sabe como reordenar fotos en un stack, que avise. Creo que se puede ¿reslice? ¿algo asi? -->
+
 ### FFT filter on BF images
 
 #### Sequential
@@ -592,7 +639,7 @@ normalizePath(filtered.bfs.dir)
 ```
 
 
-## CellID
+## Segmentation
 
 ### Parameters
 
@@ -696,7 +743,7 @@ Se puede "filtrar" posiciones y tiempos directo desde la regex, o posteriormente
 
 Noten el `0+?` enfrente del número, que indica que puede haber un cero o más frente al numerito de posición o tiempo en el nombre del archivo.
 
-#### File patterns
+#### Input file pattern
 
 Su `file.pattern` regex puede variar, por ejemplo si no hay tiempo y solo hay BFs y TFPs, usarian:
 
@@ -712,13 +759,13 @@ Original images file pattern examples; choose one and comment the others:
 arguments.file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
 
 # To consider z-stacks:
-arguments.file.pattern <- "^(BF|[A-Z]\d+)_Position(\d+)_time(\d+).tif$"
+# arguments.file.pattern <- "^(BF|[A-Z]\d+)_Position(\d+)_time(\d+).tif$"
 
 # BF or TFP only, no t.frame info.
-arguments.file.pattern <- "^(BF|TFP)_Position(\\d+)().tif$"
+# arguments.file.pattern <- "^(BF|TFP)_Position(\\d+)().tif$"
 ```
 
-#### Ejemplo simple
+#### Example
 
 Check that image file names are properly recognized:
 
@@ -736,7 +783,7 @@ Pueden seleccionar un subset de imagenes para procesar:
 cellid.args %>% filter(pos == 2, t.frame %in% c(4,2,3))
 ```
 
-### Run segmentation
+### Run Cell-ID
 
 La función `cell2` genera comandos para llamar a CellID por línea de comandos y los ejecuta en paralelo.
 
@@ -781,21 +828,23 @@ cell.boundaries <-
                                )
 ```
 
-#### File pattern
+#### Output file pattern
 
-File patterns may vary, depending on what images were provided as input, and the identifiers in their file names.
+File patterns may vary, depending on what images were provided as input, 
+and the identifiers in their file names.
 
-Fluorescent channel pattern examples for `cell.load.alt` and `parameter_scan`; choose one and comment the others:
+Fluorescent channel pattern examples for `cell.load.alt` and `parameter_scan`; 
+choose one and comment the others:
 
 ```{r}
 # Default value: all fluorescent tags, including Z-stack fluorescence channels.
 load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
 
 # Default: add "BF" as a possible channel (when CellID was run with bf_as_fl=TRUE)
-load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+|BF)_Position\\d+_time\\d+.tif$"
+# load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+|BF)_Position\\d+_time\\d+.tif$"
 
 # Same as defualt, but without t.frame information.
-load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+.tif$"
+# load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+.tif$"
 ```
 
 #### Variable descriptions
@@ -813,7 +862,38 @@ A veces querés probar muchos parámetros antes de correr CellID en todas las fo
 
 > Nota: esta sección del notebook usa variables definidas en secciones anteriores (i.e. patterns y paths).
 
-#### Setup combinations
+#### Example setup
+
+Define working paths for parameter testing:
+
+* One with the images.
+* Another one for testing.
+
+```{r}
+# The output of the parameter scan will be saved here:
+test.dir <- "/tmp/images_directory/test.dir"
+
+# Or use the example images
+data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
+                        package = "rcell2.examples")
+```
+
+Setup arguments and patterns as usual:
+
+```{r}
+# Default value: all channels, no z-stack.
+arguments.file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
+
+# Get full image list
+cellid.args <- rcell2.cellid::arguments(data.dir,
+                                        file.pattern = arguments.file.pattern)
+
+
+# Default value: all fluorescent tags, including Z-stack fluorescence channels.
+load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
+```
+
+#### Parameter combinations
 
 For each parameter variation, we need a new parameters file.
 
@@ -832,8 +912,6 @@ The list must now be expanded into a data.frame:
 ```{r}
 parameters.df <- expand.grid(parameters.list)
 
-test.params <- 1:nrow(parameters.df)  # Record the amount of combinations
-
 parameters.df
 ```
 
@@ -841,40 +919,25 @@ parameters.df
 
 > Note: `utiles::value.to.range` just converts a number to a vector centered on its value (see `base::seq`).
 
-Define working paths for parameter testing:
-
-* One with the images.
-* Another one for testing.
-
-```{r}
-test.dir <- "/tmp/images_directory/test.dir"
-```
-
 Now choose some *positions* (image sets) and *t.frame*s (time frames)
 to restrict the image test set to only some of them:
 
 ```{r}
-# All positions and frames
+# All positions and frames:
+
 test.pos = cellid.args$pos %>% unique()
 test.frames = cellid.args$t.frame %>% unique()
 
-# Only a couple
-test.pos = 1:2
-test.frames = 1  # Note: t.frame might be "0 indexed" or not, this depends on the file naming
+# Only a couple:
+
+# test.pos = 1:2
+# test.frames = 1  # Note: t.frame might be "0 indexed" or not, this depends on the file naming
 
 subset(cellid.args,
        pos %in% test.pos & t.frame %in% test.frames)
 ```
 
-And the path to the CellID binary executable; choose one and comment the others:
-
-```{r}
-cell.command.path = "~/Software/cellID-linux/cell"
-
-cell.command.path = NULL # Use the built-in binary.
-```
-
-#### Test run (v2)
+#### Automatic scan
 
 > Now comes the magic part.
 > This script uses temporary directories to work on, 
@@ -891,8 +954,7 @@ results <-
                  test.positions = test.pos, 
                  test.frames = test.frames, 
                  file.pattern = arguments.file.pattern,  # See previous section "Images and Arguments".
-                 fluorescence.pattern = load.cell.channel.pattern,  # See previous section "Load result".
-                 cell.command = cell.command.path)
+                 fluorescence.pattern = load.cell.channel.pattern)  # See previous section "Load result".
 ```
 
 Rename the output for usage in the next sections:
@@ -903,13 +965,29 @@ results.bound <- results
 
 > You can skip the next section, it does the same thing, but without the abstraction.
 
-#### Test run (v1)
+#### Manual scan
+
+Save the amount of combinations to a variable:
+
+```{r}
+test.params <- 1:nrow(parameters.df)  # Record the amount of combinations
+```
 
 Cleanup test directories:
 
 ```{r}
 unlink(test.dir, recursive = T)
 dir.create(test.dir, recursive = T)
+```
+
+And the path to the CellID binary executable; choose one and comment the others:
+
+```{r}
+# Custom inary:
+# cell.command.path = "~/Software/cellID-linux/cell"
+
+# Built-in binary:
+cell.command.path = NULL
 ```
 
 > Now comes the magic part. This script uses temporary directories to work on, and avoids messing up the main data directory, while running CellID in parallel for each parameter variation.
@@ -1054,16 +1132,20 @@ results.bound
 # results.bound <- readRDS(paste0(test.dir, "/results.bound.RDS"))
 ```
 
-#### Plot summary statistics
+#### Plot summary
 
 A few "summary" quantities are calculated for each run:
 
-* fft
-* el.p
-* ucids
-* persistence
-* roughness
-* roughness2
+* `fft`
+* `el.p`
+* `ucids`
+* `persistence`
+* `roughness`
+* `roughness2`
+
+The average of these quantities may be useful for selecting optimal parameters.
+
+A few of combinations these are plotted below:
 
 ```{r}
 results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
@@ -1112,17 +1194,21 @@ results.bound %>% filter(channel == "BF.out", t.frame == 0) %>%
 ```
 
 
-#### Review stacks in ImageJ
+#### Review result in ImageJ
 
-##### Auto mode
+##### Prepare stakcs
 
-Make TIFF stacks for a particular channel, and prepare a copy-paste-ready ImageJ Macro, to load them as Hyperstacks.
+Make TIFF stacks for a particular channel.
 
 The stacks are annotated with the parameters used for each segmentation, and other metadata (position, time frame, and channel).
 
+A copy-paste-ready ImageJ Macro will be printed out, to easily load them as virtual Hyperstacks in ImageJ.
+
 ```{r}
 stack.paths <- 
-  make_scan_stacks(results.bound = results.bound, test.dir = test.dir, stack.channels = "BF.out")
+  make_scan_stacks(results.bound = results.bound, 
+                   test.dir = test.dir, 
+                   stack.channels = "BF.out")
 ```
 
 > Just copy paste the macro to a new macro window in ImageJ, and hit run! The stack should be loaded automagically.
@@ -1130,7 +1216,11 @@ stack.paths <-
 Paths and macros are saved in the output:
 
 ```{r}
-str(stack.paths)
+names(stack.paths)
+
+stack.paths$imagej.macros
+
+stack.paths$stack.paths
 ```
 
 > For reference, the functions original code is below (but no longer updated).
@@ -1253,5 +1343,5 @@ parameters.list <- rcell2.cellid::parameters_default(
 
 Helping with data analysis is `rcell2`'s purpose.
 
-Installation instructions for `rcell2` and `rcell2.magick` packages can be found [here](https://github.com/darksideoftheshmoo/rcell2/tree/master#installing-the-package) and [here](https://github.com/darksideoftheshmoo/rcell2/tree/rcell2.magick#installing-the-package).
-
+Installation instructions for `rcell2` and `rcell2.magick` packages can be found [here](https://github.com/darksideoftheshmoo/rcell2#installing-the-package) and [here](https://github.com/darksideoftheshmoo/rcell2-magick#installing-the-package),
+respectively.
