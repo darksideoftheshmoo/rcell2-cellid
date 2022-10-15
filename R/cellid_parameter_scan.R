@@ -198,6 +198,10 @@ make_scan_stacks <- function(results.bound,
                              stack.channels = "BF.out", 
                              annotation.font = "Hack") {
   
+  # Number of parameter conbinations
+  test.params <- length(unique(results.bound$parameters))
+  
+  # Make stacks
   stack.paths <- results.bound %>% 
     
     dplyr::filter(channel %in% stack.channels) %>% 
