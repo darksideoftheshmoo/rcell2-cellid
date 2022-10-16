@@ -302,6 +302,10 @@ It requires the ijtiff and XML package:
 > The xml2 package does not convert the attributes automatically,
 > so I stuck to the XML package. See tiff_plane_info's help and source for details.
 
+#### Load TIFF metadata
+
+Get paths to the images:
+
 ```{r}
 # Choose your own path!
 metamorph_pics_dir <- "/path/to/your/data"
@@ -314,14 +318,21 @@ metamorph_pics_dir <- system.file("extdata/sample_datasets/time_series_sample/",
 dir(metamorph_pics_dir)
 ```
 
+List plane info for an example image:
+
 ```{r}
+# Path to a sample image
 metamorph_pic <- paste0(metamorph_pics_dir, "/BF_Position001_time01.tif")
 
-pic_plane_info <- tiff_plane_info(path = metamorph_pic)
+# Get the image plane metadata
+pic_plane_info <- rcell2.cellid::tiff_plane_info(path = metamorph_pic)
 
+# Show the stage-position properties
 pic_plane_info %>% 
   filter(grepl("stage-position", id))
 ```
+
+Get the metadata of all images:
 
 ```{r}
 metamorph_pics <-
@@ -348,6 +359,8 @@ ggplot(plane_info_df) +
 ```
 
 This is specially useful when tracing a path for positions in a many-well time-course experiment.
+
+#### Check position indexes
 
 The following code match the images' _position_ (Pos) to their microscope stage _physical_ XY coordinates,
 which are stored in the TIFF tags of the original images.
@@ -380,62 +393,6 @@ plane_info_df %>%
   scale_x_reverse() +
   ggtitle("Coordenadas del stage")
 ```
-
-Example crude code to handle the XML:
-
-> You should skip this! Unlessyou wish to suffer.
-
-```{r}
-pic <- "/data/Datos/2022-01-27-chequeo_cepas_far1/BF_Position001.tif"
-pic.tags <- ijtiff::read_tags(pic, frames = 1)
-pic.desc <- pic.tags$frame1$description
-
-data <- XML::xmlParse(pic.desc, useInternalNodes = TRUE)
-xml_data <- XML::xmlToList(data)
-
-plane_info <- xml_data$PlaneInfo
-
-xml_data_hasxy <- plane_info %>%
-  lapply(function(prop) isTRUE(prop[[".attrs"]][["id"]] %in% c("stage-position-x", "stage-position-y")) ) %>% 
-  unlist() %>% which()
-
-plane_info[xml_data_hasxy] %>% lapply(function(prop) list(id= prop[[".attrs"]][["id"]],
-                                                          value = prop[[".attrs"]][["value"]] )) %>% 
-  bind_rows()
-```
-
-```{r}
-tags <- images %>% filter(t.frame==min(t.frame), channel=="BF") %>% 
-  {split(.$file, .$pos)} %>% 
-  lapply(rcell2::read_tiff_tags)
-
-tags$`1`$frame1$description
-```
-
-```{r}
-tags <- tags %>% 
-  lapply(function(x) x[["frame1"]][["description"]]) %>% 
-  bind_rows(.id = "pos") %>% 
-  mutate(variable = make.names(variable)) %>% 
-  filter(variable %in% make.names(c("stage-position-x", "stage-position-y", "z-position")))
-
-tags <- tags %>%
-  pivot_wider(id_cols = "pos", names_from = "variable", values_from = "value") %>% 
-  mutate_all(as.numeric)
-```
-
-Then make a scatterplot:
-
-```{r}
-tags %>% arrange(pos) %>% 
-  ggplot(aes(x=stage.position.x, y=stage.position.y, label=pos)) +
-  geom_path() + 
-  geom_text(size=10) +
-  geom_point(color="red") +
-  scale_x_reverse() +
-  ggtitle("Coordenadas del stage")
-```
-
 
 ### Preview images
 
