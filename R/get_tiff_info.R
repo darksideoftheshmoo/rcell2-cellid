@@ -49,11 +49,25 @@ tiff_plane_info <- function(path, frames = 1, ...) {
     return(NULL)
   }
   
-  description.xml <- XML::xmlToList(pic.description, ...)
+  # Catch XML errors, return NULL if it fails
+  result <- tryCatch(
+    expr = {
+      # Parse XML to an R list
+      description.xml <- XML::xmlToList(pic.description, ...)
+      # Convert plane info to a dataframe
+      plane_info <- description.xml$PlaneInfo %>% 
+        lapply(function(prop) prop$.attrs) %>% 
+        bind_rows(.id = "prop_type")
+      # Return
+      plane_info
+    },
+    error = function(e){
+      warning(e)
+      warning(paste0(
+        "tiff_plane_info: error while parsing metadata from file '",
+        basename(path), "'. Returning NULL."))
+      return(NULL)
+    })
   
-  plane_info <- description.xml$PlaneInfo %>% 
-    lapply(function(prop) prop$.attrs) %>% 
-    bind_rows(.id = "prop_type")
-  
-  return(plane_info)
+  return(result)
 }
