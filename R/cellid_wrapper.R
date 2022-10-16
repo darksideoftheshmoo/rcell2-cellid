@@ -1186,19 +1186,25 @@ arguments_summary <- function(arguments){
 #' @import dplyr
 #' @export
 arguments_to_images <- function(arguments){
+  
+  # BF dataframe
+  bf <- arguments %>% 
+    select(pos, t.frame, path, bf) %>% 
+    unique() %>%
+    mutate(ch = "BF") %>% 
+    rename(image = bf)
+  
+  # FL dataframe
+  fl <- arguments %>% select(pos, t.frame, path, image, ch)
+  
   images <- 
-    dplyr::bind_rows(
-      arguments %>% select(pos, t.frame, path, bf) %>% 
-        unique() %>% mutate(ch = "BF") %>% rename(image = bf),
-      arguments %>% select(pos, t.frame, path, image, ch)
-    ) %>% 
+    dplyr::bind_rows(bf, fl) %>% 
     mutate(file = paste0(path, "/", image),
            is.out = F) %>% 
     select(pos, t.frame, ch, file, path, is.out, image) %>% 
     rename(channel = ch) #%>% 
-    # mutate(t.frame = t.frame - min(t.frame))
   
-  images
+  return(images)
 }
 
 #' Pipe
