@@ -4,3 +4,4 @@
 /.Rd2pdf*
 .DS_Store
 *.directory
+.~lock.*#
