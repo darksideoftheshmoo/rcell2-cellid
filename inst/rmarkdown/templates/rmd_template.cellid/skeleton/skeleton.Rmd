@@ -84,14 +84,16 @@ if(!require(rcell2.examples)){
   remotes::install_github("darksideoftheshmoo/rcell2.examples")
 }
 
-# Or use the example images
-data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
-                        package = "rcell2.examples")
+# List available datasets:
+dir(system.file("extdata/sample_datasets/", package = "rcell2.examples"))
 ```
 
-List image files:
-
 ```{r}
+# Choose one set of example images:
+data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
+                        package = "rcell2.examples")
+
+# List image files in the set:
 dir(data.dir)
 ```
 
@@ -311,7 +313,7 @@ Get paths to the images:
 metamorph_pics_dir <- "/path/to/your/data"
 
 # Or use the example images (requires "rcell2.examples", see first example above).
-metamorph_pics_dir <- system.file("extdata/sample_datasets/time_series_sample/",
+metamorph_pics_dir <- system.file("extdata/sample_datasets/image_samples/",
                                   package = "rcell2.examples")
 
 # List files
@@ -322,11 +324,17 @@ List plane info for an example image:
 
 ```{r}
 # Path to a sample image
-metamorph_pic <- paste0(metamorph_pics_dir, "/BF_Position001_time01.tif")
+metamorph_pic <- paste0(metamorph_pics_dir, "/BF_Position07.tif")
 
 # Get the image plane metadata
 pic_plane_info <- rcell2.cellid::tiff_plane_info(path = metamorph_pic)
+```
 
+> If the required metadata is not found in the TIFF, a warning will be emitted.
+> This can happen if the original images were modified or exported from ImageJ or 
+> other sofware. Continue if there are no warnings, or else skip this section.
+
+```{r}
 # Show the stage-position properties
 pic_plane_info %>% 
   filter(grepl("stage-position", id))
