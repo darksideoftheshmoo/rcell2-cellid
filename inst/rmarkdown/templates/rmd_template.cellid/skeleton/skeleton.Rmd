@@ -1021,12 +1021,6 @@ scan.results <-
                  scan.arguments = cellid.args.scan)
 ```
 
-Get the output dataframe:
-
-```{r}
-results.bound <- scan.results$results.bound
-```
-
 > Have a look at the function's source code if you like, its hopefully well commented.
 
 #### Plot summary
@@ -1042,7 +1036,15 @@ A few "summary" quantities are calculated for each run:
 
 The average of these quantities may be useful for selecting optimal parameters.
 
-A few of combinations these are plotted below:
+A few of combinations these are plotted below.
+
+First get the output dataframe:
+
+```{r}
+results.bound <- scan.results$results.bound
+```
+
+Plot:
 
 ```{r}
 results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
@@ -1063,6 +1065,7 @@ results.bound %>% filter(channel == "BF.out", t.frame == 0) %>%
   theme_minimal() + scale_color_discrete()
 ```
 
+Plot:
 
 ```{r}
 results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
@@ -1105,6 +1108,7 @@ stack.paths <-
                    test.dir = test.dir, 
                    stack.channels = "BF.out")
 ```
+
 > Have a look at the function's source code if you like, its hopefully well commented.
 
 Now copy paste the macro to a new macro window in ImageJ, and hit run! The stack should be loaded automagically.
