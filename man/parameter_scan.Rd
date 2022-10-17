@@ -10,6 +10,7 @@ parameter_scan(
   test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"),
     mustWork = F),
   fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\\\d+)_Position\\\\d+(?:_time\\\\d+)?.tif$",
+  progress = TRUE,
   ...
 )
 }
@@ -21,6 +22,8 @@ parameter_scan(
 \item{test.dir}{Working directory for the parameter scan.}
 
 \item{fluorescence.pattern}{Regex describing what the fluorescence/channel ID string looks like (default "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"). There must be only one capturing group, ant it must be for the channel identifier.}
+
+\item{progress}{Print a progress bar. Requires the \code{doSNOW} package.}
 
 \item{...}{
   Arguments passed on to \code{\link[=cell2]{cell2}}
@@ -36,7 +39,6 @@ parameter_scan(
     \item{\code{output_coords_to_tsv}}{Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (CellID option '-m').}
     \item{\code{save.logs}}{Set to TRUE to save CellID logs to text files, into the output directory of their corresponding position.}
     \item{\code{verbose}}{Print startup messages.}
-    \item{\code{progress}}{Print a progress bar. Requires the \code{doSNOW} package.}
   }}
 }
 \value{

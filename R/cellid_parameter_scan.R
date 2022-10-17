@@ -21,6 +21,7 @@
 #' @param parameters.df Dataframe with one combination of parameters per row.
 #' @param scan.arguments Output from \code{arguments}, filtered to your scanning needs.
 #' @param test.dir Working directory for the parameter scan.
+#' @param progress Print a progress bar. Requires the \code{doSNOW} package.
 #' @inheritParams cell.load.alt
 #' @inheritDotParams cell2
 #'
@@ -34,6 +35,7 @@ parameter_scan <- function(parameters.df,
                            test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"),
                                                     mustWork = F), 
                            fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+(?:_time\\d+)?.tif$",
+                           progress = TRUE,
                            ...) {
   
   # Record the amount of combinations
@@ -43,18 +45,25 @@ parameter_scan <- function(parameters.df,
   unlink(test.dir, recursive = T)
   dir.create(test.dir, recursive = T)
   
-  # Create a parallel backend:
   ncores <- parallel::detectCores() - 1
   cl <- parallel::makeCluster(ncores, setup_strategy = "sequential")
   # doParallel::registerDoParallel(cl)
   doSNOW::registerDoSNOW(cl)
   
-  
-  # Setup a progressbar and run CellID:
-  ntasks <- length(test.params)
-  pb <- txtProgressBar(max = ntasks, style = 3)
-  progress <- function(n) setTxtProgressBar(pb, n)
-  opts <- list(progress=progress)
+  # Create a parallel backend:
+  if(!progress){
+    # Register doParallel cluster
+    doParallel::registerDoParallel(cl)
+    opts <- list()
+  } else {
+    # Register doSnow cluster
+    doSNOW::registerDoSNOW(cl)
+    # Setup a progressbar and run CellID:
+    ntasks <- length(test.params)
+    pb <- txtProgressBar(max = ntasks, style = 3)
+    progress <- function(n) setTxtProgressBar(pb, n)
+    opts <- list(progress=progress)
+  }
   
   # Test
   test.param=test.params[1]
@@ -99,7 +108,9 @@ parameter_scan <- function(parameters.df,
                                               sep = "/")
               
               # Run Cell-ID
-              cellid.out <- rcell2.cellid::cell2(arguments = cellid.args.tmp, verbose = F, ...)
+              cellid.out <- rcell2.cellid::cell2(arguments = cellid.args.tmp,
+                                                 verbose = F, progress = F,
+                                                 ...)
               
               # Load output
               cell.data <- rcell2.cellid::cell.load.alt(
