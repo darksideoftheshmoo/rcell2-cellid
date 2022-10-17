@@ -164,13 +164,14 @@ open another virtual hyperstack for the output images, and browse them in-sync.
 <!-- Si alguien sabe como reordenar fotos en un stack, que avise. Creo que se puede ¿reslice? ¿algo asi? -->
 
 
-### Run Cell-ID and load the output
+### Run Cell-ID
 
 Run CellID with the built-in executable:
 
 ```{r}
 cell2.out <- 
-  rcell2.cellid::cell2(arguments = cellid.args, 
+  rcell2.cellid::cell2(arguments = cellid.args,
+                       # progress = T,  # Progress bar (requires doSnow).
                        # cell.command = "~/Software/cellID-linux/cell",  # You may use an external executable.
                        output_coords_to_tsv = T  # Optional! Only works with newer CellID (>= 1.5).
                        )
@@ -178,6 +179,8 @@ cell2.out <-
 # Check the output messages:
 cell2.out
 ```
+
+### Load the output
 
 The output tables can be loaded with `cell.load.alt`.
 
@@ -189,8 +192,7 @@ cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
 
 ### Alternatives
 
-Function `load_cell_data` from `rcell2` can load those tables as well, 
-and also the cell boundaries and interior pixels coordinates with `cell.load.boundaries`.
+Function `load_cell_data` from `rcell2` can load those tables as well.
 
 ```{r}
 # rcell2's main analysis package
@@ -200,8 +202,15 @@ if(!require(rcell2)){
 
 # Load output
 cell_data <- rcell2::load_cell_data(path = data.dir)
+```
 
-# Optional: load cell boundaries,
+
+Cell boundaries and interior pixels coordinates can be loaded with `cell.load.boundaries`,
+also provided by the `rcell2` package.
+
+> This data is only available if `cell2` has run with `output_coords_to_tsv = T`.
+
+```{r}
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
   rcell2::cell.load.boundaries(data.source = "masks.tsv",
@@ -225,6 +234,19 @@ Output variables are described by this documentation function:
 
 ```{r}
 rcell2.cellid::cellid_output_descriptions(list.output = F)
+```
+
+Plot cell boundaries:
+
+> This data is only available if `cell2` has run with `output_coords_to_tsv = T`.
+
+```{r}
+cell.boundaries %>% 
+  group_by(pos) %>% filter(cellID == 0) %>% 
+  filter(pixtype == "b") %>% 
+  ggplot(aes(x,y,color=factor(t.frame)))+
+  geom_path()+
+  facet_wrap(~pos)
 ```
 
 We recommend saving the current state at this point:
