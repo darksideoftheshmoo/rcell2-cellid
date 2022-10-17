@@ -47,8 +47,6 @@ parameter_scan <- function(parameters.df,
   
   ncores <- parallel::detectCores() - 1
   cl <- parallel::makeCluster(ncores, setup_strategy = "sequential")
-  # doParallel::registerDoParallel(cl)
-  doSNOW::registerDoSNOW(cl)
   
   # Create a parallel backend:
   if(!progress){
