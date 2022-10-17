@@ -77,6 +77,7 @@ cellid_parameter_descriptions <- function(list_format=T){
 #' @param output_coords_to_tsv Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (CellID option '-m').
 #' @param save.logs Set to TRUE to save CellID logs to text files, into the output directory of their corresponding position.
 #' @param verbose Print startup messages.
+#' @param progress Print a progress bar. Requires the \code{doSNOW} package.
 #' @return A dataframe with one column indicating the issued commands and exit codes (in the command.output column). If the execution was sucessful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the CellID output, typically located at the images path.
 # @examples
 # cell(cell.args, path = path)
@@ -94,7 +95,8 @@ cell2 <- function(arguments,
                   fill_interior_pixels = F,
                   label_cells_in_bf = F,
                   output_coords_to_tsv = F,
-                  save.logs = T, verbose=T){
+                  save.logs = T, verbose=T,
+                  progress=F){
   
   if(F){
     # For testing (NOT RUN)
@@ -162,15 +164,26 @@ cell2 <- function(arguments,
     parallel::clusterExport(cl, "arguments", envir = environment())
     
     # Register cluster
-    doParallel::registerDoParallel(cl)
+    if(!progress){
+      doParallel::registerDoParallel(cl)
+      opts <- list()
+    } else {
+      # Use registerDoSNOW for a progress bar
+      doSNOW::registerDoSNOW(cl)
+      # Setup the progressbar
+      ntasks <- length(positions)
+      pb <- txtProgressBar(max = ntasks, style = 3)
+      progress <- function(n) setTxtProgressBar(pb, n)
+      opts <- list(progress=progress)
+    }
   } else {
     # Choose sequential foreach operator
     `%do_op%` <- foreach::`%do%`
   }
   
   # Run CellID ####
-  # Iterate over positions  
-  sent_commands <- foreach::foreach(pos=positions) %do_op% {
+  # Iterate over positions
+  sent_commands <- foreach::foreach(pos=positions, .options.snow=opts) %do_op% {
     # Get arguments for current position
     arguments_pos <- arguments[arguments$pos == pos,]
     

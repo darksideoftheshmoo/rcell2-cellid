@@ -2,6 +2,8 @@
 #' 
 #' @details 
 #' 
+#' Requires the \code{doSNOW} package.
+#' 
 #' A few "summary" quantities are calculated for each run:
 #' 
 #' fft: mean fft.stat

@@ -36,6 +36,7 @@ parameter_scan(
     \item{\code{output_coords_to_tsv}}{Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (CellID option '-m').}
     \item{\code{save.logs}}{Set to TRUE to save CellID logs to text files, into the output directory of their corresponding position.}
     \item{\code{verbose}}{Print startup messages.}
+    \item{\code{progress}}{Print a progress bar. Requires the \code{doSNOW} package.}
   }}
 }
 \value{
@@ -45,6 +46,8 @@ Data frame with the results. To use it, have a look at the rmarkdown template bu
 Scan parameters for CellID
 }
 \details{
+Requires the \code{doSNOW} package.
+
 A few "summary" quantities are calculated for each run:
 
 fft: mean fft.stat

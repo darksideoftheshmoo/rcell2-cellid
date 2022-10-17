@@ -15,7 +15,8 @@ cell2(
   label_cells_in_bf = F,
   output_coords_to_tsv = F,
   save.logs = T,
-  verbose = T
+  verbose = T,
+  progress = F
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ cell2(
 \item{save.logs}{Set to TRUE to save CellID logs to text files, into the output directory of their corresponding position.}
 
 \item{verbose}{Print startup messages.}
+
+\item{progress}{Print a progress bar. Requires the \code{doSNOW} package.}
 }
 \value{
 A dataframe with one column indicating the issued commands and exit codes (in the command.output column). If the execution was sucessful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the CellID output, typically located at the images path.
