@@ -1268,18 +1268,19 @@ NULL
 #' @import dplyr
 #' @param images.path Path to the directory containing the images output by Meramorph MDA.
 #' @param rename.path Path to the target directory. If \code{NULL} (the default) images are sent to a "renamed" subdirectory of \code{images.path}.
-#' @param rename.function Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function.
-#' @param identifier.pattern Regex defining gropus for each part of the name.
-#' @param identifier.info Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. Names in this vector are prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).
-#' @param channel.maping.df A dataframe with two columns: "ch" holding the original channel names in the source files, and "ch.name" with the new names for each channel.
+#' @param rename.function Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function. Set to \code{NULL} to disable renaming (i.e. for testing purposes).
+#' @param identifier.pattern Regex defining the iamge file pattern, with gropus for identifier in the file names.
+#' @param identifier.info Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. If an element in the vector is named, the name is prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).
+#' @param channel.maping.df A dataframe with two columns: "ch" holding the original channel names in the source files (coerced to character), and "ch.name" with the new names for each channel.
 #' @param file.ext File extension to use in the final file name, such as: ".tif".
-#' @param skip.thumbs.pat A regex pattern to filter files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.
-#' @param cleanup.first Set to TRUE to remove all files within the \code{rename.path} directory. FALSE by default.
+#' @param skip.thumbs.pat A regex pattern to filter out files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.
+#' @param cleanup.first Set to TRUE to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.
+#' @param file.names A charachter vector of image names to be processed; as an alternative to listing files in \code{images.path}. Ignored if \code{images.path} is provided.
 #' @param ... Further arguments passed onto \code{rename.function}.
 #' @export
 #' @return Invisibly returns a list with the rename.path (output directory), and a data.frame with the output from the renaming function (see the \code{rename.function} parameter's description) and name conversions.
 #' @import stringr dplyr
-rename_mda <- function(images.path, 
+rename_mda <- function(images.path = NULL, 
                        rename.path = NULL, 
                        rename.function = file.symlink, 
                        identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$", 
@@ -1288,28 +1289,42 @@ rename_mda <- function(images.path,
                        file.ext=".tif",
                        skip.thumbs.pat = ".*thumb.*",
                        cleanup.first=F,
+                       file.names = NULL,
                        ...
                        ){
   
   # Checks
-  stopifnot(all(identifier.info %in% c("ch", "pos", "t.frame")))
+  if(is.null(images.path) & is.null(file.names)) 
+    stop("rename_mda: error, either images.path or file.names must be specified.")
+  if( !(all(identifier.info %in% c("ch", "pos", "t.frame")) && length(identifier.info) == 3) )
+    stop("rename_mda: error, malformed identifier.info.")
   
   # Get file names
-  image.files <- dir(images.path, pattern = identifier.pattern, full.names = T)
+  if(!is.null(images.path))
+    image.files <- dir(images.path, pattern = identifier.pattern, full.names = T)
+  else
+    image.files <- file.names
   
   # Skip thumbnails
   if(!is.null(skip.thumbs.pat)) image.files <- image.files[!grepl(skip.thumbs.pat, basename(image.files))]
   
-  # Extract groups
-  images.info <- stringr::str_match(basename(image.files), identifier.pattern)[,-1]
+  # Check if we got something
+  if(length(image.files) == 0){
+    stop(paste0(
+      "rename_mda: error, no file names were retrieved from directory ",
+      "'", images.path, "' ",
+      "using pattern: '", gsub("([\\])","\\\\\\\\", identifier.pattern), "'"
+    ))
+  }
   
-  # Cleanup and convert to dataframe
-  images.info <- apply(images.info, 2, as.numeric)
-  colnames(images.info) <- identifier.info
-  images.info <- as.data.frame(images.info)
+  # Extract groups
+  images.info <- stringr::str_match(basename(image.files), identifier.pattern)[,-1,drop=F]
+  # Cnvert to dataframe
+  images.info <- setNames(data.frame(images.info), identifier.info)
   
   # Checks
-  stopifnot(nrow(channel.maping.df) == length(unique(images.info$ch)))
+  channel.maping.df$ch <- as.character(channel.maping.df$ch)
+  stopifnot(all(unique(images.info$ch) %in% channel.maping.df$ch))
   
   # Join extracted image info to the channel mapping data.frame
   images.info <- dplyr::left_join(images.info, channel.maping.df, by = "ch")
@@ -1319,18 +1334,24 @@ rename_mda <- function(images.path,
   images.info$file <- image.files
   
   # Check if rename path was specified, use the images path otherwise
+  if(is.null(images.path)) rename.path <- ""
   if(is.null(rename.path)) rename.path <- paste0(images.path, "/renamed")
   
-  if(cleanup.first){
-    # Delete all files recursively
-    unlink(paste0(rename.path, "/*"), recursive = T)
+  # Skip cleanup it images.path was not provided
+  if(!is.null(images.path)){
+    if(cleanup.first){
+      # Delete all files recursively
+      unlink(paste0(rename.path, "/*"), recursive = T)
+    }
+    
+    # Create output directory
+    dir.create(rename.path, showWarnings = F, recursive = T)
+    
+    # Make new names and paths
+    images.info$rename.path <- rename.path
   }
   
-  # Create output directory
-  dir.create(rename.path, showWarnings = F, recursive = T)
-  
   # Make new names and paths
-  images.info$rename.path <- rename.path
   images.info$rename.file <- paste0(
     
     # ifelse(nzchar(names(identifier.info[identifier.info=="ch"])), "_", ""),
@@ -1349,20 +1370,25 @@ rename_mda <- function(images.path,
   )
   
   # Rename
-  status <- rename.function(from = normalizePath(images.info$file), 
-                            to = paste0(rename.path, "/", images.info$rename.file),
-                            ...)
+  if(!is.null(rename.function)){
+    status <- rename.function(from = normalizePath(images.info$file), 
+                              to = paste0(rename.path, "/", images.info$rename.file),
+                              ...)
+    # Add status column to image into
+    images.info$status <- status
+    
+    # Check
+    if(any(!status)) 
+      warning("rename_mda: At least some files were not renamed, see warnings!")
+    else
+      cat(paste("rename_mda: It seems the renaming went well :) check your output directory at:", rename.path))
+  } else {
+    cat(paste("rename_mda: rename.function set to NULL; no images were renamed.", rename.path))
+  }
   
-  # Add status column to image into
-  images.info$status <- status
-  
-  if(any(!status)) 
-    warning("At least some files were not renamed, see warnings!")
-  else
-    cat(paste("It seems the renaming went well :) check your output directory at:", rename.path))
-  
-  return(invisible(list(
+  # Return mapping
+  return(list(
     rename.path=rename.path,
     status=images.info
-  )))
+  ))
 }

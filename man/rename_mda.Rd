@@ -5,7 +5,7 @@
 \title{Image file renamer for Metamorph MDA}
 \usage{
 rename_mda(
-  images.path,
+  images.path = NULL,
   rename.path = NULL,
   rename.function = file.symlink,
   identifier.pattern = ".*_w(\\\\d).*_s(\\\\d{1,2})_t(\\\\d{1,2}).TIF$",
@@ -14,6 +14,7 @@ rename_mda(
   file.ext = ".tif",
   skip.thumbs.pat = ".*thumb.*",
   cleanup.first = F,
+  file.names = NULL,
   ...
 )
 }
@@ -22,19 +23,21 @@ rename_mda(
 
 \item{rename.path}{Path to the target directory. If \code{NULL} (the default) images are sent to a "renamed" subdirectory of \code{images.path}.}
 
-\item{rename.function}{Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function.}
+\item{rename.function}{Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function. Set to \code{NULL} to disable renaming (i.e. for testing purposes).}
 
-\item{identifier.pattern}{Regex defining gropus for each part of the name.}
+\item{identifier.pattern}{Regex defining the iamge file pattern, with gropus for identifier in the file names.}
 
-\item{identifier.info}{Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. Names in this vector are prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).}
+\item{identifier.info}{Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. If an element in the vector is named, the name is prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).}
 
-\item{channel.maping.df}{A dataframe with two columns: "ch" holding the original channel names in the source files, and "ch.name" with the new names for each channel.}
+\item{channel.maping.df}{A dataframe with two columns: "ch" holding the original channel names in the source files (coerced to character), and "ch.name" with the new names for each channel.}
 
 \item{file.ext}{File extension to use in the final file name, such as: ".tif".}
 
-\item{skip.thumbs.pat}{A regex pattern to filter files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.}
+\item{skip.thumbs.pat}{A regex pattern to filter out files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.}
 
-\item{cleanup.first}{Set to TRUE to remove all files within the \code{rename.path} directory. FALSE by default.}
+\item{cleanup.first}{Set to TRUE to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.}
+
+\item{file.names}{A charachter vector of image names to be processed; as an alternative to listing files in \code{images.path}. Ignored if \code{images.path} is provided.}
 
 \item{...}{Further arguments passed onto \code{rename.function}.}
 }

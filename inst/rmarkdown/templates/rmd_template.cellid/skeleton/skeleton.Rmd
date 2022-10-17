@@ -71,7 +71,9 @@ If you already have an appropriate dataset, specify the path like this:
 data.dir <- "/path/to/your/data"
 ```
 
-Otherwise, install and use the "examples" package:
+Otherwise, install and use the "examples" package.
+
+First, get the example data:
 
 ```{r}
 if(!require(remotes)){
@@ -87,9 +89,10 @@ if(!require(rcell2.examples)){
 # List available datasets:
 dir(system.file("extdata/sample_datasets/", package = "rcell2.examples"))
 ```
+Second, get the path to the chosen example dataset:
 
 ```{r}
-# Choose one set of example images:
+# Example: Choose one set of example images:
 data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
                         package = "rcell2.examples")
 
@@ -301,32 +304,98 @@ This section has detailed explanations and usage examples of the tools in `rcell
 The following sections may help improve the result of the segmentation,
 to catch severe issues early on.
 
+### Image file names
+
+Images are assumed to be in a single directory, and have names with identifiers for:
+
+* Imaging channel (birghtfield, transmission, fluorescence, z-slice, etc.).
+* Microscope position (*pos*).
+* Time (*t.frame*, optional).
+
+Cell-ID uses the first 3 letters of the file name to group imaging channels.
+**This is mandatory**. If your image set does not conform initially, it can be
+renamed (or symlinked) using rcell2's `rename_mda`, with custom arguments.
+
+For example, file names for a 2-position time course experiment
+are expected to have the following appearance:
+
+```
+BF_Position001_time01.tif
+BF_Position001_time02.tif
+TFP_Position001_time01.tif
+TFP_Position001_time02.tif
+YFP_Position001_time01.tif
+YFP_Position001_time02.tif
+BF_Position002_time01.tif
+BF_Position002_time02.tif
+TFP_Position002_time01.tif
+TFP_Position002_time02.tif
+YFP_Position002_time01.tif
+YFP_Position002_time02.tif
+```
+
+The `rcell2` packages rely on regular expressions to gather images and extract 
+metadata from their file names (i.e. channel, position, and time frame.)
+
+The file list will be recognized by a specific regular expression (regex).
+A regex matching these files can be `^(BF|TFP)_Position(\\d+)_time(\\d+).tif$`;
+note that it has **3 capturing groups** (suff between parentheses).
+The regex as a whole is used to select images from a directory (filtering out
+other files) and the capturing groups are used to extract the metadata.
+
 ### Renaming Metamorph MDA images
 
-Using Metamorph's _Multi-dimensional acquisition_ (MDA for short), may use file 
+Metamorph's _Multi-dimensional acquisition_ (MDA for short) may use file 
 names different from the usual style (i.e `far6_w2LED-BF--YFPcube--cam_s7_t2.TIF` 
 instead of `BF_Position07_time02.tif`, and so on).
 
-The `rename_mda` function renames those weird file names, making them compatible
-with `rcell2`'s defaults.
-
-```{r}
-images.path <- ""  # Path to the images produced by MetaMorph's MDA.
-rename_mda(images.path)
-```
-
-See `?rename_mda` for extra options.
+The `rename_mda` function renames those files names, making them compatible
+with `rcell2`'s defaults. See `?rename_mda` for extra options.
 
 The defaults are useful for a three channel experiment, 
 and file names looking like this: `far6_w2LED-BF--YFPcube--cam_s7_t2.TIF`.
 
+A preview of how files will be renamed can be generated:
+
 ```{r}
-formals(rename_mda)
+# Choose a sample file name (one or many)
+one.filename <- "far6_w2LED-BF--YFPcube--cam_s7_t2.TIF"
+
+# Pass it to rename_mda, 
+# setting rename.function to NULL
+# (to avoid actually copying files).
+rename_mda(rename.function = NULL, 
+           file.names = one.filename) %>% 
+  # Get the info we're interested in
+  .$status %>% select(file, rename.file)
 ```
 
-These are easily adaptable to other use cases, for example you may change `channel.dict` to include other channels, in a different order.
+To run the function on all images, provide the path to the images director.
 
-Note that the `ch` field must match the corresponding capture group in `identifier.pattern` exactly.
+A _dummy_ example follows:
+
+```{r}
+# Create a dummy file
+dir.create("/tmp/images")
+writeLines("", "/tmp/images/far6_w2LED-BF--YFPcube--cam_s7_t2.TIF")
+
+# Rename files
+images.path <- "/tmp/images"  # Path to the images produced by MetaMorph's MDA.
+rename_mda(images.path)
+```
+
+Check output:
+
+```{r}
+dir(images.path, recursive = T)
+```
+
+The defaults are easily adaptable to other use cases. 
+To use the function with different file name patterns, adjust `identifier.pattern`,
+`identifier.info`, and `channel.maping.df`. See `?rename_mda` for details.
+
+> Note that the `ch` field in `channel.maping.df` must match exactly the
+> text captured by the channel group in the `identifier.pattern` regex.
 
 ### Check XY stage coordinates
 
