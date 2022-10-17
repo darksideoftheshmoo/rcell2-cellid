@@ -11,11 +11,14 @@ output:
     number_sections: false
     smooth_scroll: false
     code_folding: show  # hide
+    code_download: true
   pdf_document:
     latex_engine: xelatex
     toc: true
     toc_depth: 4
     number_sections: true
+editor_options:
+  chunk_output_type: inline
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 urlcolor: blue
 knit: (function(inputFile, encoding) {
@@ -27,10 +30,16 @@ knit: (function(inputFile, encoding) {
 
 ```{r setup, include=FALSE}
 # Set chunk options
-knitr::opts_chunk$set(echo = T, message = F, out.width = "100%")
+knitr::opts_chunk$set(echo = T, message = F, out.width = "100%",
+                      # https://stackoverflow.com/a/15081230
+                      comment=NA)
                       # https://yihui.org/knitr/options/#chunk-options
                       # https://stackoverflow.com/a/66753995
                       # tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+# Remove comments from printed text (https://stackoverflow.com/a/44729363)
+# knitr::opts_chunk$set(tidy = TRUE, 
+#                       tidy.opts = list(comment = FALSE))
+
 
 # Set knit options
 knitr::opts_knit$set(root.dir = here::here())
@@ -114,7 +123,7 @@ data.dir <- result$rename.path
 
 Optional: customize parameters for CellID (details below).
 
-```{r eval=F}
+```{r}
 parameters.txt <- rcell2.cellid::parameters_write(rcell2.cellid::parameters_default())
 ```
 
@@ -175,7 +184,7 @@ open another virtual hyperstack for the output images, and browse them in-sync.
 
 Run CellID with the built-in executable:
 
-```{r}
+```{r eval=F}
 cell2.out <- 
   rcell2.cellid::cell2(arguments = cellid.args,
                        # progress = T,  # Progress bar (requires doSnow).
@@ -186,6 +195,12 @@ cell2.out <-
 # Check the output messages:
 cell2.out
 ```
+
+```{r include=F}
+# saveRDS(cell2.out, file = "inst/extdata/cell2.out.RDS")
+cell2.out <- readRDS(file = "inst/extdata/cell2.out.RDS")
+```
+
 
 ### Load the output
 
@@ -885,10 +900,15 @@ is used.
 <!-- El parámetro `cell.command` es el path al ejecutable. En esta versión de `rcell2.cellid`, -->
 <!-- el binario se compila durante la instalación y se usa por defecto. -->
 
-```{r}
-rcell2.cellid::cell2(arguments = cellid.args,
-                     # dry = T,
-                     n_cores = 2)
+```{r eval=F}
+cell2.result <- rcell2.cellid::cell2(arguments = cellid.args,
+                                     # dry = T,
+                                     n_cores = 2)
+```
+
+```{r include=F}
+# saveRDS(cell2.result, file = "inst/extdata/cell2.result.RDS")
+cell2.result <- readRDS(file = "inst/extdata/cell2.result.RDS")
 ```
 
 > `n_cores` can be set to the number of CPU cores you want to use to parallelize
@@ -992,18 +1012,18 @@ Define working paths for parameter testing:
 * One with the images.
 * Another one for testing.
 
-```{r eval=F}
+```{r}
 # The output of the parameter scan will be saved here:
 test.dir <- "/tmp/images_directory/test.dir"
 
 # Or use the example images
-data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
+data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
                         package = "rcell2.examples")
 ```
 
 Setup arguments and patterns as usual (if not done already):
 
-```{r eval=F}
+```{r}
 # Default value: all channels, no z-stack.
 arguments.file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
 
@@ -1018,7 +1038,7 @@ For each parameter variation, we need a new parameters file.
 
 In this example, only `background_reject_factor` is scanned:
 
-```{r eval=F}
+```{r}
 parameters.list <- rcell2.cellid::parameters_default(
   background_reject_factor = seq(from=0, to=1.5, by = 0.3)
 )
@@ -1028,7 +1048,7 @@ parameters.list$background_reject_factor
 
 The list must now be expanded into a data.frame:
 
-```{r eval=F}
+```{r}
 parameters.df <- expand.grid(parameters.list)
 
 parameters.df
@@ -1043,7 +1063,7 @@ Choose which image sets in `cellid.args` you wish to use for the parameter scan.
 For example, choose some *positions* (image sets) and *t.frame*s (time frames)
 to restrict the image test set to only some of them.
 
-```{r eval=F}
+```{r}
 test.pos = cellid.args$pos %>% unique()
 test.frames = cellid.args$t.frame %>% unique()
 
@@ -1066,10 +1086,16 @@ Just run:
 ```{r eval=F}
 scan.results <- 
   parameter_scan(parameters.df = parameters.df,
-                 scan.arguments = cellid.args.scan)
+                 scan.arguments = scan.arguments, 
+                 test.dir = test.dir)
 ```
 
 > Have a look at the function's source code if you like, its hopefully well commented.
+
+```{r include=F}
+# saveRDS(scan.results, file = "inst/extdata/scan.results.RDS")
+scan.results <- readRDS(file = "inst/extdata/scan.results.RDS")
+```
 
 #### Plot summary
 
@@ -1088,13 +1114,13 @@ A few of combinations these are plotted below.
 
 First get the output dataframe:
 
-```{r eval=F}
+```{r}
 results.bound <- scan.results$results.bound
 ```
 
 Plot:
 
-```{r eval=F}
+```{r}
 results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
   left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
   ggplot() +
@@ -1115,7 +1141,7 @@ results.bound %>% filter(channel == "BF.out", t.frame == 0) %>%
 
 Plot:
 
-```{r eval=F}
+```{r}
 results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
   left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
   ggplot() +
@@ -1150,7 +1176,7 @@ The stacks are annotated with the parameters used for each segmentation, and oth
 
 A copy-paste-ready ImageJ Macro will be printed out, to easily load them as virtual Hyperstacks in ImageJ.
 
-```{r eval=F}
+```{r}
 stack.paths <- 
   make_scan_stacks(scan.results = scan.results, 
                    test.dir = test.dir, 
@@ -1163,11 +1189,15 @@ Now copy paste the macro to a new macro window in ImageJ, and hit run! The stack
 
 Paths and macros are saved in the output:
 
-```{r eval=F}
+```{r}
 names(stack.paths)
+```
 
+```{r}
 stack.paths$imagej.macros
+```
 
+```{r}
 stack.paths$stack.paths
 ```
 
@@ -1181,13 +1211,9 @@ elongated _chorizos_ on the sides of cells.
 ```{r eval=F}
 parameters.list <- rcell2.cellid::parameters_default(
   background_reject_factor = 0.8,
-  
   max_split_over_minor = 0.6,
-  
   max_dist_over_waist = 6,
-  
   max_pixels_per_cell = 3500,
-  
   treat_brightfield_as_fluorescence_also = T
 )
 ```
