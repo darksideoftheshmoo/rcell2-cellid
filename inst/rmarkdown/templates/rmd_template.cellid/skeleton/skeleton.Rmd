@@ -249,15 +249,19 @@ cell.boundaries %>%
   facet_wrap(~pos)
 ```
 
-We recommend saving the current state at this point:
+#### Save and restore progress
+
+We recommend saving the current state at this point.
 
 ```{r}
+# Save all variables to a Rdata file.
 save.image("01-segmentation_results.Rdata")
 ```
 
 The workspace image may be restored later on:
 
 ```{r}
+# Restore all variables from the Rdata file.
 load("01-segmentation_results.Rdata")
 ```
 
@@ -267,7 +271,7 @@ You may want to check out the Shiny/Magick rcell2 analisys package:
 
 ```{r}
 # rcell2's image manipulation and cytometry package
-if(!require(rcell2.magick)){
+if(!requireNamespace("rcell2.magick")){
    devtools::install_github("darksideoftheshmoo/rcell2", ref = "rcell2.magick")
 }
 
@@ -285,18 +289,26 @@ rcell2.magick::cellSpreadPlot(cdata, images)
 rcell2.magick::shinyCell(cdata, paths = images)
 ```
 
+> Images will be displayed by default at RStudio's viewer pane.
+> Use `magickForKnitr` and `include_graphics` to include them in this notebook.
+
 # Full usage guide
+
+This section has detailed explanations and usage examples of the tools in `rcell2.cellid`.
 
 ## Preprocessing
 
 The following sections may help improve the result of the segmentation,
-and to catch severe issues early on.
+to catch severe issues early on.
 
 ### Renaming Metamorph MDA images
 
-Using Metamorph's _Multi-dimensional acquisition_ (MDA for short), may use file names different from the usual style (i.e `YFP_Position01_time1.tif`, and so on).
+Using Metamorph's _Multi-dimensional acquisition_ (MDA for short), may use file 
+names different from the usual style (i.e `far6_w2LED-BF--YFPcube--cam_s7_t2.TIF` 
+instead of `BF_Position07_time02.tif`, and so on).
 
-`rename_mda` will help you renaming those weird file names into something more useful.
+The `rename_mda` function renames those weird file names, making them compatible
+with `rcell2`'s defaults.
 
 ```{r}
 images.path <- ""  # Path to the images produced by MetaMorph's MDA.
@@ -305,7 +317,8 @@ rename_mda(images.path)
 
 See `?rename_mda` for extra options.
 
-The defaults are useful for a three channel experiment, and file names looking like this: `far6_w2LED-BF--YFPcube--cam_s7_t2.TIF`.
+The defaults are useful for a three channel experiment, 
+and file names looking like this: `far6_w2LED-BF--YFPcube--cam_s7_t2.TIF`.
 
 ```{r}
 formals(rename_mda)
