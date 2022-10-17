@@ -10,7 +10,7 @@ output:
     toc_depth: 4
     number_sections: false
     smooth_scroll: false
-    code_folding: hide
+    code_folding: show  # hide
   pdf_document:
     latex_engine: xelatex
     toc: true
@@ -20,7 +20,7 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 urlcolor: blue
 knit: (function(inputFile, encoding) {
   rmarkdown::render(inputFile, encoding = encoding, output_dir = "output/renders") })
-bibliography: references.bib
+# bibliography: references.bib
 ---
 
 <!-- Download a copy of this file with rcell2.cellid::get_workflow_template_cellid() -->
@@ -89,7 +89,7 @@ if(!require(rcell2.examples)){
 # List available datasets:
 dir(system.file("extdata/sample_datasets/", package = "rcell2.examples"))
 ```
-Second, get the path to the chosen example dataset:
+Second, get the path to the chosen example dataset and check if the files are there:
 
 ```{r}
 # Example: Choose one set of example images:
@@ -102,16 +102,20 @@ dir(data.dir)
 
 ### Prepare arguments for Cell-ID
 
-Optional: uncomment the following if you have images from Metamorph's MDA, you may need to rename them.
+Optional: use the following if you have images from Metamorph's MDA, you may need to rename them.
 
-```{r}
-# rename_mda(images.path = data.dir)
+```{r eval=F}
+# Rename images (uses symlinks by default)
+result <- rename_mda(images.path = data.dir)
+
+# Get the path where the renamed images were saved
+data.dir <- result$rename.path
 ```
 
 Optional: customize parameters for CellID (details below).
 
-```{r}
-# parameters.txt <- rcell2.cellid::parameters_write(rcell2.cellid::parameters_default())
+```{r eval=F}
+parameters.txt <- rcell2.cellid::parameters_write(rcell2.cellid::parameters_default())
 ```
 
 Prepare image paths for CellID, with a default "file.pattern":
@@ -743,23 +747,6 @@ parameters.list <-
 parameters.list$max_split_over_minor
 ```
 
-But, here is a valid, hand-made parameter list, with the same defaults:
-
-```{r}
-parameters.list <- list(
-  max_split_over_minor = 0.50,
-  max_dist_over_waist = 8.00,
-  max_pixels_per_cell = 2000,
-  min_pixels_per_cell = 75,
-  background_reject_factor = 0.75,
-  tracking_comparison = 0.20,
-  align_individual_cells = F,
-  align_fl_to_bf = T,
-  image_type = "brightfield",
-  bf_fl_mapping = "list"
-  )
-```
-
 Parameters must be written to a `parameters.txt` plain text file with the proper syntax,
 which Cell-ID will read later on.
 
@@ -782,6 +769,22 @@ Revisemos el contenido del `parameters.txt` que generamos recién:
 writeLines(readLines(parameters.txt))
 ```
 
+Here is a valid, hand-made parameter list, with the same defaults:
+
+```{r eval=F}
+parameters.list <- list(
+  max_split_over_minor = 0.50,
+  max_dist_over_waist = 8.00,
+  max_pixels_per_cell = 2000,
+  min_pixels_per_cell = 75,
+  background_reject_factor = 0.75,
+  tracking_comparison = 0.20,
+  align_individual_cells = F,
+  align_fl_to_bf = T,
+  image_type = "brightfield",
+  bf_fl_mapping = "list"
+  )
+```
 
 ### Images and Arguments
 
@@ -792,45 +795,52 @@ Define the path of the original images:
 data.dir <- "/path/to/your/data"
 
 # Or use the example images (requires "rcell2.examples", see first example above).
-data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
+data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
                         package = "rcell2.examples")
 
 # List files
 dir(data.dir)
 ```
 
-`arguments()` produce un data.frame con información de las fotos para ejecutar CellID. Se genera con la función `arguments`.
+The `arguments` function outputs a data.frame with information from images, 
+which is needed to run Cell-ID.
 
-La opción más importante es `file.pattern` que es una expresión regular para encontrar archivos de imágenes en el `path`.
+The key parameter is `file.pattern`, a regular expression used to find image
+files in the `data.dir` path.
 
-Por defecto es:
+By default, `arguments` uses:
 
     "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
 
-Entre paréntesis están los "grupos de captura" de la expresión regular, donde se espera que esté la siguiente información:
+Enclosed in parentheses are the "capture groups" of the regular expression.
+These delimit the parts of the file name which contain identifiers for 
 
-1. Canal.
-2. Número de posición.
-3. Número de tiempo.
+1. Imaging channel.
+2. Stage position index.
+3. Time-frame index.
 
-Para no usar tiempo solo hay que borrar la parte del tiempo, dejando un paréntesis vacío en su lugar `()`:
+If your experiment has a single time frame, and it is not part of the file names,
+the content of the corresponding capturing group can be deleted (leaving the
+empty parentesis in place):
 
     "^(BF|[A-Z]FP)_Position(\\d+)().tif$"
 
-Se puede "filtrar" posiciones y tiempos directo desde la regex, o posteriormente usando las funciones de R usuales. Para usar solo la posicion 2, y los tiempos 4, 2 y 3, la regex sería:
+The regular expression can be used to select or filter out sets of images (
+though it will be often easier to use R's tool for this). To select only position
+with index "2", and times 2, 3 and 4, use:
 
-    "^(BF|[A-Z]FP)_Position(?0+2)_time(?0+[423]).tif$"
+    "^(BF|[A-Z]FP)_Position(0*2)_time(0*[423]).tif$"
 
-Noten el `0+?` enfrente del número, que indica que puede haber un cero o más frente al numerito de posición o tiempo en el nombre del archivo.
+> Note the `0*` in front of numbers. This indicates that there might me be leading
+> zeros in front of the position and time identifiers.
 
 #### Input file pattern
 
-Su `file.pattern` regex puede variar, por ejemplo si no hay tiempo y solo hay BFs y TFPs, usarian:
+Adjust file patterns in `rcell2.cellid::arguments`. Go through the function help
+page to learn about their parameters.
 
-* `file.pattern = "^(BF|TFP)_Position(\\d+)().tif$"`
-
-Adjust file patterns in `rcell2.cellid::arguments` and `rcell2.cellid::cell.load.alt`.
-Go through their help pages to learn about their parameters.
+> **Important**: the patterns used in `arguments` must match the ones used in
+> `cell.load.alt` when loading Cell-ID's output (later on).
 
 Original images file pattern examples; choose one and comment the others:
 
@@ -857,7 +867,7 @@ cellid.args <- rcell2.cellid::arguments(data.dir,
 cellid.args
 ```
 
-Pueden seleccionar un subset de imagenes para procesar:
+Yo may filter out or select certain image sets at this stage:
 
 ```{r}
 cellid.args %>% filter(pos == 2, t.frame %in% c(4,2,3))
@@ -865,20 +875,33 @@ cellid.args %>% filter(pos == 2, t.frame %in% c(4,2,3))
 
 ### Run Cell-ID
 
-La función `cell2` genera comandos para llamar a CellID por línea de comandos y los ejecuta en paralelo.
+The `cell2` function generates system commands to run Cell-ID,
+and executes them in parallel by default.
+<!-- La función `cell2` genera comandos para llamar a CellID por línea de comandos y los ejecuta en paralelo. -->
 
-La opción `dry = T` indica a la función hacer "todo" menos ejecutar CellID, e imprime los comandos que habría usado.
-
-Para correr los comandos, usen `dry = F` (aunque tambien pueden copiarlos y pegarlos en una terminal, si están en Linux o Mac OS).
-
-El parámetro `cell.command` es el path al ejecutable. En esta versión de `rcell2.cellid`,
-el binario se compila durante la instalación y se usa por defecto.
+The `cell.command` argument must be the path to the Cell-ID binary executable.
+In this version of `rcell2`, it defaults to `NULL`, and the intenal executable 
+is used.
+<!-- El parámetro `cell.command` es el path al ejecutable. En esta versión de `rcell2.cellid`, -->
+<!-- el binario se compila durante la instalación y se usa por defecto. -->
 
 ```{r}
 rcell2.cellid::cell2(arguments = cellid.args,
                      # dry = T,
                      n_cores = 2)
 ```
+
+> `n_cores` can be set to the number of CPU cores you want to use to parallelize
+> the segmentation (relying on `foreach`). It defaults to use all but one of the
+> available cores.
+
+> If `dry = T` is set, the input will be processed but Cell-ID will not be run.
+> This may be useful to do a final check on the commands that would have been run,
+> before actually running the segmentation.
+<!-- La opción `dry = T` indica a la función hacer "todo" menos ejecutar CellID, e imprime los comandos que habría usado. -->
+> The commands in the output can also be run mannualy from a terminal, which
+> can be useful for debugging.
+<!-- Para correr los comandos, usen `dry = F` (aunque tambien pueden copiarlos y pegarlos en una terminal, si están en Linux o Mac OS). -->
 
 ### Output data
 
