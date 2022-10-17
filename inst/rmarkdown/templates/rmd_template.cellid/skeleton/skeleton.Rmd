@@ -197,7 +197,7 @@ cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
 
 Function `load_cell_data` from `rcell2` can load those tables as well.
 
-```{r}
+```{r eval=F}
 # rcell2's main analysis package
 if(!require(rcell2)){
    devtools::install_github("darksideoftheshmoo/rcell2")
@@ -207,11 +207,11 @@ if(!require(rcell2)){
 cell_data <- rcell2::load_cell_data(path = data.dir)
 ```
 
+`rcell2` can also load the cell boundaries and interior pixels coordinates,
+if either `output_coords_to_tsv` or `encode_cellID_in_pixels` were set to `TRUE`
+when Cell-ID was run.
 
-Cell boundaries and interior pixels coordinates can be loaded with `cell.load.boundaries`,
-also provided by the `rcell2` package.
-
-> This data is only available if `cell2` has run with `output_coords_to_tsv = T`.
+To load the boundary pixels, use the `cell.load.boundaries`:
 
 ```{r}
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
@@ -221,6 +221,9 @@ cell.boundaries <-
                                pixel.type = "b"
                                )
 ```
+
+> This data is only available if `cell2` was run with `output_coords_to_tsv = T`.
+
 
 ### Understanding the data
 
@@ -256,14 +259,14 @@ cell.boundaries %>%
 
 We recommend saving the current state at this point.
 
-```{r}
+```{r eval=F}
 # Save all variables to a Rdata file.
 save.image("01-segmentation_results.Rdata")
 ```
 
 The workspace image may be restored later on:
 
-```{r}
+```{r eval=F}
 # Restore all variables from the Rdata file.
 load("01-segmentation_results.Rdata")
 ```
@@ -272,7 +275,7 @@ load("01-segmentation_results.Rdata")
 
 You may want to check out the Shiny/Magick rcell2 analisys package:
 
-```{r}
+```{r eval=F}
 # rcell2's image manipulation and cytometry package
 if(!requireNamespace("rcell2.magick")){
    devtools::install_github("darksideoftheshmoo/rcell2", ref = "rcell2.magick")
@@ -361,9 +364,7 @@ A preview of how files will be renamed can be generated:
 # Choose a sample file name (one or many)
 one.filename <- "far6_w2LED-BF--YFPcube--cam_s7_t2.TIF"
 
-# Pass it to rename_mda, 
-# setting rename.function to NULL
-# (to avoid actually copying files).
+# Pass it to rename_mda, setting rename.function to NULL (to avoid actually copying files).
 rename_mda(rename.function = NULL, 
            file.names = one.filename) %>% 
   # Get the info we're interested in
@@ -564,7 +565,7 @@ Here is a wrapper that does most of this for you, calling ImageJ headlessly.
 
 Prepare new image directory with the subset of BF files:
 
-```{r}
+```{r eval=F}
 # Choose your own path!
 data.dir <- "/path/to/your/data"
 
@@ -577,7 +578,7 @@ dir(data.dir)
 ```
 
 
-```{r}
+```{r eval=F}
 # Get image paths
 cellid.args <- 
   rcell2.cellid::arguments(path = data.dir,
@@ -600,14 +601,14 @@ file.symlink(from = normalizePath(bf.files),
 
 Run FFT filter:
 
-```{r}
+```{r eval=F}
 # This may take a while...
 imagej_fft_filter(pic.path = fft.bfs.dir)
 ```
 
 Symlink the rest of the images (fluorescence imgs) to the filtered directory:
 
-```{r}
+```{r eval=F}
 # Get all files
 all.files <- cellid.args %>% 
   with(paste0(path[1],"/", c(bf, image))) %>% unique()
@@ -623,7 +624,7 @@ if(length(all.files) == length(bf.files) + length(the.rest)){
 
 #### Parallel
 
-```{r}
+```{r eval=F}
 # Get image paths
 cellid.args <-
   rcell2.cellid::arguments(path = new.data.dir,
@@ -633,7 +634,7 @@ cellid.args <-
 
 Split the BF files by position, and symlink them to different subdirectories:
 
-```{r}
+```{r eval=F}
 cellid.args.split <- split(cellid.args, ~pos)
 
 fft.bfs.subdirs <- list()
@@ -660,7 +661,7 @@ fft.bfs.subdirs
 
 Run FFT filter in parallel, with one thread per subdirectory:
 
-```{r}
+```{r eval=F}
 n_cores <- parallel::detectCores() #- 1
 n_chunks <- length(fft.bfs.subdirs)
 
@@ -680,7 +681,7 @@ parallel::stopCluster(cl)
 
 Symlink filtered BFs in each sibdirectory to a single "filtered" images directory:
 
-```{r}
+```{r eval=F}
 filtered.bfs <- dir(paste0(fft.bfs.subdirs, "/filtered"), full.names = T)
 
 filtered.bfs.dir <- paste0(new.data.dir, "/fft_images_dataset/")
@@ -694,7 +695,7 @@ all(result)  # Check
 
 Symlink the rest of the images (fluorescence imgs) to the filtered directory:
 
-```{r}
+```{r eval=F}
 # Get all files
 fl.files <- cellid.args %>% 
   with(paste0(path, "/", image)) %>% unique()
@@ -706,20 +707,22 @@ result <- file.symlink(from = normalizePath(fl.files),
 all(result)  # Check
 ```
 
-Done!
+> Done!
 
 You can run CellID using this directory as a data.dir:
 
-```{r}
+```{r eval=F}
 normalizePath(filtered.bfs.dir)
 ```
 
-
 ## Segmentation
+
+In this section we will prepare and run Cell-ID.
 
 ### Parameters
 
-Configure the Cell-ID parameters that affect cell segmentation, tracking, and some corrections.
+First we must configure the Cell-ID parameters that affect cell segmentation, 
+tracking, and some corrections.
 
 #### Descriptions
 
@@ -877,27 +880,66 @@ rcell2.cellid::cell2(arguments = cellid.args,
                      n_cores = 2)
 ```
 
-### Load result
+### Output data
 
-Esto se hace con la función `rcell2::load_cell_data`:
+Cell-ID's output consists mainly of:
+
+* Segmented images (named with the `.out.tif` posfix).
+  * *Optional:* "BF.out" with identified binary masks.
+* Tables with single-cell quantitative information (from their morphology and fluorescence).
+  * *Optional:* Tables with the boundary and interior pixels of identified cell.
+
+#### Output file pattern
+
+File patterns for the image set may vary slightly; depending on what images were 
+provided as input, and the identifiers in their file names.
+
+The most common fluorescent channel pattern for `cell.load.alt` and `parameter_scan`
+are defined below. Choose one pattern and comment the others:
 
 ```{r}
-cell.data <- rcell2::load_cell_data(path = path)
+# Default value: all fluorescent tags, including Z-stack fluorescence channels.
+fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
+
+# Default: add "BF" as a possible channel (when CellID was run with bf_as_fl=TRUE)
+# fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+|BF)_Position\\d+_time\\d+.tif$"
+
+# Same as defualt, but without t.frame information.
+# fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+.tif$"
 ```
 
-Si no tienen ese paquete, pueden intentar con `cell.load.alt` (ver también una alternativa más abajo):
+#### Load the output
 
-> Nota: su `fluorescence.pattern` regex puede variar (ver la siguiente sección).
+The output tables can be loaded with `cell.load.alt`.
 
 ```{r}
-cell.data <- rcell2.cellid::cell.load.alt(path = path)
+# Load output
+cell.data <- rcell2.cellid::cell.load.alt(path = data.dir,
+                                          fluorescence.pattern=fluorescence.pattern)
+```
+
+> Note: your `fluorescence.pattern` regex may vary (read the previous section).
+
+Alternatively, function `load_cell_data` from `rcell2` can load those tables as well.
+
+```{r eval=F}
+# rcell2's main analysis package
+if(!require(rcell2)){
+   devtools::install_github("darksideoftheshmoo/rcell2")
+}
+
+# Load output
+cell_data <- rcell2::load_cell_data(path = data.dir)
 ```
 
 `rcell2` can also load the cell boundaries and interior pixels coordinates,
 if either `output_coords_to_tsv` or `encode_cellID_in_pixels` were set to `TRUE`
-when CellID was run:
+when Cell-ID was run.
 
-```{r}
+To load the boundary pixels, use the `cell.load.boundaries`:
+
+```{r eval=F}
+# Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
   rcell2::cell.load.boundaries(data.source = "masks.tsv",
                                arguments = cellid.args,
@@ -905,33 +947,16 @@ cell.boundaries <-
                                )
 ```
 
-#### Output file pattern
-
-File patterns may vary, depending on what images were provided as input, 
-and the identifiers in their file names.
-
-Fluorescent channel pattern examples for `cell.load.alt` and `parameter_scan`; 
-choose one and comment the others:
-
-```{r}
-# Default value: all fluorescent tags, including Z-stack fluorescence channels.
-load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
-
-# Default: add "BF" as a possible channel (when CellID was run with bf_as_fl=TRUE)
-# load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+|BF)_Position\\d+_time\\d+.tif$"
-
-# Same as defualt, but without t.frame information.
-# load.cell.channel.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+.tif$"
-```
+> This data is only available if `cell2` was run with `output_coords_to_tsv = T`.
 
 #### Variable descriptions
 
-To help understand CellID's output, we documented the columns in `cdata` in a function:
+To help understand CellID's output, we documented the descriptions of variables
+in `cell.data$data`. They are available through a function:
 
 ```{r}
 rcell2.cellid::cellid_output_descriptions(list.output = F)
 ```
-
 
 ### Tuning parameters
 
@@ -944,7 +969,7 @@ Define working paths for parameter testing:
 * One with the images.
 * Another one for testing.
 
-```{r}
+```{r eval=F}
 # The output of the parameter scan will be saved here:
 test.dir <- "/tmp/images_directory/test.dir"
 
@@ -955,7 +980,7 @@ data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
 
 Setup arguments and patterns as usual (if not done already):
 
-```{r}
+```{r eval=F}
 # Default value: all channels, no z-stack.
 arguments.file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
 
@@ -970,7 +995,7 @@ For each parameter variation, we need a new parameters file.
 
 In this example, only `background_reject_factor` is scanned:
 
-```{r}
+```{r eval=F}
 parameters.list <- rcell2.cellid::parameters_default(
   background_reject_factor = seq(from=0, to=1.5, by = 0.3)
 )
@@ -980,7 +1005,7 @@ parameters.list$background_reject_factor
 
 The list must now be expanded into a data.frame:
 
-```{r}
+```{r eval=F}
 parameters.df <- expand.grid(parameters.list)
 
 parameters.df
@@ -995,7 +1020,7 @@ Choose which image sets in `cellid.args` you wish to use for the parameter scan.
 For example, choose some *positions* (image sets) and *t.frame*s (time frames)
 to restrict the image test set to only some of them.
 
-```{r}
+```{r eval=F}
 test.pos = cellid.args$pos %>% unique()
 test.frames = cellid.args$t.frame %>% unique()
 
@@ -1015,7 +1040,7 @@ scan.arguments
 
 Just run:
 
-```{r}
+```{r eval=F}
 scan.results <- 
   parameter_scan(parameters.df = parameters.df,
                  scan.arguments = cellid.args.scan)
@@ -1040,13 +1065,13 @@ A few of combinations these are plotted below.
 
 First get the output dataframe:
 
-```{r}
+```{r eval=F}
 results.bound <- scan.results$results.bound
 ```
 
 Plot:
 
-```{r}
+```{r eval=F}
 results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
   left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
   ggplot() +
@@ -1067,7 +1092,7 @@ results.bound %>% filter(channel == "BF.out", t.frame == 0) %>%
 
 Plot:
 
-```{r}
+```{r eval=F}
 results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
   left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
   ggplot() +
@@ -1102,7 +1127,7 @@ The stacks are annotated with the parameters used for each segmentation, and oth
 
 A copy-paste-ready ImageJ Macro will be printed out, to easily load them as virtual Hyperstacks in ImageJ.
 
-```{r}
+```{r eval=F}
 stack.paths <- 
   make_scan_stacks(scan.results = scan.results, 
                    test.dir = test.dir, 
@@ -1115,7 +1140,7 @@ Now copy paste the macro to a new macro window in ImageJ, and hit run! The stack
 
 Paths and macros are saved in the output:
 
-```{r}
+```{r eval=F}
 names(stack.paths)
 
 stack.paths$imagej.macros
@@ -1130,7 +1155,7 @@ This parameter set was chosen for FFT-filtered BFs.
 Under 0.8 background_reject_factor, there were some "persisten" _ghosts_;
 elongated _chorizos_ on the sides of cells.
 
-```{r}
+```{r eval=F}
 parameters.list <- rcell2.cellid::parameters_default(
   background_reject_factor = 0.8,
   
