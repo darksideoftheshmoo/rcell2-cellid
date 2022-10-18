@@ -25,26 +25,40 @@ gcctest := $(shell gcc -M ../inst/checktiff.c >/dev/null 2>&1 && echo "yes" || e
 # Prepare tiff library links, acoording to "test" result.
 ifeq (nope, $(gcctest))
 $(info "Makevars: libtiff not found by the C pre-processor.")
-# Define our tiflibs "flag"
+# Define our tiflibs "flag", it will be read by Cell-ID's Makefile later on.
 tiflibs=tiflibs
-# Para incluir libtiff "estatico" (el libtiff.a en vez del libtiff.so) tengo que saber que otras flags "-l" necesito
-# Eso se puede consultar con: $ pkg-config --static --libs libtiff-4
-# Para dynamic linking se consulta con: $  pkg-config --libs libtiff-4
-# Para linkear libtiff "estatico" hay que poner dos cosas:
-## Linkear el path donde está el archivo "libtiff.a" así: "-L../../inst/tiff4/r_build/libtiff"
-## y luego la librería usando: "-ltiff"
+
+# Ahora hay que hacer los links necesarios, de tipo "dinamic" o "static".
+
+# Para dynamic linking, los requerimients se consultan con: $  pkg-config --libs libtiff-4
+## En Arch solo hace falta "-ltiff".
+## No uso este approach porque requeriría dejar el folder con libtiff.
+
+# Para incluir libtiff "estatico" (el libtiff.a en vez del libtiff.so) tengo que saber que
+## otras flags "-l" necesito
+## Eso se puede consultar con: $ pkg-config --static --libs libtiff-4
+## Luego para linkear libtiff "estatico" hay que poner dos cosas:
+## 1) Linkear el path donde está el archivo "libtiff.a" así: "-L../../inst/tiff4/r_build/libtiff"
+## 2) y luego la librería usando: "-ltiff"
 ## Además, según pkg-config, para linking necesito también: "-llzma -ljbig -ljpeg -lz -lm",
 ## y parece que también necesitaba: "-lzstd" y "-lwebp",
 ## pero en Windows alcanzó con "-ltiff -ljpeg -lz".
+
+# Define a variable with the library links, 
+# it will be read by Cell-ID's Makefile later on.
 tiflinks=-ltiff -llzma -ljbig -ljpeg -lwebp -lzstd -lz -lm
+
 else
 $(info "Makevars: libtiff found by the C pre-processor.")
 # Leave our 'tiflibs' flag as empty string:
 # http://aggregate.org/rfisher/Tutorials/Make/make5.html
+# It will be read by Cell-ID's Makefile later on.
 tiflibs=
 # Simple link to system's libtiff:
+# It will be read by Cell-ID's Makefile later on.
 tiflinks=-ltiff
 endif
+
 # Make test and links variables available in CellID's Makefile
 export tiflibs
 export tiflinks

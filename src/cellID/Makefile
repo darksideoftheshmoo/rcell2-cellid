@@ -17,6 +17,7 @@ CLIBScellid = -lm -lz
 $(info "Makefile got tiflibs < $(tiflibs) > with tiflinks < $(tiflinks) > from environment.")
 
 # Check test result and define appropriate links to the libtiff library.
+# Note: tiflibs es una variable exportada del Makevars.
 ifeq (tiflibs, ${tiflibs})
 $(info "Using bundled libtiff")
 # Ahora hay que hacer los links necesarios, de tipo "dinamic" o "static".
@@ -34,6 +35,8 @@ $(info "Using bundled libtiff")
 ## Además, según pkg-config, para linking necesito también: "-llzma -ljbig -ljpeg -lz -lm",
 ## y parece que también necesitaba: "-lzstd" y "-lwebp",
 ## pero en Windows alcanzó con "-ltiff -ljpeg -lz".
+
+# Note: tiflinks es una variable exportada del Makevars.
 CLIBStiff = -L../../inst/tiff4/lib ${tiflinks}
 # Además necesitamos los headers:
 CLIBStiffh = -I../../inst/tiff4/include
@@ -42,7 +45,9 @@ else
 $(info "Using system's libtiff")
 # Simple link to system's libtiff:
 CLIBStiff = ${tiflinks}
-# No header files are needed:
+# No header files are needed.
+# However "tiffio.h" was not found in MacOS.
+# Added "-I/usr/local/include" as possible fix:
 CLIBStiffh = -I/usr/local/include
 endif
 
