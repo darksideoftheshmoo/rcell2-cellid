@@ -64,6 +64,18 @@ cellid_parameter_descriptions <- function(list_format=T){
 #   return(exit_code)
 # }
 
+#' Path to the installed cell binary
+#' 
+cell2_command <- function(){
+  system.file(c("bin/cell", "bin/x64/cell.exe"), package = "rcell2.cellid", mustWork = T)[1]
+}
+
+#' Test the installed cell binary
+#' 
+cell2_test <- function(){
+  system(paste(cell2_command(), "-h"))
+}
+
 #' Function to run CellID
 #'
 #' @param arguments An argument data.frame, as built by \code{rcell2.cellid::arguments}.
@@ -115,7 +127,7 @@ cell2 <- function(arguments,
     tryCatch(
       expr = {
         if(verbose) cat("\nUsing built-in CellID binary. Printing CellID's help message:\n")
-        cell.command <- system.file(c("bin/cell", "bin/x64/cell.exe"), package = "rcell2.cellid", mustWork = T)[1]
+        cell.command <- cell2_command()
         system(paste(cell.command, "-h"), ignore.stdout = !verbose)
         if(verbose) cat("\n\n")
       },
