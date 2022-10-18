@@ -634,9 +634,11 @@ int main(int argc, char *argv[]){
 
 
   if(help_flag==1){
-    printf("\nCellID help:\n");
+    printf("\n\n");
+    printf("CellID help:\n");
     printf("  -- Required options: -b -f\n");
     printf("  -- For detailed usage, visit: https://github.com/darksideoftheshmoo/cellID-linux\n");
+    printf("\n\n");
     return 0;
   }
 

@@ -57,7 +57,7 @@ export tiflinks
 # The content of "$(tiflibs)" will be "tiflibs" only if it 
 # needs compilation (read the above), it will otherwise be 
 # empty, and thus the target will be skipped.
-all: cellid $(tiflibs) cleanup
+all: cellid $(tiflibs) cleanup test
 
 # Define "cellid" target as requiring tiflibs, and building cellid using automake
 # The "cell" binary at "inst/" is later "installed" by the "install.libs.R" script to "bin/".
@@ -97,3 +97,7 @@ preclean:
 cleanup: $(tiflibs) cellid
 	-rm -rf tiff4
 	-rm -rf ../inst/tiff4
+
+# Test if Cell-ID runs
+test:
+	-./cell -h
