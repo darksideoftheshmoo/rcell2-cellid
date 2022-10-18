@@ -35,7 +35,7 @@ $(info "Using system's libtiff")
 # Simple link to system's libtiff:
 CLIBStiff = ${tiflinks}
 # No header files are needed:
-CLIBStiffh = 
+CLIBStiffh = -I/usr/local/include
 endif
 
 # Una variable con los targets-requisitos de cell,
