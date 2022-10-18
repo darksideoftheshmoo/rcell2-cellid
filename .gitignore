@@ -5,3 +5,4 @@
 .DS_Store
 *.directory
 .~lock.*#
+/output/renders/skeleton.html

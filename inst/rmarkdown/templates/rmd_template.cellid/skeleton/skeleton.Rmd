@@ -12,6 +12,8 @@ output:
     smooth_scroll: false
     code_folding: show  # hide
     code_download: true
+    highlight: breezedark # pygments # tango
+    theme: "darkly"
   pdf_document:
     latex_engine: xelatex
     toc: true
@@ -196,21 +198,20 @@ cell2.out <-
 cell2.out
 ```
 
-```{r include=F}
-# saveRDS(cell2.out, file = "inst/extdata/cell2.out.RDS")
-cell2.out <- readRDS(file = "inst/extdata/cell2.out.RDS")
-```
-
-
 ### Load the output
 
 The output tables can be loaded with `cell.load.alt`.
 
-```{r}
+```{r eval=F}
 # Load output
 cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
 ```
 
+<!-- Restore previous output -->
+```{r include=F}
+# saveRDS(cell.data, file = "inst/extdata/cell.data.RDS")
+cell.data <- readRDS(file = "inst/extdata/cell.data.RDS")
+```
 
 ### Alternatives
 
@@ -232,13 +233,19 @@ when Cell-ID was run.
 
 To load the boundary pixels, use the `cell.load.boundaries`:
 
-```{r}
+```{r eval=F}
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
   rcell2::cell.load.boundaries(data.source = "masks.tsv",
                                arguments = cellid.args,
                                pixel.type = "b"
                                )
+```
+
+<!-- Restore previous output -->
+```{r include=F}
+# saveRDS(cell.boundaries, file = "inst/extdata/cell.boundaries.RDS")
+cell.boundaries <- readRDS(file = "inst/extdata/cell.boundaries.RDS")
 ```
 
 > This data is only available if `cell2` was run with `output_coords_to_tsv = T`.
@@ -589,7 +596,7 @@ Prepare new image directory with the subset of BF files:
 data.dir <- "/path/to/your/data"
 
 # Or use the example images (requires "rcell2.examples", see first example above).
-data.dir <- system.file("extdata/sample_datasets/time_series_sample/",
+data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
                         package = "rcell2.examples")
 
 # List files
@@ -906,11 +913,6 @@ cell2.result <- rcell2.cellid::cell2(arguments = cellid.args,
                                      n_cores = 2)
 ```
 
-```{r include=F}
-# saveRDS(cell2.result, file = "inst/extdata/cell2.result.RDS")
-cell2.result <- readRDS(file = "inst/extdata/cell2.result.RDS")
-```
-
 > `n_cores` can be set to the number of CPU cores you want to use to parallelize
 > the segmentation (relying on `foreach`). It defaults to use all but one of the
 > available cores.
@@ -955,7 +957,7 @@ fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
 
 The output tables can be loaded with `cell.load.alt`.
 
-```{r}
+```{r eval=F}
 # Load output
 cell.data <- rcell2.cellid::cell.load.alt(path = data.dir,
                                           fluorescence.pattern=fluorescence.pattern)
@@ -988,6 +990,12 @@ cell.boundaries <-
                                arguments = cellid.args,
                                pixel.type = "b"
                                )
+```
+
+<!-- Restore previous output -->
+```{r eval=F}
+# Load output
+cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
 ```
 
 > This data is only available if `cell2` was run with `output_coords_to_tsv = T`.
@@ -1092,6 +1100,7 @@ scan.results <-
 
 > Have a look at the function's source code if you like, its hopefully well commented.
 
+<!-- Restore previous output -->
 ```{r include=F}
 # saveRDS(scan.results, file = "inst/extdata/scan.results.RDS")
 scan.results <- readRDS(file = "inst/extdata/scan.results.RDS")
@@ -1176,11 +1185,17 @@ The stacks are annotated with the parameters used for each segmentation, and oth
 
 A copy-paste-ready ImageJ Macro will be printed out, to easily load them as virtual Hyperstacks in ImageJ.
 
-```{r}
+```{r eval=F}
 stack.paths <- 
   make_scan_stacks(scan.results = scan.results, 
                    test.dir = test.dir, 
                    stack.channels = "BF.out")
+```
+
+<!-- Restore previous output -->
+```{r include=F}
+# saveRDS(stack.paths, file = "inst/extdata/stack.paths.RDS")
+stack.paths <- readRDS(file = "inst/extdata/stack.paths.RDS")
 ```
 
 > Have a look at the function's source code if you like, its hopefully well commented.
