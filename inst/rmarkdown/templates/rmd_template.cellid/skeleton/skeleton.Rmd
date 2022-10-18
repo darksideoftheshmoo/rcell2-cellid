@@ -278,7 +278,7 @@ cell.boundaries %>%
   filter(pixtype == "b") %>% 
   ggplot(aes(x,y,color=factor(t.frame)))+
   geom_path()+
-  facet_wrap(~pos)
+  facet_wrap(~pos, scales = "free") + theme(aspect.ratio = 1)
 ```
 
 #### Save and restore progress
@@ -1048,7 +1048,7 @@ In this example, only `background_reject_factor` is scanned:
 
 ```{r}
 parameters.list <- rcell2.cellid::parameters_default(
-  background_reject_factor = seq(from=0, to=1.5, by = 0.3)
+  background_reject_factor = seq(from=0, to=1.5, by = 0.4)
 )
 
 parameters.list$background_reject_factor
