@@ -16,13 +16,15 @@ CC=gcc
 # Conditional libtiff compilation
 # cpptest := $(shell cpp -v /dev/null -include "tiffio.h" 2> /dev/null 1> /dev/null || echo "nope")
 # Este otro test podria ser mejor: https://stackoverflow.com/a/14086204/11524079
-gcctest := $(shell echo "\#include <tiffio.h>" | gcc -E - >/dev/null 2>&1 && echo "yes" || echo "nope")
+# gcctest := $(shell echo "\#include <tiffio.h>" | gcc -E - >/dev/null 2>&1 && echo "yes" || echo "nope")
+# Another possible test with more readable output: https://stackoverflow.com/a/12855475
+gcctest := $(shell gcc -M ../inst/checktiff.c >/dev/null 2>&1 && echo "yes" || echo "nope" )
 # Test cpp Test
 #cpptest :=nope
 
 # Prepare tiff library links, acoording to "test" result.
 ifeq (nope, $(gcctest))
-$(info "libtiff not found by the C pre-processor.")
+$(info "Makevars: libtiff not found by the C pre-processor.")
 # Define our tiflibs "flag"
 tiflibs=tiflibs
 # Para incluir libtiff "estatico" (el libtiff.a en vez del libtiff.so) tengo que saber que otras flags "-l" necesito
@@ -36,7 +38,7 @@ tiflibs=tiflibs
 ## pero en Windows alcanzó con "-ltiff -ljpeg -lz".
 tiflinks=-ltiff -llzma -ljbig -ljpeg -lwebp -lzstd -lz -lm
 else
-$(info "libtiff found by the C pre-processor.")
+$(info "Makevars: libtiff found by the C pre-processor.")
 # Leave our 'tiflibs' flag as empty string:
 # http://aggregate.org/rfisher/Tutorials/Make/make5.html
 tiflibs=
@@ -51,19 +53,22 @@ export tiflinks
 # For example, if the file “clean” is created somehow elsewhere, "make clean" will still be run.
 .PHONY: all cellid $(tiflibs) cleanup unziplib
 
-# Define "all" targets as requiring "cellid" and "cleanup"
+# Define "all" targets as requiring "cellid" and "cleanup".
+# The content of "$(tiflibs)" will be "tiflibs" only if it 
+# needs compilation (read the above), it will otherwise be 
+# empty, and thus the target will be skipped.
 all: cellid $(tiflibs) cleanup
 
 # Define "cellid" target as requiring tiflibs, and building cellid using automake
 # The "cell" binary at "inst/" is later "installed" by the "install.libs.R" script to "bin/".
 cellid: $(tiflibs)
-	cd cellID && make clean && make -j2 && make clean && mv cell ../cell || echo "// Compilation failed for CellID. //"
+	cd cellID && make clean && make -j2 && make clean && mv cell ../cell || echo "// Makevars: Compilation failed for CellID. //"
 
 # Note that each command is run independently, that's why all must have have a cd prepended.
 # By prepending a "-" dash, errors will be ignored: https://stackoverflow.com/a/2670143
 tiflibs: unziplib
 	-mkdir -p tiff4/r_build
-	cd tiff4/r_build && cmake ../ -DBUILD_SHARED_LIBS=OFF && make all -j2 -B || echo "// Compilation failed for libtiff using cmake //"
+	cd tiff4/r_build && cmake ../ -DBUILD_SHARED_LIBS=OFF && make all -j2 -B || echo "// Makevars: Compilation failed for libtiff using cmake //"
 	-mkdir -p ../inst/tiff4/include
 	-mv tiff4/libtiff/*.h ../inst/tiff4/include/
 	-mv tiff4/r_build/libtiff/*.h ../inst/tiff4/include/
