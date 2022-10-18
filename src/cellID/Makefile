@@ -60,6 +60,7 @@ objects = cell.o segment.o tif.o nums.o date_and_time.o fit.o fft.o fft_stats.o 
 ## Las libs deben ir despues de los objetos .c/.o/... o se descartan
 ## Leer:  https://stackoverflow.com/questions/2624238/c-undefined-references-with-static-library
 cell : $(objects)
+	echo Building CellID with LD_LIBRARY_PATH: $(LD_LIBRARY_PATH)
 	gcc -o cell $(CFLAGS) $(objects) $(CLIBStiff) $(CLIBScellid)
 
 # Target original
