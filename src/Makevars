@@ -75,6 +75,14 @@ tiflibs: unziplib
 	-mkdir -p ../inst/tiff4/lib
 	-mv tiff4/r_build/libtiff/libtiff.a ../inst/tiff4/lib/
 
+# Alternate, simpler, make command for libtiff, from the brew definition.
+# Seems to not rely on cmake. However, it does not produce the static archive "libtiff.a".
+# Perhaps it can be created with "ar c libtiff.a *.o" at the ".o" objects directory.
+# https://github.com/Homebrew/homebrew-core/blob/HEAD/Formula/libtiff.rb
+tiflibs2: unziplib
+	cd ./configure --disable-dependency-tracking --disable-lzma --disable-webp --disable-zstd --without-x --enable-static=yes
+	cd make all -j4
+	
 # By prepending a "-" dash, errors will be ignored: https://stackoverflow.com/a/2670143
 unziplib: preclean
 	-unzip ../inst/tiff-4.1.0.zip

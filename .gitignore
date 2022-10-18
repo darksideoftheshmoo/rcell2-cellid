@@ -6,3 +6,4 @@
 *.directory
 .~lock.*#
 /output/renders/skeleton.html
+/src/tiff*
