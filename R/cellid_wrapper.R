@@ -593,7 +593,7 @@ arguments_check <- function(arguments, check_fail=F){
   n_fl <- sum(file.exists(paste0(arguments$path, "/", arguments$image, ".out.tif")))
   if(n_fl>0) warning(paste0("\narguments_check: ", 
                             n_fl, "/", n_row, 
-                            " output directories already exist.\n"))
+                            " output FL.out.tif files already exist.\n"))
   
   if (any(c(n_out, n_bf, n_fl) > 0)) {
     result <- FALSE
