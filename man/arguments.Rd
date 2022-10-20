@@ -14,7 +14,8 @@ arguments(
   tiff.ext = "tif$",
   bf_as_fl = F,
   dark_pattern = "^(BF|[A-Z]FP)_dark.tif$",
-  flat_pattern = "^(BF|[A-Z]FP)_flat.tif$"
+  flat_pattern = "^(BF|[A-Z]FP)_flat.tif$",
+  check_fail = F
 )
 }
 \arguments{
@@ -38,6 +39,8 @@ To consider Z-stacks, use something like "^(BF|[A-Z]\\d+)_Position(\\d+)_time(\\
 \item{dark_pattern}{A regular expression which matches only "dark correction" tiff files in the path; and has a single capturing group for the channel ID. If the exposure times match, Cell-ID will subtract this background image to fluorescent images (disregarding channel). Note: if the exposure of an FL image does not match any dark images, the correction is skipped without a warning.}
 
 \item{flat_pattern}{A regular expression which matches only "flat correction" tiff files in the path; and has a single capturing group for the channel ID. With thses images, Cell-ID will attempt to correct for uneven illumination, on the corresponding fluorescent channels. Note: Cell-ID matches images to corrections using the three-letter prefix, and uses only the correction closest in time to the current FL image.}
+
+\item{check_fail}{Whether to produce an error if any output file or directory already exists.}
 }
 \value{
 A data.frame with all the information needed to run CellID

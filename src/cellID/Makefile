@@ -15,27 +15,40 @@ CLIBScellid = -lm -lz
 
 # Conditional external -ltiff test. Check result from Makevars exported environment:
 $(info "Makefile got tiflibs < $(tiflibs) > with tiflinks < $(tiflinks) > from environment.")
-# Check test and define appropriate links
+
+# Check test result and define appropriate links to the libtiff library.
+# Note: tiflibs es una variable exportada del Makevars.
 ifeq (tiflibs, ${tiflibs})
 $(info "Using bundled libtiff")
-# Para incluir libtiff "estatico" (el libtiff.a en vez del libtiff.so) tengo que saber que otras flags "-l" necesito
-# Eso se puede consultar con: $ pkg-config --static --libs libtiff-4
-# Para dynamic linking se consulta con: $  pkg-config --libs libtiff-4
-# Para linkear libtiff "estatico" hay que poner dos cosas:
-## Linkear el path donde está el archivo "libtiff.a" así: "-L../../inst/tiff4/r_build/libtiff"
-## y luego la librería usando: "-ltiff"
+# Ahora hay que hacer los links necesarios, de tipo "dinamic" o "static".
+
+# Para dynamic linking, los requerimients se consultan con: $  pkg-config --libs libtiff-4
+## En Arch solo hace falta "-ltiff".
+## No uso este approach porque requeriría dejar el folder con libtiff.
+
+# Para incluir libtiff "estatico" (el libtiff.a en vez del libtiff.so) tengo que saber que
+## otras flags "-l" necesito
+## Eso se puede consultar con: $ pkg-config --static --libs libtiff-4
+## Luego para linkear libtiff "estatico" hay que poner dos cosas:
+## 1) Linkear el path donde está el archivo "libtiff.a" así: "-L../../inst/tiff4/r_build/libtiff"
+## 2) y luego la librería usando: "-ltiff"
 ## Además, según pkg-config, para linking necesito también: "-llzma -ljbig -ljpeg -lz -lm",
 ## y parece que también necesitaba: "-lzstd" y "-lwebp",
 ## pero en Windows alcanzó con "-ltiff -ljpeg -lz".
+
+# Note: tiflinks es una variable exportada del Makevars.
 CLIBStiff = -L../../inst/tiff4/lib ${tiflinks}
 # Además necesitamos los headers:
 CLIBStiffh = -I../../inst/tiff4/include
+
 else
 $(info "Using system's libtiff")
 # Simple link to system's libtiff:
 CLIBStiff = ${tiflinks}
-# No header files are needed:
-CLIBStiffh = 
+# No header files are needed.
+# However "tiffio.h" was not found in MacOS.
+# Added "-I/usr/local/include" as possible fix:
+CLIBStiffh = -I/usr/local/include
 endif
 
 # Una variable con los targets-requisitos de cell,
@@ -47,6 +60,7 @@ objects = cell.o segment.o tif.o nums.o date_and_time.o fit.o fft.o fft_stats.o 
 ## Las libs deben ir despues de los objetos .c/.o/... o se descartan
 ## Leer:  https://stackoverflow.com/questions/2624238/c-undefined-references-with-static-library
 cell : $(objects)
+	echo Building CellID with LD_LIBRARY_PATH: $(LD_LIBRARY_PATH)
 	gcc -o cell $(CFLAGS) $(objects) $(CLIBStiff) $(CLIBScellid)
 
 # Target original

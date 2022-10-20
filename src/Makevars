@@ -16,33 +16,49 @@ CC=gcc
 # Conditional libtiff compilation
 # cpptest := $(shell cpp -v /dev/null -include "tiffio.h" 2> /dev/null 1> /dev/null || echo "nope")
 # Este otro test podria ser mejor: https://stackoverflow.com/a/14086204/11524079
-gcctest := $(shell echo "\#include <tiffio.h>" | gcc -E - >/dev/null 2>&1 && echo "yes" || echo "nope")
+# gcctest := $(shell echo "\#include <tiffio.h>" | gcc -E - >/dev/null 2>&1 && echo "yes" || echo "nope")
+# Another possible test with more readable output: https://stackoverflow.com/a/12855475
+gcctest := $(shell gcc -M ../inst/checktiff.c >/dev/null 2>&1 && echo "yes" || echo "nope" )
 # Test cpp Test
 #cpptest :=nope
 
 # Prepare tiff library links, acoording to "test" result.
 ifeq (nope, $(gcctest))
-$(info "libtiff not found by the C pre-processor.")
-# Define our tiflibs "flag"
+$(info "Makevars: libtiff not found by the C pre-processor.")
+# Define our tiflibs "flag", it will be read by Cell-ID's Makefile later on.
 tiflibs=tiflibs
-# Para incluir libtiff "estatico" (el libtiff.a en vez del libtiff.so) tengo que saber que otras flags "-l" necesito
-# Eso se puede consultar con: $ pkg-config --static --libs libtiff-4
-# Para dynamic linking se consulta con: $  pkg-config --libs libtiff-4
-# Para linkear libtiff "estatico" hay que poner dos cosas:
-## Linkear el path donde está el archivo "libtiff.a" así: "-L../../inst/tiff4/r_build/libtiff"
-## y luego la librería usando: "-ltiff"
+
+# Ahora hay que hacer los links necesarios, de tipo "dinamic" o "static".
+
+# Para dynamic linking, los requerimients se consultan con: $  pkg-config --libs libtiff-4
+## En Arch solo hace falta "-ltiff".
+## No uso este approach porque requeriría dejar el folder con libtiff.
+
+# Para incluir libtiff "estatico" (el libtiff.a en vez del libtiff.so) tengo que saber que
+## otras flags "-l" necesito
+## Eso se puede consultar con: $ pkg-config --static --libs libtiff-4
+## Luego para linkear libtiff "estatico" hay que poner dos cosas:
+## 1) Linkear el path donde está el archivo "libtiff.a" así: "-L../../inst/tiff4/r_build/libtiff"
+## 2) y luego la librería usando: "-ltiff"
 ## Además, según pkg-config, para linking necesito también: "-llzma -ljbig -ljpeg -lz -lm",
 ## y parece que también necesitaba: "-lzstd" y "-lwebp",
 ## pero en Windows alcanzó con "-ltiff -ljpeg -lz".
+
+# Define a variable with the library links, 
+# it will be read by Cell-ID's Makefile later on.
 tiflinks=-ltiff -llzma -ljbig -ljpeg -lwebp -lzstd -lz -lm
+
 else
-$(info "libtiff found by the C pre-processor.")
+$(info "Makevars: libtiff found by the C pre-processor.")
 # Leave our 'tiflibs' flag as empty string:
 # http://aggregate.org/rfisher/Tutorials/Make/make5.html
+# It will be read by Cell-ID's Makefile later on.
 tiflibs=
 # Simple link to system's libtiff:
+# It will be read by Cell-ID's Makefile later on.
 tiflinks=-ltiff
 endif
+
 # Make test and links variables available in CellID's Makefile
 export tiflibs
 export tiflinks
@@ -51,25 +67,36 @@ export tiflinks
 # For example, if the file “clean” is created somehow elsewhere, "make clean" will still be run.
 .PHONY: all cellid $(tiflibs) cleanup unziplib
 
-# Define "all" targets as requiring "cellid" and "cleanup"
-all: cellid $(tiflibs) cleanup
+# Define "all" targets as requiring "cellid" and "cleanup".
+# The content of "$(tiflibs)" will be "tiflibs" only if it 
+# needs compilation (read the above), it will otherwise be 
+# empty, and thus the target will be skipped.
+all: cellid $(tiflibs) cleanup test
 
 # Define "cellid" target as requiring tiflibs, and building cellid using automake
 # The "cell" binary at "inst/" is later "installed" by the "install.libs.R" script to "bin/".
 cellid: $(tiflibs)
-	cd cellID && make clean && make -j2 && make clean && mv cell ../cell || echo "// Compilation failed for CellID. //"
+	cd cellID && make clean && make -j2 && make clean && mv cell ../cell || echo "// Makevars: Compilation failed for CellID. //"
 
 # Note that each command is run independently, that's why all must have have a cd prepended.
 # By prepending a "-" dash, errors will be ignored: https://stackoverflow.com/a/2670143
 tiflibs: unziplib
 	-mkdir -p tiff4/r_build
-	cd tiff4/r_build && cmake ../ -DBUILD_SHARED_LIBS=OFF && make all -j2 -B || echo "// Compilation failed for libtiff using cmake //"
+	cd tiff4/r_build && cmake ../ -DBUILD_SHARED_LIBS=OFF && make all -j2 -B || echo "// Makevars: Compilation failed for libtiff using cmake //"
 	-mkdir -p ../inst/tiff4/include
 	-mv tiff4/libtiff/*.h ../inst/tiff4/include/
 	-mv tiff4/r_build/libtiff/*.h ../inst/tiff4/include/
 	-mkdir -p ../inst/tiff4/lib
 	-mv tiff4/r_build/libtiff/libtiff.a ../inst/tiff4/lib/
 
+# Alternate, simpler, make command for libtiff, from the brew definition.
+# Seems to not rely on cmake. However, it does not produce the static archive "libtiff.a".
+# Perhaps it can be created with "ar c libtiff.a *.o" at the ".o" objects directory.
+# https://github.com/Homebrew/homebrew-core/blob/HEAD/Formula/libtiff.rb
+tiflibs2: unziplib
+	cd ./configure --disable-dependency-tracking --disable-lzma --disable-webp --disable-zstd --without-x --enable-static=yes
+	cd make all -j4
+	
 # By prepending a "-" dash, errors will be ignored: https://stackoverflow.com/a/2670143
 unziplib: preclean
 	-unzip ../inst/tiff-4.1.0.zip
@@ -84,3 +111,7 @@ preclean:
 cleanup: $(tiflibs) cellid
 	-rm -rf tiff4
 	-rm -rf ../inst/tiff4
+
+# Test if Cell-ID runs
+test:
+	-./cell -h

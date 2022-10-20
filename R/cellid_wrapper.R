@@ -64,6 +64,18 @@ cellid_parameter_descriptions <- function(list_format=T){
 #   return(exit_code)
 # }
 
+#' Path to the installed cell binary
+#' 
+cell2_command <- function(){
+  system.file(c("bin/cell", "bin/x64/cell.exe"), package = "rcell2.cellid", mustWork = T)[1]
+}
+
+#' Test the installed cell binary
+#' 
+cell2_test <- function(){
+  system(paste(cell2_command(), "-h"))
+}
+
 #' Function to run CellID
 #'
 #' @param arguments An argument data.frame, as built by \code{rcell2.cellid::arguments}.
@@ -115,7 +127,7 @@ cell2 <- function(arguments,
     tryCatch(
       expr = {
         if(verbose) cat("\nUsing built-in CellID binary. Printing CellID's help message:\n")
-        cell.command <- system.file(c("bin/cell", "bin/x64/cell.exe"), package = "rcell2.cellid", mustWork = T)[1]
+        cell.command <- cell2_command()
         system(paste(cell.command, "-h"), ignore.stdout = !verbose)
         if(verbose) cat("\n\n")
       },
@@ -386,6 +398,7 @@ cluster_test <- function(){
 #' @param bf_as_fl If TRUE, BF paths will be used as FL paths. This allows for BF-only experiments.
 #' @param dark_pattern A regular expression which matches only "dark correction" tiff files in the path; and has a single capturing group for the channel ID. If the exposure times match, Cell-ID will subtract this background image to fluorescent images (disregarding channel). Note: if the exposure of an FL image does not match any dark images, the correction is skipped without a warning.
 #' @param flat_pattern A regular expression which matches only "flat correction" tiff files in the path; and has a single capturing group for the channel ID. With thses images, Cell-ID will attempt to correct for uneven illumination, on the corresponding fluorescent channels. Note: Cell-ID matches images to corrections using the three-letter prefix, and uses only the correction closest in time to the current FL image.
+#' @inheritParams arguments_check
 #' @return A data.frame with all the information needed to run CellID
 #' @import dplyr tidyr
 # @examples
@@ -403,7 +416,8 @@ arguments <- function(path,
                       tiff.ext = "tif$",
                       bf_as_fl=F,
                       dark_pattern="^(BF|[A-Z]FP)_dark.tif$",
-                      flat_pattern="^(BF|[A-Z]FP)_flat.tif$"
+                      flat_pattern="^(BF|[A-Z]FP)_flat.tif$",
+                      check_fail = F
                       ){
   
   if(!identical(sort(file.pattern.groups.order),
@@ -544,7 +558,49 @@ arguments <- function(path,
     stop("arguments error: at least one of the values in the arguments.df dataframe is missing or blank, check your directories and file.pattern")
   }
   
+  # Check for existing output files
+  rcell2.cellid::arguments_check(arguments.df.out, check_fail)
+  
   return(arguments.df.out)
+}
+
+#' Check if output files have already been created
+#' 
+#' Emits warnings, and optionally an error, to prevent accidental overwriting.
+#'
+#' @inheritParams arguments 
+#' @param check_fail Whether to produce an error if any output file or directory already exists.
+#'
+#' @return TRUE if no existing output files were found
+#' @export
+#'
+arguments_check <- function(arguments, check_fail=F){
+  n_row <- nrow(arguments)
+  result <- TRUE
+  
+  n_out <- sum(file.exists(arguments$output))
+  if(n_out>0) warning(paste0("\narguments_check: ", 
+                             n_out, "/", n_row, 
+                             " output directories already exist.\n"))
+  
+  
+  n_bf <- sum(file.exists(paste0(arguments$path, "/", arguments$bf, ".out.tif")))
+  if(n_bf>0) warning(paste0("\narguments_check: ", 
+                            n_bf, "/", n_row, 
+                            " output BF.out.tif files already exist.\n"))
+  
+  
+  n_fl <- sum(file.exists(paste0(arguments$path, "/", arguments$image, ".out.tif")))
+  if(n_fl>0) warning(paste0("\narguments_check: ", 
+                            n_fl, "/", n_row, 
+                            " output FL.out.tif files already exist.\n"))
+  
+  if (any(c(n_out, n_bf, n_fl) > 0)) {
+    result <- FALSE
+    if(check_fail) stop("\narguments_check: output files found, raising error!\n")
+  }
+  
+  return(result)
 }
 
 #' Default parameters list for Cell-ID
