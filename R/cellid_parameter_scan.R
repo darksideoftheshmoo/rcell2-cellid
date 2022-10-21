@@ -40,6 +40,8 @@ parameter_scan <- function(parameters.df,
   
   # Record the amount of combinations
   test.params <- 1:nrow(parameters.df)
+  test.pos <- unique(scan.arguments$pos)
+  test.frames <- unique(scan.arguments$t.frame)
   
   # Clean test directory
   unlink(test.dir, recursive = T)
@@ -184,7 +186,8 @@ parameter_scan <- function(parameters.df,
     results.bound=results.bound,
     test.params=test.params,
     test.pos=test.pos,
-    test.frames=test.frames
+    test.frames=test.frames,
+    test.dir=test.dir
   )
   
   # Chin-pum!
@@ -195,7 +198,6 @@ parameter_scan <- function(parameters.df,
 #' Make TIFF stacks for reviewing the result of parameter scans in ImageJ
 #'
 #' @param scan.results The full result from \code{parameter_scan}.
-#' @param test.dir Temporary directory into which stacks should be saved.
 #' @param stack.channels Vector of channels which should be stacked.
 #' @param annotation.font Font for the annotations. A mono-spaced font is recommended.
 #'
@@ -206,11 +208,11 @@ parameter_scan <- function(parameters.df,
 #' @import dplyr
 #'
 make_scan_stacks <- function(scan.results, 
-                             test.dir,
                              stack.channels = "BF.out", 
                              annotation.font = "Hack") {
   
   # Load results
+  test.dir <- scan.results$test.dir
   results.bound <- scan.results$results.bound
   test.params <- scan.results$test.params
   test.pos <- scan.results$test.pos

@@ -1188,7 +1188,6 @@ A copy-paste-ready ImageJ Macro will be printed out, to easily load them as virt
 ```{r eval=F}
 stack.paths <- 
   make_scan_stacks(scan.results = scan.results, 
-                   test.dir = test.dir, 
                    stack.channels = "BF.out")
 ```
 

@@ -6,15 +6,12 @@
 \usage{
 make_scan_stacks(
   scan.results,
-  test.dir,
   stack.channels = "BF.out",
   annotation.font = "Hack"
 )
 }
 \arguments{
 \item{scan.results}{The full result from \code{parameter_scan}.}
-
-\item{test.dir}{Temporary directory into which stacks should be saved.}
 
 \item{stack.channels}{Vector of channels which should be stacked.}
 
