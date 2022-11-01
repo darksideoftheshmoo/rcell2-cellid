@@ -223,13 +223,13 @@ make_scan_stacks <- function(scan.results,
   stack.paths <- results.bound %>% 
     dplyr::filter(channel %in% stack.channels) %>% 
     dplyr::arrange(channel, id, t.frame, pos) %>% 
-    # Fix for R's old split
-    {split(., list(.$channel, .$pos))} %>% 
+    # {split(., list(.$channel, .$pos))} %>%  # Fix for R's old split
+    {split(., .$channel)} %>%  # Split only by channel
     lapply(function(images){
         
         # Prepare a file name for the stack
         stack.name <- paste0(
-          test.dir, "/", images$channel[1], "_stack-pos_", images$pos[1], #"-time", images$t.frame[1],
+          test.dir, "/", images$channel[1], "_stack", # "-pos_", images$pos[1], #"-time", images$t.frame[1],
           ".tif"
         )
         
