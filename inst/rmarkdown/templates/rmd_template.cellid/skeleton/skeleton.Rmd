@@ -1040,6 +1040,25 @@ cellid.args <- rcell2.cellid::arguments(data.dir,
                                         file.pattern = arguments.file.pattern)
 ```
 
+#### Image set
+
+Choose which image sets in `cellid.args` you wish to use for the parameter scan.
+
+For example, choose some *positions* (image sets) and *t.frame*s (time frames)
+to restrict the image test set to only some of them.
+
+```{r}
+test.pos = unique(cellid.args$pos)
+test.frames = unique(cellid.args$t.frame)
+
+# Filter cellid.args to choose image sets for the scan
+scan.arguments <-  
+  subset(cellid.args, 
+         pos %in% test.pos & t.frame %in% test.frames)
+
+scan.arguments
+```
+
 #### Parameter combinations
 
 For each parameter variation, we need a new parameters file.
@@ -1063,25 +1082,6 @@ parameters.df
 ```
 
 > Note: You might want to select some rows from that table. In that case, simply filter it.
-
-#### Image set
-
-Choose which image sets in `cellid.args` you wish to use for the parameter scan.
-
-For example, choose some *positions* (image sets) and *t.frame*s (time frames)
-to restrict the image test set to only some of them.
-
-```{r}
-test.pos = unique(cellid.args$pos)
-test.frames = unique(cellid.args$t.frame)
-
-# Filter cellid.args to choose image sets for the scan
-scan.arguments <-  
-  subset(cellid.args, 
-         pos %in% test.pos & t.frame %in% test.frames)
-
-scan.arguments
-```
 
 #### Automatic scan
 
