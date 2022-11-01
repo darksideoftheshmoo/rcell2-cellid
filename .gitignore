@@ -7,3 +7,6 @@
 .~lock.*#
 /output/renders/skeleton.html
 /src/tiff*
+/inst/tiff-4.1.0/*
+/inst/tiff-o/*
+/rcell2-cellid.zip

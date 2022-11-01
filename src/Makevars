@@ -81,9 +81,12 @@ cellid: $(tiflibs)
 
 # Note that each command is run independently, that's why all must have have a cd prepended.
 # By prepending a "-" dash, errors will be ignored: https://stackoverflow.com/a/2670143
+# Old cmake command:
+# cd tiff4/r_build && cmake ../ -DBUILD_SHARED_LIBS=OFF && make all -j2 -B || echo "// Makevars: Compilation failed for libtiff using cmake //"
 tiflibs: unziplib
 	-mkdir -p tiff4/r_build
-	cd tiff4/r_build && cmake ../ -DBUILD_SHARED_LIBS=OFF && make all -j2 -B || echo "// Makevars: Compilation failed for libtiff using cmake //"
+	cd tiff4 && ./configure --disable-dependency-tracking --disable-lzma --disable-webp --disable-zstd --without-x --disable-jbig || echo "// Makevars: Configuration failed for libtiff using make //"
+	cd tiff4 && make all -j4 || echo "// Makevars: Compilation failed for libtiff using make //"
 	-mkdir -p ../inst/tiff4/include
 	-mv tiff4/libtiff/*.h ../inst/tiff4/include/
 	-mv tiff4/r_build/libtiff/*.h ../inst/tiff4/include/
