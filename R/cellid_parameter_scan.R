@@ -219,13 +219,13 @@ make_scan_stacks <- function(scan.results,
   test.frames <- scan.results$test.frames
   
   # Make stacks
+  # images <- stack.paths[[1]]  # For testing
   stack.paths <- results.bound %>% 
-    
     dplyr::filter(channel %in% stack.channels) %>% 
-    
-    dplyr::arrange(channel, id, t.frame, pos) %>% split(~channel+pos) %>% 
-      # images <- stack.paths[[1]]
-      lapply(function(images){
+    dplyr::arrange(channel, id, t.frame, pos) %>% 
+    # Fix for R's old split
+    {split(., list(.$channel, .$pos))} %>% 
+    lapply(function(images){
         
         # Prepare a file name for the stack
         stack.name <- paste0(

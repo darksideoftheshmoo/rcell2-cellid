@@ -1072,12 +1072,13 @@ For example, choose some *positions* (image sets) and *t.frame*s (time frames)
 to restrict the image test set to only some of them.
 
 ```{r}
-test.pos = cellid.args$pos %>% unique()
-test.frames = cellid.args$t.frame %>% unique()
+test.pos = unique(cellid.args$pos)
+test.frames = unique(cellid.args$t.frame)
 
 # Filter cellid.args to choose image sets for the scan
-scan.arguments <- cellid.args %>% 
-  subset(pos %in% test.pos & t.frame %in% test.frames)
+scan.arguments <-  
+  subset(cellid.args, 
+         pos %in% test.pos & t.frame %in% test.frames)
 
 scan.arguments
 ```
