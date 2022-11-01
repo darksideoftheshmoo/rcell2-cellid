@@ -1,3 +1,35 @@
+# Test manual build
+
+```bash
+# Unzip
+unzip ../inst/tiff-4.1.0.zip
+mv tiff-4.1.0 tiff4
+ 
+# Build libtiff
+cd tiff4
+./configure --disable-dependency-tracking --disable-lzma --disable-webp --disable-zstd --without-x --disable-jbig || echo "// Makevars: Configuration failed for libtiff using make //"
+make all -j4 || echo "// Makevars: Compilation failed for libtiff using make //"
+ 
+# Copy header files
+cd ..
+mkdir -p ../inst/tiff4/include
+cp tiff4/libtiff/*.h ../inst/tiff4/include/
+cp r_build/libtiff/*.h ../inst/tiff4/include/
+ 
+# Copy static archive file
+mkdir -p ../inst/tiff4/lib
+cp tiff4/libtiff/.libs/libtiff.a ../inst/tiff4/lib/
+ 
+# Build CellID
+cd cellID
+export tiflibs="tiflibs"
+export tiflinks="-ltiff -llzma -lz -lm"
+make -j4
+ 
+# Test
+./cell -h
+```
+
 # Makevars
 
 ## Makevars
@@ -44,6 +76,7 @@ https://github.com/ropensci/ijtiff/blob/master/tools/winlibs.R
 
 
 # CellID original parameters
+
 ```
 *** Cell_ID Version 1.4.6 *** 
 
