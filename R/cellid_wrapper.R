@@ -49,7 +49,7 @@ cellid_parameter_descriptions <- function(list_format=T){
 # #' @return Exit code from CellID
 # cellid <- function(args, debug_flag=0){
 # 
-#   # args <- "~/Software/cellID-linux/cell -p /home/nicomic/Projects/Colman/HD/scripts/cellMagick/data/images/parameters.txt -b /tmp/Rtmp7fjlFo/file2b401093d715 -f /tmp/Rtmp7fjlFo/file2b402742f6ef -o /home/nicomic/Projects/Colman/HD/uscope/20200130_Nico_screen_act1_yfp/1/Position001/out"
+#   # args <- "~/Software/cellID-linux/cell -p ~/Projects/Colman/HD/scripts/cellMagick/data/images/parameters.txt -b /tmp/Rtmp7fjlFo/file2b401093d715 -f /tmp/Rtmp7fjlFo/file2b402742f6ef -o ~/Projects/Colman/HD/uscope/20200130_Nico_screen_act1_yfp/1/Position001/out"
 #   argv <- strsplit(args, " ")[[1]]
 #   argc <- length(argv)
 #   

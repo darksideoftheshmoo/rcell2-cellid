@@ -204,12 +204,15 @@ parameter_scan <- function(parameters.df,
 #' @return A list with paths to the stacks, and 
 #' @export
 #' @importFrom stringr str_pad
-#' @import magick
 #' @import dplyr
 #'
 make_scan_stacks <- function(scan.results, 
                              stack.channels = "BF.out", 
                              annotation.font = "Hack") {
+  
+  if(!requireNamespace("magick")){
+    stop("make_scan_stacks: requires functions from the 'magick' package, which is not installed.")
+  }
   
   # Load results
   test.dir <- scan.results$test.dir
@@ -219,17 +222,17 @@ make_scan_stacks <- function(scan.results,
   test.frames <- scan.results$test.frames
   
   # Make stacks
+  # images <- stack.paths[[1]]  # For testing
   stack.paths <- results.bound %>% 
-    
     dplyr::filter(channel %in% stack.channels) %>% 
-    
-    dplyr::arrange(channel, id, t.frame, pos) %>% split(~channel+pos) %>% 
-      # images <- stack.paths[[1]]
-      lapply(function(images){
+    dplyr::arrange(channel, id, t.frame, pos) %>% 
+    # {split(., list(.$channel, .$pos))} %>%  # Fix for R's old split
+    {split(., .$channel)} %>%  # Split only by channel
+    lapply(function(images){
         
         # Prepare a file name for the stack
         stack.name <- paste0(
-          test.dir, "/", images$channel[1], "_stack-pos_", images$pos[1], #"-time", images$t.frame[1],
+          test.dir, "/", images$channel[1], "_stack", # "-pos_", images$pos[1], #"-time", images$t.frame[1],
           ".tif"
         )
         

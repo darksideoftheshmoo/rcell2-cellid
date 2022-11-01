@@ -87,12 +87,12 @@ Otherwise, install and use the "examples" package.
 First, get the example data:
 
 ```{r}
-if(!require(remotes)){
+if(!requireNamespace("remotes")){
   # Install the "remotes" package if not found:
   install.packages("remotes")
 }
 
-if(!require(rcell2.examples)){
+if(!requireNamespace("rcell2.examples")){
   # Install the "rcell2.examples" package if not found:
   remotes::install_github("darksideoftheshmoo/rcell2.examples")
 }
@@ -219,7 +219,7 @@ Function `load_cell_data` from `rcell2` can load those tables as well.
 
 ```{r eval=F}
 # rcell2's main analysis package
-if(!require(rcell2)){
+if(!requireNamespace("rcell2")){
    devtools::install_github("darksideoftheshmoo/rcell2")
 }
 
@@ -969,7 +969,7 @@ Alternatively, function `load_cell_data` from `rcell2` can load those tables as 
 
 ```{r eval=F}
 # rcell2's main analysis package
-if(!require(rcell2)){
+if(!requireNamespace("rcell2")){
    devtools::install_github("darksideoftheshmoo/rcell2")
 }
 
@@ -1011,7 +1011,20 @@ rcell2.cellid::cellid_output_descriptions(list.output = F)
 
 ### Tuning parameters
 
-Sometimes we want to test out many parameter combinations fefor running Cell-ID in the full dataset.
+Sometimes we want to test out many parameter combinations 
+before running Cell-ID in the full dataset.
+
+This functionality requires the `magick` R package,
+and ImageMagick on your system (which can be obtained 
+[here](https://imagemagick.org/script/download.php)). 
+
+Run the following to install the R package if absent:
+
+```{r}
+if(!requireNamespace("magick")){
+  install.packages("magick")
+}
+```
 
 #### Example setup
 
@@ -1040,6 +1053,25 @@ cellid.args <- rcell2.cellid::arguments(data.dir,
                                         file.pattern = arguments.file.pattern)
 ```
 
+#### Image set
+
+Choose which image sets in `cellid.args` you wish to use for the parameter scan.
+
+For example, choose some *positions* (image sets) and *t.frame*s (time frames)
+to restrict the image test set to only some of them.
+
+```{r}
+test.pos = unique(cellid.args$pos)
+test.frames = unique(cellid.args$t.frame)
+
+# Filter cellid.args to choose image sets for the scan
+scan.arguments <-  
+  subset(cellid.args, 
+         pos %in% test.pos & t.frame %in% test.frames)
+
+scan.arguments
+```
+
 #### Parameter combinations
 
 For each parameter variation, we need a new parameters file.
@@ -1063,24 +1095,6 @@ parameters.df
 ```
 
 > Note: You might want to select some rows from that table. In that case, simply filter it.
-
-#### Image set
-
-Choose which image sets in `cellid.args` you wish to use for the parameter scan.
-
-For example, choose some *positions* (image sets) and *t.frame*s (time frames)
-to restrict the image test set to only some of them.
-
-```{r}
-test.pos = cellid.args$pos %>% unique()
-test.frames = cellid.args$t.frame %>% unique()
-
-# Filter cellid.args to choose image sets for the scan
-scan.arguments <- cellid.args %>% 
-  subset(pos %in% test.pos & t.frame %in% test.frames)
-
-scan.arguments
-```
 
 #### Automatic scan
 
