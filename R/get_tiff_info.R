@@ -29,13 +29,13 @@ tiff_plane_info <- function(path, frames = 1, ...) {
     frames <- frames[1]
   }
   
-  if(!require(XML)){
-    warning("tiff_plane_info requires xmlToList from the XML package, which is not installed.")
+  if(!requireNamespace("XML")){
+    warning("tiff_plane_info requires xmlToList from the 'XML' package, which is not installed.")
     return(NULL)
   }
   
-  if(!require(ijtiff)){
-    warning("tiff_plane_info requires read_tags from the ijtiff package, which is not installed.")
+  if(!requireNamespace("ijtiff")){
+    warning("tiff_plane_info requires read_tags from the 'ijtiff' package, which is not installed.")
     return(NULL)
   }
   

@@ -204,12 +204,15 @@ parameter_scan <- function(parameters.df,
 #' @return A list with paths to the stacks, and 
 #' @export
 #' @importFrom stringr str_pad
-#' @import magick
 #' @import dplyr
 #'
 make_scan_stacks <- function(scan.results, 
                              stack.channels = "BF.out", 
                              annotation.font = "Hack") {
+  
+  if(!requireNamespace("magick")){
+    stop("make_scan_stacks: requires functions from the 'magick' package, which is not installed.")
+  }
   
   # Load results
   test.dir <- scan.results$test.dir
