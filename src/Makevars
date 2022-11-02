@@ -79,31 +79,24 @@ all: cellid $(tiflibs) cleanup test
 cellid: $(tiflibs)
 	cd cellID && make clean && make -j2 && make clean && mv cell ../cell || echo "// Makevars: Compilation failed for CellID. //"
 
+# Alternate, simpler, make command for libtiff, from the brew definition.
+# Seems to not rely on cmake. It produces the static archive "libtiff.a" in the "libtiff/.libs" directory.
+# https://github.com/Homebrew/homebrew-core/blob/HEAD/Formula/libtiff.rb
 # Note that each command is run independently, that's why all must have have a cd prepended.
 # By prepending a "-" dash, errors will be ignored: https://stackoverflow.com/a/2670143
-# Old cmake command:
-# cd tiff4/r_build && cmake ../ -DBUILD_SHARED_LIBS=OFF && make all -j2 -B || echo "// Makevars: Compilation failed for libtiff using cmake //"
+# This target depends on the "unziplib" target, which extracts the tiff library source
+# into the "src/tiff4" directory.
 tiflibs: unziplib
-	-mkdir -p tiff4/r_build
 	cd tiff4 && ./configure --disable-dependency-tracking --disable-lzma --disable-webp --disable-zstd --without-x --disable-jbig || echo "// Makevars: Configuration failed for libtiff using make //"
 	cd tiff4 && make all -j4 || echo "// Makevars: Compilation failed for libtiff using make //"
 	-mkdir -p ../inst/tiff4/include
-	-mv tiff4/libtiff/*.h ../inst/tiff4/include/
-	-mv tiff4/r_build/libtiff/*.h ../inst/tiff4/include/
+	-cp tiff4/libtiff/*.h ../inst/tiff4/include/
 	-mkdir -p ../inst/tiff4/lib
-	-mv tiff4/r_build/libtiff/libtiff.a ../inst/tiff4/lib/
-
-# Alternate, simpler, make command for libtiff, from the brew definition.
-# Seems to not rely on cmake. However, it does not produce the static archive "libtiff.a".
-# Perhaps it can be created with "ar c libtiff.a *.o" at the ".o" objects directory.
-# https://github.com/Homebrew/homebrew-core/blob/HEAD/Formula/libtiff.rb
-tiflibs2: unziplib
-	cd ./configure --disable-dependency-tracking --disable-lzma --disable-webp --disable-zstd --without-x --enable-static=yes
-	cd make all -j4
+	-cp tiff4/libtiff/.libs/libtiff.a ../inst/tiff4/lib/
 	
 # By prepending a "-" dash, errors will be ignored: https://stackoverflow.com/a/2670143
 unziplib: preclean
-	-unzip ../inst/tiff-4.1.0.zip
+	-unzip ../inst/tiff-4.1.0.zip || echo "// Makevars: Unzip failed for tiff-4.1.0.zip. //"
 	-mv tiff-4.1.0 tiff4
 
 # By prepending a "-" dash, errors will be ignored: https://stackoverflow.com/a/2670143

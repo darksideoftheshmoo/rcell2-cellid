@@ -14,7 +14,6 @@ make all -j4 || echo "// Makevars: Compilation failed for libtiff using make //"
 cd ..
 mkdir -p ../inst/tiff4/include
 cp tiff4/libtiff/*.h ../inst/tiff4/include/
-cp r_build/libtiff/*.h ../inst/tiff4/include/
  
 # Copy static archive file
 mkdir -p ../inst/tiff4/lib

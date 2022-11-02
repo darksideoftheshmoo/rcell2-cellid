@@ -36,9 +36,12 @@ $(info "Using bundled libtiff")
 ## y parece que también necesitaba: "-lzstd" y "-lwebp",
 ## pero en Windows alcanzó con "-ltiff -ljpeg -lz".
 
+# Link to the static "libtiff.a".
 # Note: tiflinks es una variable exportada del Makevars.
+# It may contain just "-ltiff" (to link the system tiff library),
+# or "-ltiff -llzma -lzstd -lz -lm"  (to link the bundled tiff library),
 CLIBStiff = -L../../inst/tiff4/lib ${tiflinks}
-# Además necesitamos los headers:
+# We also need to include the ".h" header files
 CLIBStiffh = -I../../inst/tiff4/include
 
 else
