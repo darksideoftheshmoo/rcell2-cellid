@@ -50,19 +50,34 @@ parameter_scan <- function(parameters.df,
   ncores <- parallel::detectCores() - 1
   cl <- parallel::makeCluster(ncores, setup_strategy = "sequential")
   
-  # Create a parallel backend:
-  if(!progress){
-    # Register doParallel cluster
-    doParallel::registerDoParallel(cl)
-    opts <- list()
-  } else {
-    # Register doSnow cluster
+  # Check if the progressbar can be shown
+  if(!requireNamespace("doSNOW", quietly = T)){
+    # If the doSNOW package is missing...
+    if(progress) {
+      # And if a progress-bar was requested...
+      warning(paste0(
+        "\nparameter_scan: a progress-bar was requested, but the doSNOW package is missing.",
+        " Install the 'doSNOW' package to enable this feature.",
+        " Now falling back to registerDoParallel, without progress-bar :(\n"
+      ))
+      # then fall back to no progress-bar.
+      progress <- FALSE
+    }
+  }
+  
+  # Create a parallel back-end:
+  if(progress){
+    # Register doSNOW cluster
     doSNOW::registerDoSNOW(cl)
     # Setup a progressbar and run CellID:
     ntasks <- length(test.params)
     pb <- txtProgressBar(max = ntasks, style = 3)
     progress <- function(n) setTxtProgressBar(pb, n)
     opts <- list(progress=progress)
+  } else {
+    # Register a regular doParallel cluster
+    doParallel::registerDoParallel(cl)
+    opts <- list()
   }
   
   # Test
@@ -72,7 +87,7 @@ parameter_scan <- function(parameters.df,
   result <- 
     foreach(test.param=test.params, #.export = c(".parameters.df",)
             .options.snow=opts,
-            .packages = c("rcell2", "base", "dplyr")) %dopar% {
+            .packages = c("base", "dplyr")) %dopar% {
               
               # Prepare a temp dir for each cellid run
               tmp.path <- tempfile(pattern = "dir", tmpdir = test.dir)
