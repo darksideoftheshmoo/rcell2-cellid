@@ -87,8 +87,8 @@ cellid: $(tiflibs)
 # This target depends on the "unziplib" target, which extracts the tiff library source
 # into the "src/tiff4" directory.
 tiflibs: unziplib
-	cd tiff4 && ./configure --disable-dependency-tracking --disable-lzma --disable-webp --disable-zstd --without-x --disable-jbig || echo "// Makevars: Configuration failed for libtiff using make //"
-	cd tiff4 && make all -j4 || echo "// Makevars: Compilation failed for libtiff using make //"
+	cd tiff4 && ./configure --quiet --disable-dependency-tracking --disable-lzma --disable-webp --disable-zstd --without-x --disable-jbig || echo "// Makevars: Configuration failed for libtiff using make //"
+	cd tiff4 && make all -j4 --quiet || echo "// Makevars: Compilation failed for libtiff using make //"
 	-mkdir -p ../inst/tiff4/include
 	-cp tiff4/libtiff/*.h ../inst/tiff4/include/
 	-mkdir -p ../inst/tiff4/lib
