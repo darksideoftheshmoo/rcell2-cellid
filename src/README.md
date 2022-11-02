@@ -1,4 +1,4 @@
-# Test manual build
+# Manual build test
 
 ```bash
 # Unzip
@@ -30,7 +30,7 @@ make -j4
 ./cell -h
 ```
 
-# Makevars
+# Makevars notes
 
 ## Makevars
 
@@ -57,7 +57,7 @@ No funciona, probé de todo pero Windows es realmente un bardo.
     PKG_CFLAGS = -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
     PKG_LIBS=-lglib-2.0 -ltiff
 
-# libtiff
+# Bundling libtiff notes
 
 Para ver si la puedo incluir dentro del paquete:
 
@@ -133,7 +133,7 @@ Miscelaneus options
   --output_paw                   Make output for PAW.
 ```
 
-# Getting mask data out from cellid
+# Getting mask data from cellid
 
 Clues:
 
