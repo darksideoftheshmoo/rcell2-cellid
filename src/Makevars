@@ -47,7 +47,7 @@ tiflibs=tiflibs
 # Define a variable with the library links, 
 # it will be read by Cell-ID's Makefile later on.
 # tiflinks=-ltiff -llzma -ljbig -ljpeg -lwebp -lzstd -lz -lm
-tiflinks=-ltiff -llzma -lzstd -lz -lm
+tiflinks=-ltiff -lz -lm
 
 else
 $(info "Makevars: libtiff found by the C pre-processor.")

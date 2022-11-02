@@ -39,7 +39,7 @@ $(info "Using bundled libtiff")
 # Link to the static "libtiff.a".
 # Note: tiflinks es una variable exportada del Makevars.
 # It may contain just "-ltiff" (to link the system tiff library),
-# or "-ltiff -llzma -lzstd -lz -lm"  (to link the bundled tiff library),
+# or "-ltiff -lz -lm"  (to link the bundled tiff library),
 CLIBStiff = -L../../inst/tiff4/lib ${tiflinks}
 # We also need to include the ".h" header files
 CLIBStiffh = -I../../inst/tiff4/include
