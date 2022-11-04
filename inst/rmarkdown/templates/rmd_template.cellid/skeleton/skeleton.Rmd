@@ -61,7 +61,7 @@ library(tidyverse)  # import numpy as np (?)
 - **Read the help page** of functions before using them. Open help pages with R's `?` (e.g. `?arguments`).
 - **Read the README**.md at rcell2's [GitHub repo](https://github.com/darksideoftheshmoo/rcell2/).
 
-## Minimal example
+## Example workflow
 
 A minimal usage example with:
 
@@ -75,7 +75,7 @@ A minimal usage example with:
 
 First point R to the folder containing the images.
 
-If you already have an appropriate dataset, specify the path like this:
+If you already have an appropriate dataset, specify the path to the images like this:
 
 ```{r}
 # Location of your image set
@@ -100,6 +100,7 @@ if(!requireNamespace("rcell2.examples")){
 # List available datasets:
 dir(system.file("extdata/sample_datasets/", package = "rcell2.examples"))
 ```
+
 Second, get the path to the chosen example dataset and check if the files are there:
 
 ```{r}
@@ -111,7 +112,7 @@ data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
 dir(data.dir)
 ```
 
-### Prepare arguments for Cell-ID
+### Prepare images for Cell-ID
 
 Optional: use the following if you have images from Metamorph's MDA, you may need to rename them.
 
@@ -123,13 +124,16 @@ result <- rename_mda(images.path = data.dir)
 data.dir <- result$rename.path
 ```
 
-Optional: customize parameters for CellID (details below).
+### Prepare arguments for Cell-ID
+
+Customize parameters for CellID (details below).
 
 ```{r}
 parameters.txt <- rcell2.cellid::parameters_write(rcell2.cellid::parameters_default())
 ```
 
-Prepare image paths for CellID, with a default "file.pattern":
+Prepare the "arguments" dataframe for CellID, 
+which lists the image files that match the regular expression specified in `file.pattern`:
 
 ```{r}
 cellid.args <- 
@@ -262,15 +266,17 @@ cdata %>% ggplot(aes(a.tot, fft.stat)) +
   geom_point() + facet_grid(~pos)
 ```
 
+> Note: the "c" in "cdata" stands for _cell_ data.
+
 Output variables are described by this documentation function:
+
+> This data is only available if `cell2` has been run with `output_coords_to_tsv = T`.
 
 ```{r}
 rcell2.cellid::cellid_output_descriptions(list.output = F)
 ```
 
 Plot cell boundaries:
-
-> This data is only available if `cell2` has run with `output_coords_to_tsv = T`.
 
 ```{r}
 cell.boundaries %>% 
@@ -281,7 +287,41 @@ cell.boundaries %>%
   facet_wrap(~pos, scales = "free") + theme(aspect.ratio = 1)
 ```
 
-#### Save and restore progress
+### Load position metadata
+
+This step is optional, but also part of our usual workflow.
+
+The `pdata` CSV file holds information about how the cells
+of each position (and time) were prepared and treated.
+
+Get the path to the file:
+
+```{r}
+# pdata_path <- "path/to/your/pdata.csv"
+pdata_path <- dir(data.dir, "pdata.csv", full.names = T)  # Sample pdata
+
+pdata_path
+```
+
+Load "pdata":
+
+```{r}
+# It is a "metadata" dataframe we usually join to cdata by "position" and/or "t.frame",
+# which contains other experimental variables: simuli concentrations, notes, etc.
+pdata <- readr::read_csv(pdata_path)
+
+pdata
+```
+
+> Note: the "p" in "pdata" stands for microscope _position_ data.
+
+This table is usually joined to cdata by position (and time frame if available).
+
+```{r eval=F}
+cdata <- left_join(cdata, pdata)
+```
+
+### Save and restore progress
 
 We recommend saving the current state at this point.
 
