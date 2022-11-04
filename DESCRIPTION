@@ -47,5 +47,6 @@ Suggests:
     rcell2.magick,
     magick,
     ijtiff,
+    tiff,
     XML,
     doSNOW
