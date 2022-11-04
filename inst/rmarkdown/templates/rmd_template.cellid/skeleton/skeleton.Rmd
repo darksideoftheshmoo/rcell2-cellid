@@ -317,6 +317,9 @@ pdata
 
 This table is usually joined to cdata by position (and time frame if available).
 
+> Warning: `load_cell_data` does the following automatically if a pdata.csv file is found next to the images.
+> If it were the case, you shouldn't run the join again.
+
 ```{r eval=F}
 cdata <- left_join(cdata, pdata)
 ```
@@ -339,14 +342,21 @@ load("01-segmentation_results.Rdata")
 
 ### Advanced tools
 
-You may want to check out the Shiny/Magick rcell2 analisys package:
+You may want to check out the Shiny/Magick rcell2 analisys package!
+
+It provides functions to manipulate images of single cells into strips, mosaics,
+and plots. It has it's own notebook with full examples and explanations.
+
+Execute the following to install the package and open the template:
 
 ```{r eval=F}
-# rcell2's image manipulation and cytometry package
-if(!requireNamespace("rcell2.magick")){
-   devtools::install_github("darksideoftheshmoo/rcell2", ref = "rcell2.magick")
-}
+if(!requireNamespace("rcell2.cellid")) remotes::install_github("darksideoftheshmoo/rcell2-cellid")
+rcell2.cellid::get_workflow_template_cellid()
+```
 
+Optional: run the following, line by line, to preview its features.
+
+```{r eval=F}
 # Images data.frame
 images <- cell.data$images
 
@@ -360,9 +370,6 @@ rcell2.magick::cellSpreadPlot(cdata, images)
 # App
 rcell2.magick::shinyCell(cdata, paths = images)
 ```
-
-> Images will be displayed by default at RStudio's viewer pane.
-> Use `magickForKnitr` and `include_graphics` to include them in this notebook.
 
 # Full usage guide
 
