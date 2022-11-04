@@ -16,7 +16,8 @@ cell2(
   output_coords_to_tsv = F,
   save.logs = T,
   verbose = T,
-  progress = F
+  progress = F,
+  check_fail = F
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ cell2(
 \item{verbose}{Print startup messages.}
 
 \item{progress}{Print a progress bar. Requires the \code{doSNOW} package.}
+
+\item{check_fail}{Whether to produce an error if any output file or directory already exists.}
 }
 \value{
 A dataframe with one column indicating the issued commands and exit codes (in the command.output column). If the execution was sucessful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the CellID output, typically located at the images path.

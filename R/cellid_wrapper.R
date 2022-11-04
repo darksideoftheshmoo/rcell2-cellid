@@ -90,6 +90,7 @@ cell2_test <- function(){
 #' @param save.logs Set to TRUE to save CellID logs to text files, into the output directory of their corresponding position.
 #' @param verbose Print startup messages.
 #' @param progress Print a progress bar. Requires the \code{doSNOW} package.
+#' @inheritParams arguments
 #' @return A dataframe with one column indicating the issued commands and exit codes (in the command.output column). If the execution was sucessful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the CellID output, typically located at the images path.
 # @examples
 # cell(cell.args, path = path)
@@ -108,7 +109,8 @@ cell2 <- function(arguments,
                   label_cells_in_bf = F,
                   output_coords_to_tsv = F,
                   save.logs = T, verbose=T,
-                  progress=F){
+                  progress=F,
+                  check_fail=F){
   
   if(F){
     # For testing (NOT RUN)
@@ -121,6 +123,9 @@ cell2 <- function(arguments,
     encode_cellID_in_pixels = F
     save.logs = T
   }
+  
+  # Check for existing output files
+  rcell2.cellid::arguments_check(arguments.df.out, check_fail)
   
   # CellID path setup ####
   if(is.null(cell.command)){

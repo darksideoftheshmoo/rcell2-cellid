@@ -39,6 +39,7 @@ parameter_scan(
     \item{\code{output_coords_to_tsv}}{Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (CellID option '-m').}
     \item{\code{save.logs}}{Set to TRUE to save CellID logs to text files, into the output directory of their corresponding position.}
     \item{\code{verbose}}{Print startup messages.}
+    \item{\code{check_fail}}{Whether to produce an error if any output file or directory already exists.}
   }}
 }
 \value{
