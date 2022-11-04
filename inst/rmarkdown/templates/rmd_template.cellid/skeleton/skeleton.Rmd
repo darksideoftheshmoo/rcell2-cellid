@@ -470,7 +470,7 @@ It may be a good idea to double check that the physical coordinates of your imag
 match your expectations (i.e. the column/row pairs of each well in a microscopy plate).
 This information is stored in TIFF's metadata.
 
-It requires the ijtiff and XML package:
+It requires the `ijtiff` and `XML` packages:
 
 > The xml2 package does not convert the attributes automatically,
 > so I stuck to the XML package. See tiff_plane_info's help and source for details.
@@ -491,7 +491,7 @@ metamorph_pics_dir <- system.file("extdata/sample_datasets/sample_images/",
 dir(metamorph_pics_dir)
 ```
 
-List plane info for an example image:
+Get the path to an example image:
 
 ```{r}
 # Path to a sample image
@@ -501,6 +501,7 @@ metamorph_pics <- paste0(image_list$path, "/", image_list$image)
 metamorph_pic <- metamorph_pics[2]
 ```
 
+List plane info for the image:
 
 ```{r}
 # Get the image plane metadata
@@ -547,7 +548,7 @@ ggplot(plane_info_df) +
   geom_point(aes(stage.position.x, stage.position.y))
 ```
 
-#### Check position indexes
+#### Check position indexes and overlap
 
 The following code match the images' _position_ (Pos) to their microscope stage _physical_ XY coordinates,
 which are stored in the TIFF tags of the original images.
