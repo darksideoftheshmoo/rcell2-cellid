@@ -125,7 +125,7 @@ cell2 <- function(arguments,
   }
   
   # Check for existing output files
-  rcell2.cellid::arguments_check(arguments.df.out, check_fail)
+  rcell2.cellid::arguments_check(arguments, check_fail)
   
   # CellID path setup ####
   if(is.null(cell.command)){
