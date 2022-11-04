@@ -125,7 +125,7 @@ cell2 <- function(arguments,
   }
   
   # Check for existing output files
-  rcell2.cellid::arguments_check(arguments, check_fail)
+  arguments_check(arguments, check_fail)
   
   # CellID path setup ####
   if(is.null(cell.command)){
@@ -563,15 +563,29 @@ arguments <- function(path,
     stop("arguments error: at least one of the values in the arguments.df dataframe is missing or blank, check your directories and file.pattern")
   }
   
-  # Check for existing output files
-  rcell2.cellid::arguments_check(arguments.df.out, check_fail)
+  # Add Cell-ID's t.frame (annoying) indexing
+  cids.frame <- arguments.df.out %>% 
+    group_by(pos, t.frame) %>% 
+    summarise(.groups = "drop_last") %>%
+    arrange(pos, t.frame) %>% 
+    mutate(t.frame.cid = 1:n() - 1)
+  # Join to output
+  arguments <- left_join(arguments.df.out,
+                         cids.frame, 
+                         by = c("pos", "t.frame"))
   
-  return(arguments.df.out)
+  # Check for existing output files
+  arguments_check(arguments, check_fail)
+  
+  # Chin pum!
+  return(arguments)
 }
 
 #' Check if output files have already been created
 #' 
 #' Emits warnings, and optionally an error, to prevent accidental overwriting.
+#' 
+#' Also checks if Cell-IDs t.frame numbering will match the t.frame in the file's names.
 #'
 #' @inheritParams arguments 
 #' @param check_fail Whether to produce an error if any output file or directory already exists.
@@ -583,26 +597,38 @@ arguments_check <- function(arguments, check_fail=F){
   n_row <- nrow(arguments)
   result <- TRUE
   
+  # Check that t.frame indices from files will match Cell-ID's indices.
+  t.frame.idx.match <- arguments %>% 
+    select(t.frame, t.frame.cid) %>% unique() %>% 
+    mutate(matches = t.frame == t.frame.cid)
+  if(sum(!t.frame.idx.match$matches) > 0) warning(paste0(
+    "\n\narguments_check: ",
+    "Index numbers in file names will not match those assigned by Cell-ID ",
+    "in the 'out_all' files. This will cause CRITICAL errors when filtering by t.frame ",
+    "or when joining pdata to cdata.",
+    "\n\n"
+  ))
+  
   n_out <- sum(file.exists(arguments$output))
-  if(n_out>0) warning(paste0("\narguments_check: ", 
+  if(n_out>0) warning(paste0("\n\narguments_check: ", 
                              n_out, "/", n_row, 
-                             " output directories already exist.\n"))
+                             " output directories already exist.\n\n"))
   
   
   n_bf <- sum(file.exists(paste0(arguments$path, "/", arguments$bf, ".out.tif")))
-  if(n_bf>0) warning(paste0("\narguments_check: ", 
+  if(n_bf>0) warning(paste0("\n\narguments_check: ", 
                             n_bf, "/", n_row, 
-                            " output BF.out.tif files already exist.\n"))
+                            " output BF.out.tif files already exist.\n\n"))
   
   
   n_fl <- sum(file.exists(paste0(arguments$path, "/", arguments$image, ".out.tif")))
-  if(n_fl>0) warning(paste0("\narguments_check: ", 
+  if(n_fl>0) warning(paste0("\n\narguments_check: ", 
                             n_fl, "/", n_row, 
-                            " output FL.out.tif files already exist.\n"))
+                            " output FL.out.tif files already exist.\n\n"))
   
   if (any(c(n_out, n_bf, n_fl) > 0)) {
     result <- FALSE
-    if(check_fail) stop("\narguments_check: output files found, raising error!\n")
+    if(check_fail) stop("\n\narguments_check: output files found, raising error!\n\n")
   }
   
   return(result)

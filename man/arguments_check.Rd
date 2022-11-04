@@ -15,3 +15,6 @@ TRUE if no existing output files were found
 \description{
 Emits warnings, and optionally an error, to prevent accidental overwriting.
 }
+\details{
+Also checks if Cell-IDs t.frame numbering will match the t.frame in the file's names.
+}

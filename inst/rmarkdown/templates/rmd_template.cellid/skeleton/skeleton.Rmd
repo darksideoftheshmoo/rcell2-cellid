@@ -263,7 +263,7 @@ Access the main output data and plot:
 cdata <- cell.data$data
 
 cdata %>% ggplot(aes(a.tot, fft.stat)) + 
-  geom_point() + facet_grid(~pos)
+  geom_point() + facet_grid(t.frame~pos)
 ```
 
 > Note: the "c" in "cdata" stands for _cell_ data.
