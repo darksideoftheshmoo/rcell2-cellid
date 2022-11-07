@@ -32,7 +32,7 @@ knit: (function(inputFile, encoding) {
 
 ```{r setup, include=FALSE}
 # Set chunk options
-knitr::opts_chunk$set(echo = T, message = F, out.width = "100%",
+knitr::opts_chunk$set(echo = T, message = F, out.width = "100%", eval = F,
                       # https://stackoverflow.com/a/15081230
                       comment=NA)
                       # https://yihui.org/knitr/options/#chunk-options
@@ -56,6 +56,9 @@ library(tidyverse)  # import numpy as np (?)
 
 # Introduction
 
+This notebook contains a minimal [Example workflow], with a broad overview of the pipeline,
+and a [Full usage guide] with in-depth explanations and advanced usage examples.
+
 ## Friendly reminder
 
 - **Read this notebook carefully**.
@@ -66,9 +69,11 @@ library(tidyverse)  # import numpy as np (?)
 
 This is only meant as a quick example.
 
-For full usage details, skip to the next main heading, named "Full usage guide", and read it carefully.
+For full usage details, skip to the [Full usage guide] section of this notebook, 
+and read it carefully.
 
-Always read the `?help` before using a function ;) specially when they do file operations, which are irreversible.
+Always read the `?help` before using a function ;) specially when they do file operations,
+which are irreversible.
 
 This example uses:
 
@@ -82,6 +87,9 @@ This example uses:
 First point R to the folder containing the images.
 
 If you already have an appropriate dataset, specify the path to the images like this:
+
+> Note: the aprropriate pattern for file names is described at the [Image file names]
+> section of this notebook.
 
 ```{r}
 # Location of your image set
@@ -122,85 +130,47 @@ data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
 dir(data.dir)
 ```
 
-### Prepare images for Cell-ID
+### Naming images for Cell-ID
 
-Optional: use the following if you have images from Metamorph's MDA, you may need to rename them.
+Using Metamorph's _Multi-dimensional acquisition_ (MDA for short), may result in file names
+different from the default style (i.e `YFP_Position01_time1.tif`, and so on).
 
-```{r eval=F}
-# Rename images (uses symlinks by default)
-result <- rename_mda(images.path = data.dir)
+The default pattern, described at the [Image file names] section of this notebook.
+`rename_mda` will help you rename file names to match that pattern.
 
-# Get the path where the renamed images were saved
-data.dir <- result$rename.path
-```
-
-### Prepare arguments for Cell-ID
-
-Customize parameters for CellID (details below).
-
-```{r}
-parameters.txt <- rcell2.cellid::parameters_write(rcell2.cellid::parameters_default())
-```
-
-Prepare the "arguments" dataframe for CellID, 
-which lists the image files that match the regular expression specified in `file.pattern`:
-
-```{r}
-cellid.args <- 
-  rcell2.cellid::arguments(path = data.dir,
-                           # file.pattern = "^(BF)_Position(\\d+)_time(\\d+).tif$", bf_as_fl = T,  # Settings for a "BF only" experiment.
-                           # file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)().tif$"  # Settings for a single time frame experiment.
-                           # parameters = parameters.txt  # Optional: include if defined previously.
-                           )
-```
-
-### Preview images
-
-Open your images with FIJI-ImageJ before you begin.
-
-No analysis package exists (yet) that can replace a researcher's visual assesment.
-
-A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment.
-
-> Note: this macro uses a "file" pattern that only matches input images (and not ".out")
-> in a tipically-named set of images.
-
-Run the following code, copy the output, and paste it into a new "Macro" window in ImageJ/FIJI. Run the macro code in ImageJ, a new hyperstack will open.
-
-```{r}
-n_axis1 <- length(unique(cellid.args$t.frame))
-n_axis2 <- length(unique(cellid.args$pos))
-n_axis3 <- length(unique(cellid.args$ch))
-
-# Add 1 to include the BF images as a possible channel
-n_axis3 <- n_axis3 + 1
-
-macro <- glue::glue(
-  '// Macro',
-  'run("Image Sequence...", "open={data.dir} file=(.*\\\\d.tif$) sort use");',
-  'run("Stack to Hyperstack...", "order=xyczt(default) channels={n_axis1} slices={n_axis2} frames={n_axis3} display=Grayscale");',
-  .sep = "\n"
-)
-
-cat(macro)
-```
-
-> Note: the dimensions names may be mismatched between R and the macro. This is because 
-virtual stacks must be in `xyczt` order (time is likely to end up as the "channels" dimension), 
-but the order in which the "Image Sequence..." is loaded depends on how their files are named.
-
-The only restriction of this approach is that only "3" dimensions are available for
-browsing: `frame`, `plane`, and `channel`. This is relevant if you wish to browse
-segmentation results (which adds another dimension to the set: original vs "out").
-A fourth dimension would be needed, but Hyperstacks only provide 3. Alternatively, 
-open another virtual hyperstack for the output images, and browse them in-sync.
-
-<!-- Si alguien sabe como reordenar fotos en un stack, que avise. Creo que se puede ¿reslice? ¿algo asi? -->
-
+The function is provided by the `rcell2.cellid` package. A full example on how to use it is 
+available below, in the [Renaming images] section of this notebook.
 
 ### Run Cell-ID
 
-Run CellID with the built-in executable:
+1. Customize parameters for CellID.
+
+```{r}
+# Create a list of parameters with default values.
+parameters.list <- rcell2.cellid::parameters_default()
+
+# Write the parameters to a plain-text file, and save its path.
+parameters.txt <- rcell2.cellid::parameters_write(parameters.list)
+```
+
+> Note: segmentation parameters for Cell-ID and criteria to customize them
+> are discussed in the [Parameters] section of this notebook.
+
+2. Prepare the "arguments" dataframe for CellID, which lists the image files that match
+   the regular expression specified in `file.pattern`.
+
+```{r}
+# Gather images
+cellid.args <- 
+  rcell2.cellid::arguments(path = data.dir, 
+                           parameters = parameters.txt)
+```
+
+> Note: the default file pattern will match file names that match de default pattern
+> (described in the [Image file names] section). Alternative patterns are discussed
+> in the [Images and Arguments] section.
+
+3. Run Cell-ID with the built-in executable:
 
 ```{r eval=F}
 cell2.out <- 
@@ -214,36 +184,24 @@ cell2.out <-
 cell2.out
 ```
 
+> Note: we suggest that you check your images before segmentation, as shown in the
+> [Preview images in ImageJ] section. It may be critical to optimize parameters on a subset of 
+> images, before processing the whole experiment, as shown in the [Tuning parameters] 
+> section.
+
 ### Load the output
 
-The output tables can be loaded with `cell.load.alt`.
+The output tables can be loaded with `cell.load.alt` provided by this package.
 
 ```{r eval=F}
 # Load output
 cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
 ```
 
-<!-- Restore previous output -->
-```{r include=F}
-# saveRDS(cell.data, file = "inst/extdata/cell.data.RDS")
-cell.data <- readRDS(file = "inst/extdata/cell.data.RDS")
-```
+> Note: detailed usage of this function is described at the [Output data] section of this
+> notebook.
 
-### Alternatives
-
-Function `load_cell_data` from `rcell2` can load those tables as well.
-
-```{r eval=F}
-# rcell2's main analysis package
-if(!requireNamespace("rcell2")){
-   devtools::install_github("darksideoftheshmoo/rcell2")
-}
-
-# Load output
-cell_data <- rcell2::load_cell_data(path = data.dir)
-```
-
-`rcell2` can also load the cell boundaries and interior pixels coordinates,
+`rcell2.cellid` can also load the cell boundaries and interior pixels coordinates,
 if either `output_coords_to_tsv` or `encode_cellID_in_pixels` were set to `TRUE`
 when Cell-ID was run.
 
@@ -252,20 +210,15 @@ To load the boundary pixels, use the `cell.load.boundaries`:
 ```{r eval=F}
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
-  rcell2::cell.load.boundaries(data.source = "masks.tsv",
-                               arguments = cellid.args,
-                               pixel.type = "b"
-                               )
-```
-
-<!-- Restore previous output -->
-```{r include=F}
-# saveRDS(cell.boundaries, file = "inst/extdata/cell.boundaries.RDS")
-cell.boundaries <- readRDS(file = "inst/extdata/cell.boundaries.RDS")
+  rcell2.cellid::cell.load.boundaries(data.source = "masks.tsv",
+                                      arguments = cellid.args,
+                                      pixel.type = "b")
 ```
 
 > This data is only available if `cell2` was run with `output_coords_to_tsv = T`.
 
+> Note: `rcell2` provides the `load_cell_data` and `cell.load.boundaries` functions,
+> to load the measurements and cell boundary pixels, respectively.
 
 ### Understanding the data
 
@@ -282,8 +235,6 @@ cdata %>% ggplot(aes(a.tot, fft.stat)) +
 
 Output variables are described by this documentation function:
 
-> This data is only available if `cell2` has been run with `output_coords_to_tsv = T`.
-
 ```{r}
 rcell2.cellid::cellid_output_descriptions(list.output = F)
 ```
@@ -298,6 +249,8 @@ cell.boundaries %>%
   geom_path()+
   facet_wrap(~pos, scales = "free") + theme(aspect.ratio = 1)
 ```
+
+> This data is only available if `cell2` has been run with `output_coords_to_tsv = T`.
 
 ### Load position metadata
 
@@ -359,14 +312,19 @@ You may want to check out the Shiny/Magick rcell2 analisys package!
 It provides functions to manipulate images of single cells into strips, mosaics,
 and plots. It has it's own notebook with full examples and explanations.
 
-Execute the following to install the package and open the template:
+Execute the following to install the package.
 
 ```{r eval=F}
-if(!requireNamespace("rcell2.cellid")) remotes::install_github("darksideoftheshmoo/rcell2-cellid")
-rcell2.cellid::get_workflow_template_cellid()
+if(!requireNamespace("rcell2.magick")) remotes::install_github("darksideoftheshmoo/rcell2-magick")
 ```
 
-Optional: run the following, line by line, to preview its features.
+Run the following to open package's notebook:
+
+```{r}
+rcell2.magick::get_workflow_template_magick()
+```
+
+Alternatively, run the following line-by-line, to preview its features.
 
 ```{r eval=F}
 # Images data.frame
@@ -431,7 +389,7 @@ note that it has **3 capturing groups** (suff between parentheses).
 The regex as a whole is used to select images from a directory (filtering out
 other files) and the capturing groups are used to extract the metadata.
 
-### Renaming Metamorph MDA images
+### Renaming images
 
 Metamorph's _Multi-dimensional acquisition_ (MDA for short) may use file 
 names different from the usual style (i.e `far6_w2LED-BF--YFPcube--cam_s7_t2.TIF` 
@@ -456,7 +414,7 @@ rename_mda(rename.function = NULL,
   .$status %>% select(file, rename.file)
 ```
 
-To run the function on all images, provide the path to the images director.
+To run the function on all images, provide the path to the images directory.
 
 A _dummy_ example follows:
 
@@ -470,7 +428,7 @@ images.path <- "/tmp/images"  # Path to the images produced by MetaMorph's MDA.
 rename_mda(images.path)
 ```
 
-Check output:
+List all files in the images directory to inspect the result:
 
 ```{r}
 dir(images.path, recursive = T)
@@ -482,6 +440,7 @@ To use the function with different file name patterns, adjust `identifier.patter
 
 > Note that the `ch` field in `channel.maping.df` must match exactly the
 > text captured by the channel group in the `identifier.pattern` regex.
+> Read the function's help page for details: `?rename_mda`.
 
 ### Check XY stage coordinates
 
@@ -489,10 +448,15 @@ It may be a good idea to double check that the physical coordinates of your imag
 match your expectations (i.e. the column/row pairs of each well in a microscopy plate).
 This information is stored in TIFF's metadata.
 
-It requires the `ijtiff` and `XML` packages:
+It requires the `ijtiff` and `XML` packages, install them by running the following:
 
-> The xml2 package does not convert the attributes automatically,
-> so I stuck to the XML package. See tiff_plane_info's help and source for details.
+```{r}
+if(!requireNamespace("ijtiff")) install.packages("ijtiff")
+if(!requireNamespace("XML")) install.packages("XML")
+```
+
+<!-- Internal note: The xml2 package does not convert the attributes automatically, 
+so I stuck to the XML package. See tiff_plane_info's help and source for details. -->
 
 #### Load TIFF metadata
 
@@ -520,6 +484,9 @@ metamorph_pics <- paste0(image_list$path, "/", image_list$image)
 metamorph_pic <- metamorph_pics[2]
 ```
 
+> Note: the usage of the "file.pattern" argument is explained below, at the
+> [Images and Arguments] section of this notebook.
+
 List plane info for the image:
 
 ```{r}
@@ -533,8 +500,9 @@ pic_plane_info
 > This can happen if the original images were modified or exported from ImageJ or 
 > other sofware. Continue if there are no warnings, or else skip this section.
 
+Show the stage-position properties:
+
 ```{r}
-# Show the stage-position properties
 subset(pic_plane_info, grepl("stage-position", id))
 ```
 
@@ -560,12 +528,12 @@ plane_info_df
 
 Plot XY stage positions:
 
-> This is specially useful when tracing a path for positions in a many-well time-course experiment.
-
 ```{r}
 ggplot(plane_info_df) +
   geom_point(aes(stage.position.x, stage.position.y))
 ```
+
+> This plot is specially useful when tracing a path for positions in a many-well time-course experiment.
 
 #### Check position indexes and overlap
 
@@ -600,18 +568,27 @@ plane_info_df %>%
           "Compare the index numbers with the expected physical distrubution in the well plate.\nThe shaded areas around index numbers shuould not overlap with each other.")
 ```
 
-### Preview images
+> If any two shaded areas overlap, there will be duplicated cells in the dataset.
+
+We do not yet offer a way to remove them automatically. You may do this yourself
+by finding the XY coordinates of the first cells not shared between images, and using
+their coordinates to remove the overlaping set from one position.
+
+### Preview images in ImageJ
+
+No analysis package exists (yet) that can replace a researcher's general visual assesment.
 
 Open your images with FIJI-ImageJ before you begin.
-
-No analysis package exists (yet) that can replace a researcher's visual assesment.
 
 A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment.
 
 > Note: this macro uses a "file" pattern that only matches input images (and not ".out")
 > in a tipically-named set of images.
 
+Run the following code, copy the output, and paste it into a new "Macro" window in ImageJ/FIJI. Run the macro code in ImageJ, a new hyperstack will open.
+
 ```{r}
+# Make an ImageJ macro to browse the images before segmentation
 n_axis1 <- length(unique(cellid.args$t.frame))
 n_axis2 <- length(unique(cellid.args$pos))
 n_axis3 <- length(unique(cellid.args$ch))
@@ -641,13 +618,20 @@ open another virtual hyperstack for the output images, and browse them in-sync.
 
 <!-- Si alguien sabe como reordenar fotos en un stack, que avise. Creo que se puede ¿reslice? ¿algo asi? -->
 
-### FFT filter on BF images
-
-#### Sequential
+### Apply FFT filter on BF images
 
 Optionally, use ImageJ's bandpass FFT filter on the defocused brightfield images.
 
-Here is a wrapper that does most of this for you, calling ImageJ headlessly.
+This can help Cell-ID find cells and reduce background artifacts.
+
+There are two ways to apply the filter:
+
+- [Parallel] run: paralellized execution, which is faster and uses more resources (recommended).
+- [Sequential] run: one image is processed at a time, which can be slow on large datasets.
+
+#### Sequential
+
+Here is a wrapper that does most of this for you, calling ImageJ headlessly, on all images.
 
 Prepare new image directory with the subset of BF files:
 
@@ -709,6 +693,8 @@ if(length(all.files) == length(bf.files) + length(the.rest)){
 
 
 #### Parallel
+
+This is the parallel version of the FFT filter script.
 
 ```{r eval=F}
 # Get image paths
@@ -999,8 +985,13 @@ Cell-ID's output consists mainly of:
 File patterns for the image set may vary slightly; depending on what images were 
 provided as input, and the identifiers in their file names.
 
-The most common fluorescent channel pattern for `cell.load.alt` and `parameter_scan`
-are defined below. Choose one pattern and comment the others:
+The pattern must match file names of fluorescent images, and have a capturing group
+for the channel identifier (e.g. `YFP`, `GFP`, etc.).
+
+The most common fluorescent channel patterns for `cell.load.alt` and `parameter_scan`
+are defined below.
+
+Choose one pattern and comment the others:
 
 ```{r}
 # Default value: all fluorescent tags, including Z-stack fluorescence channels.
@@ -1013,6 +1004,13 @@ fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
 # fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+.tif$"
 ```
 
+List files that match the pattern, to check that it works as expected:
+
+```{r}
+data.dir %>% 
+  dir(pattern = fluorescence.pattern)
+```
+
 #### Load the output
 
 The output tables can be loaded with `cell.load.alt`.
@@ -1023,12 +1021,12 @@ cell.data <- rcell2.cellid::cell.load.alt(path = data.dir,
                                           fluorescence.pattern=fluorescence.pattern)
 ```
 
-> Note: your `fluorescence.pattern` regex may vary (read the previous section).
+> Note: your `fluorescence.pattern` regex may vary (read the [Output file pattern] section above).
 
 Alternatively, function `load_cell_data` from `rcell2` can load those tables as well.
 
 ```{r eval=F}
-# rcell2's main analysis package
+# Install rcell2's main analysis package if unavailable.
 if(!requireNamespace("rcell2")){
    devtools::install_github("darksideoftheshmoo/rcell2")
 }
@@ -1037,28 +1035,25 @@ if(!requireNamespace("rcell2")){
 cell_data <- rcell2::load_cell_data(path = data.dir)
 ```
 
-`rcell2` can also load the cell boundaries and interior pixels coordinates,
-if either `output_coords_to_tsv` or `encode_cellID_in_pixels` were set to `TRUE`
-when Cell-ID was run.
+Both `rcell2.cellid` and `rcell2` provide the `cell.load.boundaries` function, which can 
+load the cell boundaries and interior pixels coordinates.
 
-To load the boundary pixels, use the `cell.load.boundaries`:
+This data is only available if either `output_coords_to_tsv` or `encode_cellID_in_pixels` 
+were set to `TRUE` when Cell-ID was run.
+
+To load the boundary pixels, use the `cell.load.boundaries` function. It can load this 
+information from two kinds of sources:
+
+* "`masks.tsv`": from TSV files, available if Cell-ID was run with `output_coords_to_tsv=TRUE`.
+* "`out.tif`": from binary masks in TIFF files, available if Cell-ID was run with `encode_cellID_in_pixels=TRUE`.
 
 ```{r eval=F}
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
   rcell2::cell.load.boundaries(data.source = "masks.tsv",
                                arguments = cellid.args,
-                               pixel.type = "b"
-                               )
+                               pixel.type = "b")
 ```
-
-<!-- Restore previous output -->
-```{r eval=F}
-# Load output
-cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
-```
-
-> This data is only available if `cell2` was run with `output_coords_to_tsv = T`.
 
 #### Variable descriptions
 
@@ -1068,6 +1063,8 @@ in `cell.data$data`. They are available through a function:
 ```{r}
 rcell2.cellid::cellid_output_descriptions(list.output = F)
 ```
+
+The 
 
 ### Tuning parameters
 
@@ -1174,12 +1171,6 @@ scan.results <-
 
 > Have a look at the function's source code if you like, its hopefully well commented.
 
-<!-- Restore previous output -->
-```{r include=F}
-# saveRDS(scan.results, file = "inst/extdata/scan.results.RDS")
-scan.results <- readRDS(file = "inst/extdata/scan.results.RDS")
-```
-
 #### Plot summary
 
 A few "summary" quantities are calculated for each run:
@@ -1263,12 +1254,6 @@ A copy-paste-ready ImageJ Macro will be printed out, to easily load them as virt
 stack.paths <- 
   make_scan_stacks(scan.results = scan.results, 
                    stack.channels = "BF.out")
-```
-
-<!-- Restore previous output -->
-```{r include=F}
-# saveRDS(stack.paths, file = "inst/extdata/stack.paths.RDS")
-stack.paths <- readRDS(file = "inst/extdata/stack.paths.RDS")
 ```
 
 > Have a look at the function's source code if you like, its hopefully well commented.
