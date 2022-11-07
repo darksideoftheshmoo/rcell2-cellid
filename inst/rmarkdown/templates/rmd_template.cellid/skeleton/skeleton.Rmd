@@ -636,7 +636,7 @@ There are two ways to apply the filter:
 
 Here is a wrapper that does most of this for you, calling ImageJ headlessly, on all images.
 
-Prepare new image directory with the subset of BF files:
+Get the path to the original BF images:
 
 ```{r eval=F}
 # Choose your own path!
@@ -650,6 +650,7 @@ data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
 dir(data.dir)
 ```
 
+List the BF images from the `arguments` function, and symlink them to a separate directory:
 
 ```{r eval=F}
 # Get image paths
@@ -672,7 +673,7 @@ file.symlink(from = normalizePath(bf.files),
              to = paste0(dirname(bf.files[1]), "/", fft.bfs.subdirectory, "/", basename(bf.files)))
 ```
 
-Run FFT filter:
+Run FFT filter on all images sequentially:
 
 ```{r eval=F}
 # This may take a while...
@@ -698,6 +699,8 @@ if(length(all.files) == length(bf.files) + length(the.rest)){
 #### Parallel
 
 This is the parallel version of the FFT filter script.
+
+List the BF images from the `arguments` function:
 
 ```{r eval=F}
 # Get image paths
@@ -754,7 +757,7 @@ foreach(fft.bfs.subdir=fft.bfs.subdirs, .packages = "rcell2.cellid") %dopar% {
 parallel::stopCluster(cl)
 ```
 
-Symlink filtered BFs in each sibdirectory to a single "filtered" images directory:
+Symlink filtered BFs in each subdirectory to a single "filtered" images directory:
 
 ```{r eval=F}
 filtered.bfs <- dir(paste0(fft.bfs.subdirs, "/filtered"), full.names = T)
@@ -784,10 +787,10 @@ all(result)  # Check
 
 > Done!
 
-You can run CellID using this directory as a data.dir:
+You can run CellID using this directory as the `data.dir`:
 
 ```{r eval=F}
-normalizePath(filtered.bfs.dir)
+data.dir <- normalizePath(filtered.bfs.dir)
 ```
 
 ## Segmentation
