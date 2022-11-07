@@ -114,15 +114,13 @@ dir(data.dir)
 
 ### Prepare images for Cell-ID
 
-Optional: use the following if you have images from Metamorph's MDA, you may need to rename them.
+If your images do not follow the standard file name pattern, you can either:
 
-```{r eval=F}
-# Rename images (uses symlinks by default)
-result <- rename_mda(images.path = data.dir)
+1. Rename your files with the `rename_mda` function (run `?rename_mda` for details, and read the "Renaming Metamorph MDA images" section).
+2. Rename your files with a bulk renaming tool.
+3. Customize the regular expressions in `arguments`, `load_cell_data`, etc.
 
-# Get the path where the renamed images were saved
-data.dir <- result$rename.path
-```
+We do not recommend option 3, as it will be more prone to errors.
 
 ### Prepare arguments for Cell-ID
 
@@ -444,17 +442,20 @@ rename_mda(rename.function = NULL,
   .$status %>% select(file, rename.file)
 ```
 
-To run the function on all images, provide the path to the images director.
+To run the function on all images, provide the path to the images directory.
 
 A _dummy_ example follows:
 
 ```{r}
+# Path to the images produced by MetaMorph's MDA.
+images.path <- "/tmp/images/"  
+# Create a temporary directory
+dir.create(images.path)
 # Create a dummy file
-dir.create("/tmp/images")
-writeLines("", "/tmp/images/far6_w2LED-BF--YFPcube--cam_s7_t2.TIF")
+writeLines(text = "dummy content", 
+           con = paste0(images.path, "far6_w2LED-BF--YFPcube--cam_s7_t2.TIF"))
 
 # Rename files
-images.path <- "/tmp/images"  # Path to the images produced by MetaMorph's MDA.
 rename_mda(images.path)
 ```
 
