@@ -804,7 +804,7 @@ tracking, and some corrections.
 
 #### Descriptions
 
-Description for parameters:
+Show a data.frame with the description of each Cell-ID parameter:
 
 ```{r}
 rcell2.cellid::cellid_parameter_descriptions(list_format = F)
@@ -812,7 +812,7 @@ rcell2.cellid::cellid_parameter_descriptions(list_format = F)
 
 #### Example parameters
 
-There is a helper function to prepare parameters more easily:
+`parameters_default` is a helper function to prepare parameters more easily:
 
 ```{r}
 parameters.list <- 
@@ -827,8 +827,7 @@ which Cell-ID will read later on.
 For this purpose, you may use the `parameters_write()` function. It writes the parameters,
 and returns the path where it was saved.
 
-<!-- to do: consider moving this step into cell2() -->
-
+<!-- Internal note: consider moving this step into cell2() -->
 ```{r}
 parameters.txt <- rcell2.cellid::parameters_write(parameters.list)
 
@@ -840,10 +839,11 @@ Este path es el que hay que pasarle a `arguments()` en la siguiente sección.
 Revisemos el contenido del `parameters.txt` que generamos recién:
 
 ```{r}
+# Mostrar el contenido del archivo
 writeLines(readLines(parameters.txt))
 ```
 
-Here is a valid, hand-made parameter list, with the same defaults:
+For clarity, here is a valid, hand-made parameter list, with the same defaults:
 
 ```{r eval=F}
 parameters.list <- list(
@@ -862,7 +862,7 @@ parameters.list <- list(
 
 ### Images and Arguments
 
-Define the path of the original images:
+Define the path to the images of your experiment.
 
 ```{r}
 # Choose your own path!
@@ -875,6 +875,10 @@ data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
 # List files
 dir(data.dir)
 ```
+
+> In the chunk above we set up `data.dir` to hold the path to samples images of a
+time-course experiment. Remember to omit the corresponding lines when using your own
+images!
 
 The `arguments` function outputs a data.frame with information from images, 
 which is needed to run Cell-ID.
@@ -889,9 +893,9 @@ By default, `arguments` uses:
 Enclosed in parentheses are the "capture groups" of the regular expression.
 These delimit the parts of the file name which contain identifiers for 
 
-1. Imaging channel.
-2. Stage position index.
-3. Time-frame index.
+1. Imaging channel (`ch`).
+2. Stage position index (`pos`).
+3. Time-frame index (`t.frame`).
 
 If your experiment has a single time frame, and it is not part of the file names,
 the content of the corresponding capturing group can be deleted (leaving the
@@ -907,6 +911,13 @@ with index "2", and times 2, 3 and 4, use:
 
 > Note the `0*` in front of numbers. This indicates that there might me be leading
 > zeros in front of the position and time identifiers.
+
+If the identifiers on your file names appear in a different order, either rename them as
+shown in the [Renaming images] section, or reorder the default `file.pattern.groups.order`
+in the call to `arguments`.
+
+Note, however, that the channel identifier _must_ be first. Cell-ID will use the **first
+three letters** to distinguish and group imaging channels.
 
 #### Input file pattern
 
