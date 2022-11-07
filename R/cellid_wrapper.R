@@ -605,59 +605,87 @@ arguments_check <- function(arguments, check_fail=F){
   n_row <- nrow(arguments)
   result <- TRUE
   
+  # Check primary key ####
   # Check that t.frame indices from files will match Cell-ID's indices.
   t.frame.idx.match <- arguments %>% 
     select(t.frame, t.frame.cid) %>% unique() %>% 
     mutate(matches = t.frame == t.frame.cid)
-  if(sum(!t.frame.idx.match$matches) > 0) warning(paste0(
-    "\n\narguments_check: ",
-    "Index numbers in file names will not match those assigned by Cell-ID ",
-    "in the 'out_all' files. This will cause CRITICAL errors when filtering by t.frame ",
-    "or when joining pdata to cdata.",
-    "\n\n"
-  ))
-  
+  if(sum(!t.frame.idx.match$matches) > 0){
+    warning(paste0(
+      "\n\narguments_check: ",
+      "Time frame index numbers in file names will not match those assigned by Cell-ID ",
+      "in the 'out_all' files. This is likely to cause errors when filtering by t.frame ",
+      "or when joining pdata to cdata. Cell-IDs time frames start at 0 and grow by 1 unit.",
+      "\n\n"
+    ))
+  }
+  # Check channels ####
   # Check if the channel ID is of the right length
   ch_ids <- unique(arguments[["ch"]])
   ch_len_test <- any(nchar(ch_ids) != 3)
   if(ch_len_test){
     # Emit a warning
     warning(paste0(
-      "arguments warning: the following channel identifiers are of the incorrect length, which must be equal to 3 characters: '",
+      "\n\narguments warning: the following channel identifiers are of the incorrect length, which must be equal to 3 characters: '",
       paste0(ch_ids[nchar(ch_ids) != 3], collapse = "', '"),
-      "'. Cell-ID will group imaging channels by the first 3 letters of file names. This is not customizable yet."
+      "'. Cell-ID will group imaging channels by the first 3 letters of file names. This is not customizable yet.\n\n"
     ))
     # And check if this will cause problems with Cell-ID, and stop if it is the case:
     unique_ch_check <- arguments %>% 
       mutate(first_ch_chars = substr(image, 1, 3)) %>% 
       select(first_ch_chars, ch) %>% 
       unique() %>% nrow()
-    if(unique_ch_check != length(ch_ids)) 
+    if(unique_ch_check != length(ch_ids)) {
       stop(paste(
-        "arguments error: the first three letters of fluorescence",
+        "\n\narguments error: the first three letters of fluorescence",
         "images and the extracted channel IDs form different sets.",
-        "Rename your files and rebuild the arguments dataframe."
+        "Rename your files and rebuild the arguments dataframe.\n\n"
       ))
+    } else {
+      warning(paste(
+        "\n\narguments warning: though the channel IDs are short, there will be",
+        "no issues with the current image set during imaging channel mapping.\n\n"
+      ))
+    }
+      
   }
   
-  # Check if files exist
+  # Check output files ####
   n_out <- sum(file.exists(arguments$output))
-  if(n_out>0) warning(paste0("\n\narguments_check: ", 
-                             n_out, "/", n_row, 
-                             " output directories already exist.\n\n"))
+  if(n_out>0){
+    warning(paste0("\n\narguments_check: ", 
+                   n_out, "/", n_row, 
+                   " output directories already exist.\n\n"))
+  } else {
+    message("\n\narguments_check: no output directories exist.\n\n")
+  }
   
-  
+  # Check BF ####
   n_bf <- sum(file.exists(paste0(arguments$path, "/", arguments$bf, ".out.tif")))
-  if(n_bf>0) warning(paste0("\n\narguments_check: ", 
-                            n_bf, "/", n_row, 
-                            " output BF.out.tif files already exist.\n\n"))
+  if(n_bf>0){
+    # Warning
+    warning(paste0("\n\narguments_check: ", 
+                   n_bf, "/", n_row, 
+                   " output BF.out.tif files already exist.\n\n"))
+  } else {
+    # Message OK
+    message("\n\narguments_check: no output BF.out.tif files exist.\n\n")
+  }
   
-  
+  # Check FL ####
   n_fl <- sum(file.exists(paste0(arguments$path, "/", arguments$image, ".out.tif")))
-  if(n_fl>0) warning(paste0("\n\narguments_check: ", 
-                            n_fl, "/", n_row, 
-                            " output FL.out.tif files already exist.\n\n"))
+  if(n_fl>0){ 
+    # Warning
+    warning(paste0("\n\narguments_check: ", 
+                   n_fl, "/", n_row, 
+                   " output FL.out.tif files already exist.\n\n"))
+  } else{
+    # Message OK
+    message("\n\narguments_check:  no output FL.out.tif files exist.\n\n")
+  }
   
+  
+  # Raise an error if requested
   if (any(c(n_out, n_bf, n_fl) > 0)) {
     result <- FALSE
     if(check_fail) stop("\n\narguments_check: output files found, raising error!\n\n")

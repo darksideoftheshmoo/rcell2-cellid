@@ -962,31 +962,25 @@ cellid.args %>% filter(pos == 2, t.frame %in% c(4,2,3))
 
 The `cell2` function generates system commands to run Cell-ID,
 and executes them in parallel by default.
-<!-- La función `cell2` genera comandos para llamar a CellID por línea de comandos y los ejecuta en paralelo. -->
 
 The `cell.command` argument must be the path to the Cell-ID binary executable.
 In this version of `rcell2`, it defaults to `NULL`, and the intenal executable 
 is used.
-<!-- El parámetro `cell.command` es el path al ejecutable. En esta versión de `rcell2.cellid`, -->
-<!-- el binario se compila durante la instalación y se usa por defecto. -->
+
+Warning: existing output files **will be overwritten**. To check if this will happen 
+before running `cell2`, run "`arguments_check(cellid.args)`".
 
 ```{r eval=F}
 cell2.result <- rcell2.cellid::cell2(arguments = cellid.args,
-                                     # dry = T,
                                      n_cores = 2)
 ```
+
+> Run `?cell2` to learn about advanced segmentation parameters, and to generate additional
+output files with segmentation masks or identified cell-boundary pixel coordinates.
 
 > `n_cores` can be set to the number of CPU cores you want to use to parallelize
 > the segmentation (relying on `foreach`). It defaults to use all but one of the
 > available cores.
-
-> If `dry = T` is set, the input will be processed but Cell-ID will not be run.
-> This may be useful to do a final check on the commands that would have been run,
-> before actually running the segmentation.
-<!-- La opción `dry = T` indica a la función hacer "todo" menos ejecutar CellID, e imprime los comandos que habría usado. -->
-> The commands in the output can also be run mannualy from a terminal, which
-> can be useful for debugging.
-<!-- Para correr los comandos, usen `dry = F` (aunque tambien pueden copiarlos y pegarlos en una terminal, si están en Linux o Mac OS). -->
 
 ### Output data
 
