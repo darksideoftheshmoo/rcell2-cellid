@@ -1098,16 +1098,16 @@ if(!requireNamespace("magick")){
 
 Define working paths for parameter testing:
 
-* One with the images.
-* Another one for testing.
+* `data.dir`: directory with the original images (they will not be modified).
+* `test.dir`: directory for temporary files of the tuning process.
 
 ```{r}
-# The output of the parameter scan will be saved here:
-test.dir <- "/tmp/images_directory/test.dir"
-
-# Or use the example images
+# Use the example images or set your own path
 data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
                         package = "rcell2.examples")
+
+# The output of the parameter scan will be saved here:
+test.dir <- "/tmp/images_directory/test.dir"
 ```
 
 Setup arguments and patterns as usual (if not done already):
@@ -1129,14 +1129,17 @@ For example, choose some *positions* (image sets) and *t.frame*s (time frames)
 to restrict the image test set to only some of them.
 
 ```{r}
-test.pos = unique(cellid.args$pos)
-test.frames = unique(cellid.args$t.frame)
+# Choose test positions, frames and channels.
+test.pos = unique(cellid.args$pos)[1]        # e.g.: One position.
+test.frames = unique(cellid.args$t.frame)[1] # e.g.: One frame.
+test.chs = unique(cellid.args$ch)[1]         # e.g.: One channel.
 
 # Filter cellid.args to choose image sets for the scan
 scan.arguments <-  
   subset(cellid.args, 
          pos %in% test.pos & t.frame %in% test.frames)
 
+# Examine the subset
 scan.arguments
 ```
 
@@ -1144,7 +1147,7 @@ scan.arguments
 
 For each parameter variation, we need a new parameters file.
 
-In this example, only `background_reject_factor` is scanned:
+In this example, only `background_reject_factor` is scanned, across 4 values:
 
 ```{r}
 parameters.list <- rcell2.cellid::parameters_default(
@@ -1154,7 +1157,8 @@ parameters.list <- rcell2.cellid::parameters_default(
 parameters.list$background_reject_factor
 ```
 
-The list must now be expanded into a data.frame:
+The parameters list must now be expanded into a data.frame, 
+with a row for every possible combination of parameter values:
 
 ```{r}
 parameters.df <- expand.grid(parameters.list)
@@ -1167,9 +1171,10 @@ parameters.df
 #### Automatic scan
 
 > Now comes the magic part.
-> This script uses temporary directories to work on, 
-> and avoids messing up the main data directory, 
-> while running CellID in parallel for each parameter variation.
+
+The `parameter_scan` function uses temporary directories to work on images, 
+and avoids messing up the main data directory, 
+while running CellID in parallel for each parameter variation.
 
 Just run:
 
@@ -1203,7 +1208,7 @@ First get the output dataframe:
 results.bound <- scan.results$results.bound
 ```
 
-Plot:
+A few plots:
 
 ```{r}
 results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
@@ -1224,7 +1229,9 @@ results.bound %>% filter(channel == "BF.out", t.frame == 0) %>%
   theme_minimal() + scale_color_discrete()
 ```
 
-Plot:
+<!-- Internal note: TO-DO: add explanations of these quantitites. -->
+
+More plots:
 
 ```{r}
 results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
@@ -1252,14 +1259,17 @@ results.bound %>% filter(channel == "BF.out", t.frame == 0) %>%
   theme_minimal() + scale_color_discrete()
 ```
 
+<!-- Internal note: TO-DO: add explanations of these quantitites. -->
 
 #### Review result in ImageJ
 
-Make TIFF stacks for a particular channel.
+Make TIFF stacks for a one or more imaging channels, with the `make_scan_stacks` function.
 
-The stacks are annotated with the parameters used for each segmentation, and other metadata (position, time frame, and channel).
+To help the user choose a parameter set, the stacks are annotated with the parameters used
+for the segmentation, and other metadata (position, time frame, and channel).
 
-A copy-paste-ready ImageJ Macro will be printed out, to easily load them as virtual Hyperstacks in ImageJ.
+A copy-paste-ready ImageJ Macro will be printed out, 
+to easily load the stacks as virtual Hyperstacks in ImageJ.
 
 ```{r eval=F}
 stack.paths <- 
@@ -1269,7 +1279,8 @@ stack.paths <-
 
 > Have a look at the function's source code if you like, its hopefully well commented.
 
-Now copy paste the macro to a new macro window in ImageJ, and hit run! The stack should be loaded automagically.
+Copy paste the macro to a new macro window in ImageJ, and hit run!
+The stack should be loaded automagically.
 
 Paths and macros are saved in the output:
 
@@ -1278,11 +1289,11 @@ names(stack.paths)
 ```
 
 ```{r}
-stack.paths$imagej.macros
+stack.paths$stack.paths
 ```
 
 ```{r}
-stack.paths$stack.paths
+stack.paths$imagej.macros
 ```
 
 #### Final parameter set
