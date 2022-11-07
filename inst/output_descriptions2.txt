@@ -90,7 +90,7 @@ category	index	Variable Name	Description
 
 	37	a.surf	Surface area as calculated by the union of spheres method (Gordon et al., 2007)
 
-	38	sphere.vol	Volume a measured by the union of spheres method (Gordon et al., 2007) 
+	38	sphere.vol	Volume a measured by the union of spheres method (Gordon et al., 2007). This is the recommended method.
 
 # Category: Extra variables added by rcell2
 
