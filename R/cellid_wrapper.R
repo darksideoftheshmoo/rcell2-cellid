@@ -425,9 +425,13 @@ arguments <- function(path,
                       check_fail = F
                       ){
   
+  # Check capturing groups order argument
   if(!identical(sort(file.pattern.groups.order),
                 sort(c("ch", "pos", "t.frame")))) 
     stop('arguments error: file.pattern.groups.order must contain "ch", "pos", and "t.frame" (in an appropriate order).')
+  if (file.pattern.groups.order[1] != "ch") {
+    stop('arguments error: the first item in file.pattern.groups.order must be "ch". Cell-ID uses the first three letters to group imaging channels.')
+  }
   
   # Normalize the images path
   path <- normalizePath(path)
@@ -569,12 +573,12 @@ arguments <- function(path,
     summarise(.groups = "drop_last") %>%
     arrange(pos, t.frame) %>% 
     mutate(t.frame.cid = 1:n() - 1)
-  # Join to output
+  # And join it to the output df
   arguments <- left_join(arguments.df.out,
                          cids.frame, 
                          by = c("pos", "t.frame"))
   
-  # Check for existing output files
+  # Check for existing output files and stuff
   arguments_check(arguments, check_fail)
   
   # Chin pum!
@@ -583,9 +587,13 @@ arguments <- function(path,
 
 #' Check if output files have already been created
 #' 
-#' Emits warnings, and optionally an error, to prevent accidental overwriting.
+#' @details 
+#' 
+#' Emits warnings, and optionally an error, to prevent accidental overwriting of existing output files.
 #' 
 #' Also checks if Cell-IDs t.frame numbering will match the t.frame in the file's names.
+#' 
+#' Also checks that the channel identifier is 3 characters long, as required by Cell-ID to distinguish imaging channels.
 #'
 #' @inheritParams arguments 
 #' @param check_fail Whether to produce an error if any output file or directory already exists.
@@ -609,6 +617,30 @@ arguments_check <- function(arguments, check_fail=F){
     "\n\n"
   ))
   
+  # Check if the channel ID is of the right length
+  ch_ids <- unique(arguments[["ch"]])
+  ch_len_test <- any(nchar(ch_ids) != 3)
+  if(ch_len_test){
+    # Emit a warning
+    warning(paste0(
+      "arguments warning: the following channel identifiers are of the incorrect length, which must be equal to 3 characters: '",
+      paste0(ch_ids[nchar(ch_ids) != 3], collapse = "', '"),
+      "'. Cell-ID will group imaging channels by the first 3 letters of file names. This is not customizable yet."
+    ))
+    # And check if this will cause problems with Cell-ID, and stop if it is the case:
+    unique_ch_check <- arguments %>% 
+      mutate(first_ch_chars = substr(image, 1, 3)) %>% 
+      select(first_ch_chars, ch) %>% 
+      unique() %>% nrow()
+    if(unique_ch_check != length(ch_ids)) 
+      stop(paste(
+        "arguments error: the first three letters of fluorescence",
+        "images and the extracted channel IDs form different sets.",
+        "Rename your files and rebuild the arguments dataframe."
+      ))
+  }
+  
+  # Check if files exist
   n_out <- sum(file.exists(arguments$output))
   if(n_out>0) warning(paste0("\n\narguments_check: ", 
                              n_out, "/", n_row, 

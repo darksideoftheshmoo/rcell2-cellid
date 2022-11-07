@@ -13,8 +13,12 @@ arguments_check(arguments, check_fail = F)
 TRUE if no existing output files were found
 }
 \description{
-Emits warnings, and optionally an error, to prevent accidental overwriting.
+Check if output files have already been created
 }
 \details{
+Emits warnings, and optionally an error, to prevent accidental overwriting of existing output files.
+
 Also checks if Cell-IDs t.frame numbering will match the t.frame in the file's names.
+
+Also checks that the channel identifier is 3 characters long, as required by Cell-ID to distinguish imaging channels.
 }
