@@ -58,18 +58,24 @@ library(tidyverse)  # import numpy as np (?)
 
 ## Friendly reminder
 
-- **Read the help page** of functions before using them. Open help pages with R's `?` (e.g. `?arguments`).
-- **Read the README**.md at rcell2's [GitHub repo](https://github.com/darksideoftheshmoo/rcell2/).
+- **Read this notebook carefully**.
+- Use the **help page** of functions before using them. Open help pages with R's `?` (e.g. `?arguments`).
+- Read the README.md at rcell2's [GitHub repo](https://github.com/darksideoftheshmoo/rcell2/).
 
 ## Example workflow
 
-A minimal usage example with:
+This is only meant as a quick example.
 
-* Image filenames in time-course experiment "format": `BF_Position001_time01.tif`
+For full usage details, skip to the next main heading, named "Full usage guide", and read it carefully.
+
+Always read the `?help` before using a function ;) specially when they do file operations, which are irreversible.
+
+This example uses:
+
+* Image examples from the `rcell2.examples` package.
+* Images and filenames in time-course experiment "format": `BF_Position001_time01.tif`
 * Default CellID segmentation parameters.
 * The built-in CellID binary.
-
-> Note: this is only meant as a quick example, read on to learn more! and use the ?help ;)
 
 ### Image directory
 
@@ -102,6 +108,10 @@ dir(system.file("extdata/sample_datasets/", package = "rcell2.examples"))
 ```
 
 Second, get the path to the chosen example dataset and check if the files are there:
+
+> The dataset selected in the chunk below is a subset of a larger experiment.
+> The subset contains two positions (4, 12), three time frames (10, 20, 30),
+> three 'fluorescence' channels (TFP, YFP), and the mandatory BF channel.
 
 ```{r}
 # Example: Choose one set of example images:
@@ -139,7 +149,7 @@ which lists the image files that match the regular expression specified in `file
 cellid.args <- 
   rcell2.cellid::arguments(path = data.dir,
                            # file.pattern = "^(BF)_Position(\\d+)_time(\\d+).tif$", bf_as_fl = T,  # Settings for a "BF only" experiment.
-                           # file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)().tif$"  # Settings for a single frame experiment.
+                           # file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)().tif$"  # Settings for a single time frame experiment.
                            # parameters = parameters.txt  # Optional: include if defined previously.
                            )
 ```
@@ -150,10 +160,12 @@ Open your images with FIJI-ImageJ before you begin.
 
 No analysis package exists (yet) that can replace a researcher's visual assesment.
 
-A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment:
+A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment.
 
 > Note: this macro uses a "file" pattern that only matches input images (and not ".out")
 > in a tipically-named set of images.
+
+Run the following code, copy the output, and paste it into a new "Macro" window in ImageJ/FIJI. Run the macro code in ImageJ, a new hyperstack will open.
 
 ```{r}
 n_axis1 <- length(unique(cellid.args$t.frame))
