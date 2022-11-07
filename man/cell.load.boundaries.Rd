@@ -35,7 +35,7 @@ cell masks have interior pixels offset from boundary pixels (set to TRUE if NULL
 \item{blank_bg}{logical. If \code{TRUE} the function assumes that the image
 background (i.e., non-mask pixels) are blank. Set to FALSE if left NULL (the default).}
 
-\item{arguments}{The arguments dataframe used to run cellid (prepared with \code{rcell2.cellid::arguments}).}
+\item{arguments}{The "\code{arguments}" dataframe used to run Cell-ID (prepared with \code{rcell2.cellid::arguments}). Required only for the "masks.tsv" \code{data.source}.}
 
 \item{pixel.type}{When \code{data.source = "masks.tsv"}, you may choose the pixel "type". At least one of \code{c("i", "b")} for interior and/or boundary pixels ("b" by default).}
 

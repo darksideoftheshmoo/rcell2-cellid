@@ -204,7 +204,7 @@ tsv_paths_from_args <- function(arguments,
 #' (see: https://github.com/darksideoftheshmoo/rcell2/issues/29).
 #' 
 #' @param data.source Either "out.tif" or "masks.tsv".
-#' @param arguments The arguments dataframe used to run cellid (prepared with \code{rcell2.cellid::arguments}).
+#' @param arguments The "\code{arguments}" dataframe used to run Cell-ID (prepared with \code{rcell2.cellid::arguments}). Required only for the "masks.tsv" \code{data.source}.
 #' @param pixel.type When \code{data.source = "masks.tsv"}, you may choose the pixel "type". At least one of \code{c("i", "b")} for interior and/or boundary pixels ("b" by default).
 #' @param flags Used to subset the input files by CellID's "flag" field. Each flag corresponds to an imaging channel, according to a "mapping" found in \code{cell.data$mapping} (available when using cell.load.alt).
 #' @param close.paths When TRUE and \code{data.source = "masks.tsv"}, append the first row to the end of the data.frame (groping by cellID and pos). Useful for plotting of making closed polygons.
@@ -216,12 +216,12 @@ tsv_paths_from_args <- function(arguments,
 #' 
 #' @export
 cell.load.boundaries <- function(data.source,
-                                 # tsv_paths_from_args args
+                                 # Arguments for the tsv_paths_from_args function:
                                  position_pattern = ".*Position(\\d+)$",
                                  tsv_pattern = "^out_all_masks.tsv(?:\\.gz)?$",
-                                 # read_tiff_masks args
+                                 # Arguments for the read_tiff_masks function:
                                  cell_id_offset = -1, interior_offset = NULL, blank_bg = NULL,
-                                 # Other args
+                                 # Other arguments:
                                  arguments = NULL,
                                  pixel.type = "b",
                                  flags = NULL,
