@@ -82,23 +82,15 @@ This example uses:
 * Default CellID segmentation parameters.
 * The built-in CellID binary.
 
-### Image directory
+### Images directory
 
-First point R to the folder containing the images.
+First point R to the folder containing the images. This notebook obeys the path
+specified in the `data.dir` variable. Make sure to assign its value once, or 
+double-check before overwriting it.
 
-If you already have an appropriate dataset, specify the path to the images like this:
-
-> Note: the aprropriate pattern for file names is described at the [Image file names]
-> section of this notebook.
-
-```{r}
-# Location of your image set
-data.dir <- "/path/to/your/data"
-```
-
-Otherwise, install and use the "examples" package.
-
-First, get the example data:
+In this example we install and use a set from the "examples" package. A more
+detailed explanation is available in the [Path to the dataset] section of
+this notebook.
 
 ```{r}
 if(!requireNamespace("remotes")){
@@ -111,35 +103,22 @@ if(!requireNamespace("rcell2.examples")){
   remotes::install_github("darksideoftheshmoo/rcell2.examples")
 }
 
-# List available datasets:
-dir(system.file("extdata/sample_datasets/", package = "rcell2.examples"))
-```
-
-Second, get the path to the chosen example dataset and check if the files are there:
-
-> The dataset selected in the chunk below is a subset of a larger experiment.
-> The subset contains two positions (4, 12), three time frames (10, 20, 30),
-> three 'fluorescence' channels (TFP, YFP), and the mandatory BF channel.
-
-```{r}
 # Example: Choose one set of example images:
 data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
                         package = "rcell2.examples")
-
 # List image files in the set:
 dir(data.dir)
 ```
 
 ### Naming images for Cell-ID
 
-Using Metamorph's _Multi-dimensional acquisition_ (MDA for short), may result in file names
-different from the default style (i.e `YFP_Position01_time1.tif`, and so on).
+Images output by the acquisition software may result in file
+names different from the default style (i.e `YFP_Position01_time1.tif`, and so on).
+The default pattern is described at the [Image file names] section of this notebook.
 
-The default pattern, described at the [Image file names] section of this notebook.
-`rename_mda` will help you rename file names to match that pattern.
-
-The function is provided by the `rcell2.cellid` package. A full example on how to use it is 
-available below, in the [Renaming images] section of this notebook.
+The `rename_mda` function will help you rename file names to match that pattern.
+The function is provided by the `rcell2.cellid` package. A full example on how to
+use it is available below, in the [Renaming images] section of this notebook.
 
 ### Run Cell-ID
 
@@ -345,12 +324,67 @@ rcell2.magick::shinyCell(cdata, paths = images)
 
 This section has detailed explanations and usage examples of the tools in `rcell2.cellid`.
 
-## Preprocessing
+## Path to the dataset
 
-The following sections may help improve the result of the segmentation,
-to catch severe issues early on.
+First point R to the folder containing the images. This notebook obeys the path
+specified in the `data.dir` variable. Make sure to assign its value once, or 
+double-check before overwriting it.
 
-### Image file names
+If you already have an appropriate dataset, specify the path to the images like this:
+
+> Note: the aprropriate pattern for file names is described at the [Image file names]
+> section of this notebook.
+
+```{r}
+# Location of your image set
+data.dir <- "/path/to/your/data"
+
+# R has an interactive file chooser
+data.dir <- dirname(file.choose())
+```
+
+Otherwise, install and use the "examples" package.
+
+First, get the example data:
+
+```{r}
+if(!requireNamespace("remotes")){
+  # Install the "remotes" package if not found:
+  install.packages("remotes")
+}
+
+if(!requireNamespace("rcell2.examples")){
+  # Install the "rcell2.examples" package if not found:
+  remotes::install_github("darksideoftheshmoo/rcell2.examples")
+}
+
+# List available datasets:
+dir(system.file("extdata/sample_datasets/", package = "rcell2.examples"))
+```
+
+Second, get the path to the chosen example dataset and check if the files are there:
+
+> The dataset selected in the chunk below is a subset of a larger experiment.
+> The subset contains two positions (4, 12), three time frames (10, 20, 30),
+> three 'fluorescence' channels (TFP, YFP), and the mandatory BF channel.
+
+```{r}
+# Example: Choose one set of example images:
+data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
+                        package = "rcell2.examples")
+```
+
+> In the chunk above we set up `data.dir` to hold the path to samples images of a
+time-course experiment. This will replace any previous value!
+
+Finally, Cceck if the files are there:
+
+```{r}
+# List image files in the set:
+dir(data.dir)
+```
+
+## Image file names
 
 Images are assumed to be in a single directory, and have names with identifiers for:
 
@@ -444,6 +478,11 @@ To use the function with different file name patterns, adjust `identifier.patter
 > Note that the `ch` field in `channel.maping.df` must match exactly the
 > text captured by the channel group in the `identifier.pattern` regex.
 > Read the function's help page for details: `?rename_mda`.
+
+## Preprocessing
+
+The following sections may help improve the result of the segmentation,
+to catch severe issues early on.
 
 ### Check XY stage coordinates
 
@@ -862,23 +901,8 @@ parameters.list <- list(
 
 ### Images and Arguments
 
-Define the path to the images of your experiment.
-
-```{r}
-# Choose your own path!
-data.dir <- "/path/to/your/data"
-
-# Or use the example images (requires "rcell2.examples", see first example above).
-data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
-                        package = "rcell2.examples")
-
-# List files
-dir(data.dir)
-```
-
-> In the chunk above we set up `data.dir` to hold the path to samples images of a
-time-course experiment. Remember to omit the corresponding lines when using your own
-images!
+The path to the images of your experiment must be alredy defined,
+as explained in the [Path to the dataset] section of this notebook.
 
 The `arguments` function outputs a data.frame with information from images, 
 which is needed to run Cell-ID.
