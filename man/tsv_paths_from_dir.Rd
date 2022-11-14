@@ -6,7 +6,7 @@
 \usage{
 tsv_paths_from_dir(
   dir_path,
-  tsv_pattern = "^out_all_masks.tsv$",
+  tsv_pattern = "^out_all_masks.tsv(?:\\\\.gz)?$",
   position_pattern = ".*Position(\\\\d+)$"
 )
 }

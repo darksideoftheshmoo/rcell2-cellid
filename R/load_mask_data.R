@@ -374,7 +374,7 @@ mask_df_from_tiff <- function(tiff_path, image_bits, cell_id_offset = -1){
 #' @return A data.frame with XY
 #' @export
 load_tsv_masks <- function(dir_path, 
-                           tsv_pattern = "^out_all_masks.tsv$",
+                           tsv_pattern = "^out_all_masks.tsv(?:\\.gz)?$",
                            position_pattern = ".*Position(\\d+)$",
                            ...){
   
@@ -398,7 +398,7 @@ load_tsv_masks <- function(dir_path,
 #' @param position_pattern A regex pattern with one group for the integer position number, extracted from the directory name holding the TSV file.
 #' @export
 tsv_paths_from_dir <- function(dir_path,
-                               tsv_pattern = "^out_all_masks.tsv$",
+                               tsv_pattern = "^out_all_masks.tsv(?:\\.gz)?$",
                                position_pattern = ".*Position(\\d+)$"){
   
   tsv_paths <- dir(unique(dir_path),
