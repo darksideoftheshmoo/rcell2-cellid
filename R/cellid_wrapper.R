@@ -985,11 +985,22 @@ cell.load.alt <- function(path,
 #' Una función que lea un .csv y les agregue una columna con un id del archivo (pos)
 #' @keywords internal
 #' @import stringr dplyr
-read_tsv.con.pos <- function(.nombre.archivo, .carpeta, position.pattern, col_types = "c"){
-  cat(paste0("\rReading: ", .nombre.archivo), "\033[K")
+read_tsv.con.pos <- function(.path.archivo, 
+                             position.pattern, 
+                             col_types = "c"){
+  # Intro message:
+  cat(paste0("\rReading: '", basename(.path.archivo), 
+             "' in directory '", basename(dirname(.path.archivo)), "'.") ,
+      "\033[K")
   
-  .archivo <- normalizePath(paste0(.carpeta, "/", .nombre.archivo))
-  .pos <- stringr::str_replace(.nombre.archivo, position.pattern, "\\1") %>% as.numeric()
+  # Test:
+  # .path.archivo <- .nombre.archivos[1]
+  
+  # Normalize file name
+  .archivo <- normalizePath(.path.archivo, mustWork = T)
+  # Get position index number
+  .pos <- stringr::str_replace(dirname(.path.archivo), position.pattern, "\\1") %>% 
+    as.integer()
   
   # Load "out_all" files ####
   d <-  readr::read_tsv(.archivo, col_types = col_types, trim_ws = T) %>%
@@ -1038,17 +1049,24 @@ read_tsv.con.pos <- function(.nombre.archivo, .carpeta, position.pattern, col_ty
 #' @return A list of two dataframes: `d` contains the actual output, and `out.map` contains image paths and metadata.
 #' @keywords internal
 load_out_all <- function(path,
-                         position.pattern = ".*Position(\\d+).*",
+                         position.pattern = ".*Position(\\d+)$",
                          out_file_pattern = "^out_all$",
                          out_mapping_pattern = "^out_bf_fl_mapping$",
                          fluorescence.pattern = ".*(BF|[A-Z]FP)_Position.*",
                          fix_id_columns=F,
                          fix_id_columns_fun=dplyr::first){
   
+  # List position directories
+  .pos.directories <- list.dirs(path = path, full.names = T) %>% 
+    grep(pattern = position.pattern, value = T)
   
-  # Migrated from cell.load()
-  .nombre.archivos <- list.files(path = path, pattern = out_file_pattern, recursive = T, include.dirs = T)  # paths de los "out_all"
-  .nombre.archivos.map <- list.files(path = path, pattern = out_mapping_pattern, recursive = T, include.dirs = T)  # paths de los "bf_fl_mapping"
+  # List paths de los "out_all"
+  .nombre.archivos <- list.files(path = .pos.directories, full.names = T,
+                                 pattern = out_file_pattern)
+  
+  # List paths de los "bf_fl_mapping"
+  .nombre.archivos.map <- list.files(path = .pos.directories, full.names = T,
+                                     pattern = out_mapping_pattern)
   # A bit of error handling
   if(length(.nombre.archivos) == 0) 
     stop("Error in load_out_all: no CellID output files found, check your path, options and files.")
@@ -1061,7 +1079,7 @@ load_out_all <- function(path,
   cat("\rLoading datasets...\033[K")
   d.out <- purrr::map(.x = .nombre.archivos,
                       .f = read_tsv.con.pos, 
-                      .carpeta = path,
+                      # .carpeta = path,  # Argumento reemplazafo por ".path.archivo".
                       # col_types = "iiiiiddddddddddddddddddddddddddddddddddddddddddddddddddd", # types: 5 int columns, 51 double columns
                       col_types = readr::cols(.default = "d"), # types: all double, convert later
                       position.pattern = position.pattern) %>%
@@ -1074,7 +1092,7 @@ load_out_all <- function(path,
   cat("\rLoading mapping...              ")
   d.map <- purrr::map(.x = .nombre.archivos.map,
                       .f = read_tsv.con.pos,  # Una función para leer los archivos "out" y agregarles "pos" segun la carpeta que los contiene
-                      .carpeta = path,
+                      # .carpeta = path,  # Argumento reemplazafo por ".path.archivo".
                       col_types = "ciicl",  # types: 2 char columns, 2 int columns, 1 logical column
                       position.pattern = position.pattern) %>%
     bind_rows() %>%
@@ -1102,11 +1120,18 @@ load_out_all <- function(path,
   # Return join (discard flag variable)
   cat("\rJoining data and mapping...\033[K")
   d.out.map <- dplyr::left_join(
+      # Data:
       d.out,
+      # Image mapping:
       unique(select(d.map, flag, t.frame , pos, channel)),
       by = c("flag", "t.frame", "pos")
     ) %>%
     select(-flag)
+  
+  # Check row numbers
+  if(nrow(d.out.map) > nrow(d.out)){
+    stop("Error at load_out_all: while joining output and mapping, at least one output row matched multiple mappings.")
+  }
   
   # Data table leftjoin tests
   if(F){
@@ -1115,9 +1140,6 @@ load_out_all <- function(path,
     data.table::setDT(d.out)
     r <- d.out[mapping, on = c("flag", "t.frame", "pos")]
   }
-  
-  if(nrow(d.out.map) > nrow(d.out)) 
-    stop("Error at load_out_all: while joining output and mapping, at least one output row matche multiple mappings.")
   
   # Add f.tot columns to data
   d.out.map <- mutate(d.out.map,
@@ -1303,17 +1325,19 @@ load_out_all <- function(path,
   d.list <- list(
     "d" = cdata,
     "d.map" = d.map,
-    "flag.channel.mapping" = flag.channel.mapping
+    "flag.channel.mapping" = flag.channel.mapping,
+    "pos.directories" = .pos.directories
     )
   
   # Check unique ucid-frame combo ####
   # Check uniqueness of ucid-t.frame combinations
   if(nrow(unique(cdata[,c("cellID", "pos", "t.frame")])) < nrow(cdata)){
     
-    cat("\rFailed ucid-t.frame uniqueness check, dumping to RDS...\033[K")
     dump.file <- tempfile(fileext = ".RDS")
+    cat("\rFailed ucid-t.frame uniqueness check, dumping to RDS file:", dump.file ,"\033[K")
     saveRDS(d.list, dump.file)
     
+    # Find problematic positions
     test.df <- cdata[,c("cellID", "pos", "t.frame")]
     test.df.list <- split(test.df, test.df$pos)
     test.res <- 
