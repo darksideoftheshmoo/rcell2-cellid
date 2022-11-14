@@ -862,7 +862,7 @@ cell.load.alt <- function(path,
                           ucid.zero.pad = 4,
                           append.posfix = NULL,
                           ...){
-  
+  # Normalize the path
   path <- normalizePath(path, mustWork = T)
   
   if(F){
@@ -874,15 +874,16 @@ cell.load.alt <- function(path,
     append.posfix = NULL
     cell.data <- cell.load.alt(path = path)
   }
-
+  
+  # Load data ####
   # Cargar datos out_all y juntar en un solo dataframe usando metadata de "out_bf_fl_mapping"
   cat("\n\nLoading CellID output files...\n")
   d.list <- load_out_all(path = path,
-                           position.pattern = position.pattern,
-                           fluorescence.pattern = fluorescence.pattern,
-                           ...)  # https://stackoverflow.com/questions/40794780/r-functions-passing-arguments-with-ellipsis/40794874
+                         position.pattern = position.pattern,
+                         fluorescence.pattern = fluorescence.pattern,
+                         ...)  # https://stackoverflow.com/questions/40794780/r-functions-passing-arguments-with-ellipsis/40794874
   
-  # Create ucid column
+  # Create ucid column ####
   cat("\rCreating ucid column...                            ")
   d.list$d <- d.list$d %>%
     # By padding to an invariant number of digits, cells from positions as 90 and 9 _could_ have the same UCID.
@@ -905,6 +906,7 @@ cell.load.alt <- function(path,
   # Delethe the cellid.pad column
   d.list$d$cellid.pad <- NULL
   
+  # Calculate el.p ####
   # ellipse.perim = perimeter of theoretical ellipse, calculated using each
   # cell's axis values.
   # el.p = ratio of ellipse perim over the perimeter measured by cellID.
@@ -918,7 +920,7 @@ cell.load.alt <- function(path,
 
                             el.p = ellipse.perim / perim)
 
-  # Mergear con pdata
+  # Merge with pdata ####
   # if(exists("pdata", inherits = F)){
   cat("\rJoining pdata if specified...")
   if(!is.null(pdata)){
@@ -927,7 +929,7 @@ cell.load.alt <- function(path,
     cat(" and it was :)                            ")
   } else cat(" but it was not :(                            ")
 
-
+  # Create paths DF ####
   # Create paths dataframe and add three-letter code for channel
   cat("\rCreating image paths dataframe...                            ")
   paths <- d.list$d.map
@@ -989,6 +991,7 @@ read_tsv.con.pos <- function(.nombre.archivo, .carpeta, position.pattern, col_ty
   .archivo <- normalizePath(paste0(.carpeta, "/", .nombre.archivo))
   .pos <- stringr::str_replace(.nombre.archivo, position.pattern, "\\1") %>% as.numeric()
   
+  # Load "out_all" files ####
   d <-  readr::read_tsv(.archivo, col_types = col_types, trim_ws = T) %>%
     # "pos", "t.frame" y "flag" estan bf_fl_mapping y en out_all
     mutate(pos = as.integer(.pos),  # La columna de ID es "pos"
@@ -997,14 +1000,13 @@ read_tsv.con.pos <- function(.nombre.archivo, .carpeta, position.pattern, col_ty
     # el resto de las columnas que no se comparten y deberian ser enteras
     # se convierten en load_out_all()
   
-  
+  # Check "con.vol" duplicate column name (old CellID bug)
   if("con.vol_1" %in% names(d)) {
     cat(paste0("\nRemoving 'con.vol_1' column from position: ", 
                .pos, 
                ". Use CellID version > 1.4.6 to stop seeing this message.\n"))
     d <- dplyr::select(d, -con.vol_1)
   }
-  
   con.vol.dupes <- startsWith(names(d), "con.vol")
   if(sum(con.vol.dupes) > 1){
     first <- names(d)[which(con.vol.dupes)][1]
@@ -1014,11 +1016,12 @@ read_tsv.con.pos <- function(.nombre.archivo, .carpeta, position.pattern, col_ty
     cat(paste0("\nRemoving '", dupes, "' column(s) from position: ", 
                .pos, 
                ". Use CellID version > 1.4.6 to stop seeing this message.\n"))
-    # browser()
+    
     colnames(d)[which(con.vol.dupes)[1]] <- "con.vol"
     d[which(con.vol.dupes)[-1]] <- NULL
   }
   
+  # Done
   return(d)
 }
 
@@ -1125,7 +1128,7 @@ load_out_all <- function(path,
   
   # d.out.map <- filter(d.out.map, cellID==1)  # test one cell
   
-  
+  # Define ID and value variables ####
   # Variables that should not change across fluroescence channels are used as IDs
   cell_idcols <- c("cellID", "t.frame", "pos")
   id_cols = c("cellID",
@@ -1200,7 +1203,7 @@ load_out_all <- function(path,
   cat("\rChecking ID column uniqueness...\033[K")
   
 
-  
+  # ID cols checks ####
   # Check if "id columns" are really the same within each observation
   id_cols_check <- d.out.map[,id_cols] %>% group_by_at(.vars = cell_idcols) %>% 
     summarise_all(.funs = function(x) length(unique(x)) == 1) %>% 
@@ -1258,7 +1261,7 @@ load_out_all <- function(path,
     }
   }
   
-  
+  # Convert to wide format ####
   # Right now the out_all is in a "long" format for the "channel" variable.
   # Spread it to match expectations:
   cat("\rSpreading data from channels...\033[K")
@@ -1296,13 +1299,14 @@ load_out_all <- function(path,
   #                 cellID = as.integer(cellID),
   #                 t.frame = as.integer(t.frame))
 
-  # Prepare output list
+  # Prepare output list ####
   d.list <- list(
     "d" = cdata,
     "d.map" = d.map,
     "flag.channel.mapping" = flag.channel.mapping
     )
   
+  # Check unique ucid-frame combo ####
   # Check uniqueness of ucid-t.frame combinations
   if(nrow(unique(cdata[,c("cellID", "pos", "t.frame")])) < nrow(cdata)){
     
@@ -1325,7 +1329,7 @@ load_out_all <- function(path,
     )
   }
   
-  # Return
+  # Return ####
   return(d.list)
 }
 
