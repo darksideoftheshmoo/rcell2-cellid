@@ -956,17 +956,26 @@ cell.load.alt <- function(path,
                               channel = paste0(channel, ".out"),
                               is.out = TRUE)) %>%
     mutate(image = basename(file))
-
+  # Save to the output list
   d.list$d.paths <- paths
   
-  # Make output list
+  # Position directory df ####
+  positions <- data.frame(
+    pos = as.numeric(str_replace(string = basename(d.list$pos.directories), pattern = position.pattern, replacement = "\\1")),
+    output = d.list$pos.directories
+  )
+  
+  # Make output list ####
   cell.data <- list(data = d.list$d,
                     images = d.list$d.paths,
                     mapping = d.list$d.map,
                     channels = unique(d.list$flag.channel.mapping),
+                    positions = positions,
                     variable_descriptions = cellid_output_descriptions())
   
   cat("\rDone loading CellID data!                            \n")
+  
+  # Return ####
   return(cell.data)
 }
 
