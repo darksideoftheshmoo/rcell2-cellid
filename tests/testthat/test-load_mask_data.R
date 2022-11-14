@@ -15,7 +15,7 @@ test_that("cell.load.alt works on examples", {
   expect_equal(X, X.ref)
 })
 
-test_that("read_coords_tsv works on examples", {
+test_that("cell.load.boundaries works on examples", {
   # Example: Choose one set of example images:
   data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
                           package = "rcell2.examples")
