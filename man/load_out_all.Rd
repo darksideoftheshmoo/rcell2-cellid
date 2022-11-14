@@ -6,7 +6,7 @@
 \usage{
 load_out_all(
   path,
-  position.pattern = ".*Position(\\\\d+).*",
+  position.pattern = ".*Position(\\\\d+)$",
   out_file_pattern = "^out_all$",
   out_mapping_pattern = "^out_bf_fl_mapping$",
   fluorescence.pattern = ".*(BF|[A-Z]FP)_Position.*",
