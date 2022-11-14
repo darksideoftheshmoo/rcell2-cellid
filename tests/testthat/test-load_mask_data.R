@@ -1,8 +1,3 @@
-test_that("multiplication works", {
-  expect_equal(2 * 2, 4)
-})
-
-
 test_that("cell.load.alt works on examples", {
   # Example: Choose one set of example images:
   data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
