@@ -174,7 +174,7 @@ The output tables can be loaded with `cell.load.alt` provided by this package.
 
 ```{r eval=F}
 # Load output
-cell.data <- rcell2.cellid::cell.load.alt(path = data.dir)
+cell.data <- cell.load.alt(path = data.dir)
 ```
 
 > Note: detailed usage of this function is described at the [Output data] section of this
@@ -189,9 +189,9 @@ To load the boundary pixels, use the `cell.load.boundaries`:
 ```{r eval=F}
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
-  rcell2.cellid::cell.load.boundaries(data.source = "masks.tsv",
-                                      arguments = cellid.args,
-                                      pixel.type = "b")
+  cell.load.boundaries(data.source = "masks.tsv",
+                       positions = cell.data$positions,
+                       pixel.type = "b")
 ```
 
 > This data is only available if `cell2` was run with `output_coords_to_tsv = T`.
