@@ -558,8 +558,8 @@ arguments <- function(path,
   
   # Final checks ####
   if(all(is.na(arguments.df.out$t.frame))){
-    warning("arguments warning: No t.frame data extracted, replacing all NAs with '1'. Check your directories and file.pattern if this is unexpected.")
-    arguments.df.out$t.frame <- 1
+    warning("arguments warning: No t.frame data extracted, replacing all NAs with '0'. Check your directories and file.pattern if this is unexpected.")
+    arguments.df.out$t.frame <- 0
   }
   
   if(any(is.na(arguments.df.out)) | any(arguments.df.out == "")){
