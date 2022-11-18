@@ -19,7 +19,7 @@ rename_mda(
 )
 }
 \arguments{
-\item{images.path}{Path to the directory containing the images output by Meramorph MDA.}
+\item{images.path}{Path to the directory containing the original images. Can be NULL if \code{file.names} is provided.}
 
 \item{rename.path}{Path to the target directory. If \code{NULL} (the default) images are sent to a "renamed" subdirectory of \code{images.path}.}
 
@@ -54,7 +54,7 @@ These are used to copy or link image files to a target directory.
 For example, \code{far1_rtcc_exp16_thumb_w1LED-BF--YFPcube--cam_s17_t35.TIF} can be converted to \code{BF_Position17_time35.tif}.
 
 The \code{identifier.pattern} is a key parameter. There must be three groups, one for each of the three information types: channel, position and time.
-The defaults are useful for a file name such as \code{far1_rtcc_exp16_thumb_w1LED-BF--YFPcube--cam_s17_t35.TIF}, in which the channel is identified by a "w", 
+The defaults are useful for a file name such as "\code{far1_rtcc_exp16_thumb_w1LED-BF--YFPcube--cam_s17_t35.TIF}", in which the channel is identified by a "w", 
 position by an "s", and time by a "t".
 
 The order in which this information appears in the file name is specified in \code{identifier.info}. 

@@ -1428,7 +1428,7 @@ NULL
 #' For example, \code{far1_rtcc_exp16_thumb_w1LED-BF--YFPcube--cam_s17_t35.TIF} can be converted to \code{BF_Position17_time35.tif}.
 #' 
 #' The \code{identifier.pattern} is a key parameter. There must be three groups, one for each of the three information types: channel, position and time.
-#' The defaults are useful for a file name such as \code{far1_rtcc_exp16_thumb_w1LED-BF--YFPcube--cam_s17_t35.TIF}, in which the channel is identified by a "w", 
+#' The defaults are useful for a file name such as "\code{far1_rtcc_exp16_thumb_w1LED-BF--YFPcube--cam_s17_t35.TIF}", in which the channel is identified by a "w", 
 #' position by an "s", and time by a "t".
 #' 
 #' The order in which this information appears in the file name is specified in \code{identifier.info}. 
@@ -1450,7 +1450,7 @@ NULL
 #' rename_mda(images.path, rename.function = file.copy)
 #' 
 #' @import dplyr
-#' @param images.path Path to the directory containing the images output by Meramorph MDA.
+#' @param images.path Path to the directory containing the original images. Can be NULL if \code{file.names} is provided.
 #' @param rename.path Path to the target directory. If \code{NULL} (the default) images are sent to a "renamed" subdirectory of \code{images.path}.
 #' @param rename.function Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function. Set to \code{NULL} to disable renaming (i.e. for testing purposes).
 #' @param identifier.pattern Regex defining the iamge file pattern, with gropus for identifier in the file names.
@@ -1480,7 +1480,7 @@ rename_mda <- function(images.path = NULL,
   # Checks
   if(is.null(images.path) & is.null(file.names)) 
     stop("rename_mda: error, either images.path or file.names must be specified.")
-  if( !(all(identifier.info %in% c("ch", "pos", "t.frame")) && length(identifier.info) == 3) )
+  if(!( setequal(identifier.info, c("ch", "pos", "t.frame") && length(identifier.info) == 3) ))
     stop("rename_mda: error, malformed identifier.info.")
   
   # Get file names
