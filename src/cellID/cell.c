@@ -319,74 +319,74 @@ int main(int argc, char *argv[]){
     printf("Parsing getopt options\n");
     switch(opt) {
     case 'p':
-       printf(" - parameters: ");
+       printf(" -p parameters: ");
        printf("%s\n", optarg);
       param_file=optarg;
       break;
 
     case 'b':
-       printf(" - brightfield: ");
+       printf(" -b brightfield: ");
        printf("%s\n", optarg);
       bright_list_file=optarg;
       break;
 
     case 'f':
-       printf(" - fluorescence: ");
+       printf(" -f fluorescence: ");
        printf("%s\n", optarg);
       fluor_list_file=optarg;
       break;
       
     case 'o':
-       printf(" - output_prefix: ");
+       printf(" -o output_prefix: ");
        printf("%s\n", optarg);
       output_basename=optarg;
       break;
 
     case 'D':
-      printf(" - dark file list: ");
+      printf(" -D dark file list: ");
       printf("%s\n", optarg);
       dark_list_file=optarg;
       break;
       
     case 'F':
-      printf(" - flat file list: ");
+      printf(" -F flat file list: ");
       printf("%s\n", optarg);
       flat_list_file=optarg;
       break;
       
     case 'l':
-       printf(" - Label cells in BF.\n");
+       printf(" -l Label cells in BF.\n");
        if(fill_interior==0) label_cells=1;
       break;
 
     case 'i':
-       printf(" - Fill interior pixels in BF.out\n");
+       printf(" -i Fill interior pixels in BF.out\n");
        fill_interior=1;
        label_cells=0;
       break;
 
     case 'm':
-       printf(" - Replace BF.out with segmentation masks only, removing image data.\n");
+       printf(" -m Replace BF.out with segmentation masks only, removing image data.\n");
        mask_output=1;
       break;
 
     case 't':
-       printf(" - Output cell boundary and interior coords to TSV file.\n");
+       printf(" -t Output cell boundary and interior coords to TSV file.\n");
        out_mask=1; // enable
       break;
 
     case 'w':
-       printf(" - Offset boundary and interior mask intensities.\n");
+       printf(" -w Offset boundary and interior mask intensities.\n");
        interior_offset = 1; // enable
       break;
 
     case 'z':
-      printf(" - Time of t0 flag enabled.\n");
+      printf(" -z Time of t0 flag enabled.\n");
       time_of_t0_flag = 1;
       break;
 
     case 'h':
-        printf(" - Help flag enabled.\n");
+        printf(" -h Help flag enabled.\n");
         help_flag = 1;
       break;
 

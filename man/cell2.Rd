@@ -10,10 +10,10 @@ cell2(
   n_cores = NULL,
   debug_flag = 0,
   dry = F,
-  encode_cellID_in_pixels = F,
-  fill_interior_pixels = F,
-  label_cells_in_bf = F,
   output_coords_to_tsv = F,
+  encode_cellID_in_pixels = F,
+  label_cells_in_bf = F,
+  fill_interior_pixels = F,
   interior_offset = F,
   write_initial_time = F,
   save.logs = T,
@@ -33,15 +33,15 @@ cell2(
 
 \item{dry}{Do everything without actually running Cell-ID, print the commands that would have been issued.}
 
-\item{encode_cellID_in_pixels}{Set to TRUE to write cell interior and boundary pixels with intensity-encoded cellIDs and blank the rest of the image (Cell-ID option '-m').}
+\item{output_coords_to_tsv}{Set to TRUE to write cell interior and boundary pixels coordinates of each cell to a compressed \code{.tsv} file, located in the main output directory (Cell-ID option '-t'). This data can be loaded with the \code{cell.load.boundaries} function.}
 
-\item{fill_interior_pixels}{Set to TRUE to fill each cell interior area in the output image file with intensity-labeled pixels (Cell-ID option '-i').}
+\item{encode_cellID_in_pixels}{Set to TRUE to encode cellIDs in the intensity values of the boundary pixels, and blank the rest of the output image (Cell-ID option '-m'). Pixel intensities are proportional to each cellID, following the relationship \code{cellID = 65535 - boundary_intensity - 1}. Only boundary pixels are used by default; this behavior can be modified by enabling \code{label_cells_in_bf}, \code{fill_interior_pixels}, or \code{interior_offset}.}
 
-\item{label_cells_in_bf}{Set to TRUE to enable labeling of cells with their Cell-ID in the BF output image using number characters (Cell-ID option '-l', default FALSE).}
+\item{label_cells_in_bf}{Set mask boundary pixel intensities proportional to each cellID, and add cellID numbers to the cells with maximum pixel intensity \code{65535} (Cell-ID option '-l', default FALSE).}
 
-\item{output_coords_to_tsv}{Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (Cell-ID option '-t').}
+\item{fill_interior_pixels}{Fill each cell interior area in the output BF image file with intensity-labeled pixels (Cell-ID option '-i'). This overrides cell labeling.}
 
-\item{interior_offset}{Offset boundary and interior pixel intensities by a calculated 'interior_offset' threshold. cellID will relate to interior pixel intensities with the relationship 'cellID = 65535 - boundary_intensity - interior_offset - 1'. The offset defaults to 5000, but may have a larger value for images or time series with more than 2500 cells (Cell-ID option '-w').}
+\item{interior_offset}{Offset boundary and interior pixel intensities by a calculated 'interior_offset' threshold. cellID will relate to interior pixel intensities with the relationship \code{cellID = 65535 - boundary_intensity - interior_offset - 1}. The offset defaults to 5000, but may have a larger value for images or time series with more than 2500 cells (Cell-ID option '-w').}
 
 \item{write_initial_time}{Write the absolute time of the first image to a text file (Cell-ID option '-z').}
 
