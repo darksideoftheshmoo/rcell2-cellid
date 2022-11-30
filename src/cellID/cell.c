@@ -315,7 +315,7 @@ int main(int argc, char *argv[]){
   opterr = 0;  // https://stackoverflow.com/a/24331449/11524079
   optind = 1;  // https://stackoverflow.com/a/25937743/11524079
 
-  while((opt = getopt(argc, argv, "p:b:f:o:D:F:limtwh")) != -1) {
+  while((opt = getopt(argc, argv, "p:b:f:o:D:F:limtwzh")) != -1) {
     printf("Parsing getopt options\n");
     switch(opt) {
     case 'p':
