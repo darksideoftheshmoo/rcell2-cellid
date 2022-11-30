@@ -632,12 +632,23 @@ int main(int argc, char *argv[]){
   if(pnt_third_img_label==NULL) pnt_third_img_label=&str_third_img_label[0];
   if(pnt_image_type==NULL) pnt_image_type=&str_image_type[0];
 
-
+  // Cell-ID help message
   if(help_flag==1){
     printf("\n\n");
     printf("CellID help:\n");
     printf("  -- Required options: -b -f\n");
-    printf("  -- For detailed usage, visit: https://github.com/darksideoftheshmoo/cellID-linux\n");
+    printf("  -- For detailed usage, visit: https://github.com/darksideoftheshmoo/cellid-linux/tree/mask_mod\n");
+    printf("  -- Parameters: \n");
+    printf("     -b <path> Provide the path to a text file containing a list of paths to 'BF' images used for segmentation.\n");
+    printf("     -f <path> Provide the path to a text file containing a list of paths to 'FL' images used for quantification.\n");
+    printf("     -o        Output prefix.\n");
+    printf("     -l        Label cells in BF.\n");
+    printf("     -i        Fill interior pixels in BF.out TIFF files.\n");
+    printf("     -m        Replace BF.out with segmentation masks only, removing image data.\n");
+    printf("     -w        Offset boundary and interior mask intensities.\n");
+    printf("     -t        Output cell boundary and interior coords to a compressed TSV file.\n");
+    printf("     -z        Enable time of t0 flag.\n");
+    printf("     -h        Show this message.\n");
     printf("\n\n");
     return 0;
   }
