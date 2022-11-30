@@ -29,16 +29,18 @@ parameter_scan(
   Arguments passed on to \code{\link[=cell2]{cell2}}
   \describe{
     \item{\code{arguments}}{An argument data.frame, as built by \code{rcell2.cellid::arguments}.}
-    \item{\code{cell.command}}{By default \code{NULL}, to use the built-in binary. Otherwise a path to a CellID binary executable (get if from https://github.com/darksideoftheshmoo/cellID-linux).}
+    \item{\code{cell.command}}{By default \code{NULL}, to use the built-in binary. Otherwise a path to a Cell-ID binary executable (get if from https://github.com/darksideoftheshmoo/cellID-linux).}
     \item{\code{n_cores}}{Number of cores to use for position-wise parallelization,internally capped to number of positions in \code{arguments}. Set to 1 to disable parallelization. If NULL, defaults to available cores - 1.}
-    \item{\code{dry}}{Do everything without actually running CellID, print the commands that would have been issued.}
-    \item{\code{debug_flag}}{Set to 0 to disable CellID printf messages (builtin CellID only).}
-    \item{\code{label_cells_in_bf}}{Set to TRUE to enable labeling of cells with their CellID in the BF output image using number characters (CellID option '-l', default FALSE).}
-    \item{\code{encode_cellID_in_pixels}}{Set to TRUE to write cell interior and boundary pixels with intensity-encoded CellIDs and blank the rest of the image (CellID option '-s').}
-    \item{\code{fill_interior_pixels}}{Set to TRUE to fill each cell interior area in the output image file with intensity-labeled pixels (CellID option '-i').}
-    \item{\code{output_coords_to_tsv}}{Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (CellID option '-m').}
-    \item{\code{save.logs}}{Set to TRUE to save CellID logs to text files, into the output directory of their corresponding position.}
-    \item{\code{verbose}}{Print startup messages.}
+    \item{\code{dry}}{Do everything without actually running Cell-ID, print the commands that would have been issued.}
+    \item{\code{debug_flag}}{Set to 0 to disable Cell-ID printf messages (built-in Cell-ID only).}
+    \item{\code{encode_cellID_in_pixels}}{Set to TRUE to write cell interior and boundary pixels with intensity-encoded cellIDs and blank the rest of the image (Cell-ID option '-m').}
+    \item{\code{fill_interior_pixels}}{Set to TRUE to fill each cell interior area in the output image file with intensity-labeled pixels (Cell-ID option '-i').}
+    \item{\code{label_cells_in_bf}}{Set to TRUE to enable labeling of cells with their Cell-ID in the BF output image using number characters (Cell-ID option '-l', default FALSE).}
+    \item{\code{output_coords_to_tsv}}{Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (Cell-ID option '-t').}
+    \item{\code{interior_offset}}{Offset boundary and interior pixel intensities by a calculated 'interior_offset' threshold. cellID will relate to interior pixel intensities with the relationship 'cellID = 65535 - boundary_intensity - interior_offset - 1'. The offset defaults to 5000, but may have a larger value for images or time series with more than 2500 cells (Cell-ID option '-w').}
+    \item{\code{write_initial_time}}{Write the absolute time of the first image to a text file (Cell-ID option '-z').}
+    \item{\code{save.logs}}{Set to TRUE to save Cell-ID logs to text files, into the output directory of their corresponding position.}
+    \item{\code{verbose}}{Print start-up messages.}
     \item{\code{check_fail}}{Whether to produce an error if any output file or directory already exists.}
   }}
 }

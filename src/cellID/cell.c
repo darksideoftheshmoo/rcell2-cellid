@@ -651,7 +651,7 @@ int main(int argc, char *argv[]){
     printf("     -m        Replace contents of the BF.out TIFF files with segmentation masks only, removing image data (optional, disabled by default).\n");
     printf("     -t        Output cell boundary and interior coords to a compressed TSV file (optional, disabled by default).\n");
     printf("     -w        Offset boundary and interior pixel intensities by a calculated 'interior_offset' threshold. cellID will relate to interior pixel intensities with the relationship 'cellID = 65535 - boundary_intensity - interior_offset - 1'. The offset defaults to 5000, but may have a larger value for images or time series with more than 2500 cells.\n");
-    printf("     -z        Write the absolute time of the first image to a file (optional, disabled by default).\n");
+    printf("     -z        Write the absolute time of the first image to a text file (optional, disabled by default).\n");
     printf("     -h        Show the help message.\n");
     printf("\n\n");
     return 0;

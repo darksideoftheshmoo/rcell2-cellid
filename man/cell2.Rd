@@ -14,6 +14,8 @@ cell2(
   fill_interior_pixels = F,
   label_cells_in_bf = F,
   output_coords_to_tsv = F,
+  interior_offset = F,
+  write_initial_time = F,
   save.logs = T,
   verbose = T,
   progress = F,
@@ -23,32 +25,36 @@ cell2(
 \arguments{
 \item{arguments}{An argument data.frame, as built by \code{rcell2.cellid::arguments}.}
 
-\item{cell.command}{By default \code{NULL}, to use the built-in binary. Otherwise a path to a CellID binary executable (get if from https://github.com/darksideoftheshmoo/cellID-linux).}
+\item{cell.command}{By default \code{NULL}, to use the built-in binary. Otherwise a path to a Cell-ID binary executable (get if from https://github.com/darksideoftheshmoo/cellID-linux).}
 
 \item{n_cores}{Number of cores to use for position-wise parallelization,internally capped to number of positions in \code{arguments}. Set to 1 to disable parallelization. If NULL, defaults to available cores - 1.}
 
-\item{debug_flag}{Set to 0 to disable CellID printf messages (builtin CellID only).}
+\item{debug_flag}{Set to 0 to disable Cell-ID printf messages (built-in Cell-ID only).}
 
-\item{dry}{Do everything without actually running CellID, print the commands that would have been issued.}
+\item{dry}{Do everything without actually running Cell-ID, print the commands that would have been issued.}
 
-\item{encode_cellID_in_pixels}{Set to TRUE to write cell interior and boundary pixels with intensity-encoded CellIDs and blank the rest of the image (CellID option '-s').}
+\item{encode_cellID_in_pixels}{Set to TRUE to write cell interior and boundary pixels with intensity-encoded cellIDs and blank the rest of the image (Cell-ID option '-m').}
 
-\item{fill_interior_pixels}{Set to TRUE to fill each cell interior area in the output image file with intensity-labeled pixels (CellID option '-i').}
+\item{fill_interior_pixels}{Set to TRUE to fill each cell interior area in the output image file with intensity-labeled pixels (Cell-ID option '-i').}
 
-\item{label_cells_in_bf}{Set to TRUE to enable labeling of cells with their CellID in the BF output image using number characters (CellID option '-l', default FALSE).}
+\item{label_cells_in_bf}{Set to TRUE to enable labeling of cells with their Cell-ID in the BF output image using number characters (Cell-ID option '-l', default FALSE).}
 
-\item{output_coords_to_tsv}{Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (CellID option '-m').}
+\item{output_coords_to_tsv}{Set to TRUE to write cell interior masks and boundary pixels data to a .tsv file in the output directory (Cell-ID option '-t').}
 
-\item{save.logs}{Set to TRUE to save CellID logs to text files, into the output directory of their corresponding position.}
+\item{interior_offset}{Offset boundary and interior pixel intensities by a calculated 'interior_offset' threshold. cellID will relate to interior pixel intensities with the relationship 'cellID = 65535 - boundary_intensity - interior_offset - 1'. The offset defaults to 5000, but may have a larger value for images or time series with more than 2500 cells (Cell-ID option '-w').}
 
-\item{verbose}{Print startup messages.}
+\item{write_initial_time}{Write the absolute time of the first image to a text file (Cell-ID option '-z').}
+
+\item{save.logs}{Set to TRUE to save Cell-ID logs to text files, into the output directory of their corresponding position.}
+
+\item{verbose}{Print start-up messages.}
 
 \item{progress}{Print a progress bar. Requires the \code{doSNOW} package.}
 
 \item{check_fail}{Whether to produce an error if any output file or directory already exists.}
 }
 \value{
-A dataframe with one column indicating the issued commands and exit codes (in the command.output column). If the execution was sucessful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the CellID output, typically located at the images path.
+A data.frame with one column indicating the issued commands and exit codes (in the command.output column). If the execution was successful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the Cell-ID output, typically located at the images path.
 }
 \description{
 Function to run CellID
