@@ -2,7 +2,7 @@
 % Please edit documentation in R/cellid_wrapper.R
 \name{cell2}
 \alias{cell2}
-\title{Function to run CellID}
+\title{Function to run Cell-ID}
 \usage{
 cell2(
   arguments,
@@ -57,5 +57,5 @@ cell2(
 A data.frame with one column indicating the issued commands and exit codes (in the command.output column). If the execution was successful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the Cell-ID output, typically located at the images path.
 }
 \description{
-Function to run CellID
+Handles Cell-ID executions: creates necessary directories, sets-up parallelization, wraps the Cell-ID binary, and checks exit status.
 }

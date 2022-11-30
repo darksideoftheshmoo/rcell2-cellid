@@ -76,7 +76,9 @@ cell2_test <- function(){
   system(paste(cell2_command(), "-h"))
 }
 
-#' Function to run CellID
+#' Function to run Cell-ID
+#' 
+#' Handles Cell-ID executions: creates necessary directories, sets-up parallelization, wraps the Cell-ID binary, and checks exit status.
 #'
 #' @param arguments An argument data.frame, as built by \code{rcell2.cellid::arguments}.
 #' @param cell.command By default \code{NULL}, to use the built-in binary. Otherwise a path to a Cell-ID binary executable (get if from https://github.com/darksideoftheshmoo/cellID-linux).
@@ -103,9 +105,6 @@ cell2_test <- function(){
 #' 
 #' @return A data.frame with one column indicating the issued commands and exit codes (in the command.output column). If the execution was successful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the Cell-ID output, typically located at the images path.
 #' 
-# @examples
-# cell(cell.args, path = path)
-
 #' @import purrr dplyr stringr tidyr doParallel readr parallel
 #' @importFrom foreach foreach %dopar% %do%
 #' @rawNamespace import(foreach, except = c("when", "accumulate"))
