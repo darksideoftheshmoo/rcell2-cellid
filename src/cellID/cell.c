@@ -133,10 +133,10 @@ int main(int argc, char *argv[]){
   printf("\n\n*** Cell_ID Version 1.5.0 ***");
   printf("** 2022 redistribution. Now with awesome identified masks, and tailored to rcell2's workflow. **\n\n");
 
-  int out_mask=0;       // mask_mod: optionally output interior/boundary coords to TSV, default disabled
-  int label_cells=0;    // mask_mod: label cells in BF.out optionally, default disabled
-  int mask_output=0;    // mask_mod: cellID-adjusted mask output option in BF.out TIFF, default disabled
-  int fill_interior=0;  // mask_mod: fill cells in BF.out. overrides label_cells. default disabled
+  int out_mask=0;        // mask_mod: optionally output interior/boundary coords to TSV, default disabled
+  int label_cells=0;     // mask_mod: label cells in BF.out optionally, default disabled
+  int mask_output=0;     // mask_mod: cellID-adjusted mask output option in BF.out TIFF, default disabled
+  int fill_interior=0;   // mask_mod: fill cells in BF.out. overrides label_cells. default disabled
   int interior_offset=0; // mask_mod: offset interior and boundary pixel intensities
 
   FILE *fp_in;
@@ -633,22 +633,26 @@ int main(int argc, char *argv[]){
   if(pnt_image_type==NULL) pnt_image_type=&str_image_type[0];
 
   // Cell-ID help message
+  // Params: p:b:f:o:D:F:limtwzh
   if(help_flag==1){
     printf("\n\n");
     printf("CellID help:\n");
-    printf("  -- Required options: -b -f\n");
+    printf("  -- Usage: cell -b BF/list/file.txt -f FL/list/file.txt -p parameters/list/file.txt -o output/path/prefix/Position4/out [-D <dark.tiff>] [-F <flat.tiff>] [-l] [-i] [-m] [-t] [-w] [-h] \n");
     printf("  -- For detailed usage, visit: https://github.com/darksideoftheshmoo/cellid-linux/tree/mask_mod\n");
     printf("  -- Parameters: \n");
-    printf("     -b <path> Provide the path to a text file containing a list of paths to 'BF' images used for segmentation.\n");
-    printf("     -f <path> Provide the path to a text file containing a list of paths to 'FL' images used for quantification.\n");
-    printf("     -o        Output prefix.\n");
-    printf("     -l        Label cells in BF.\n");
-    printf("     -i        Fill interior pixels in BF.out TIFF files.\n");
-    printf("     -m        Replace BF.out with segmentation masks only, removing image data.\n");
-    printf("     -w        Offset boundary and interior mask intensities.\n");
-    printf("     -t        Output cell boundary and interior coords to a compressed TSV file.\n");
-    printf("     -z        Enable time of t0 flag.\n");
-    printf("     -h        Show this message.\n");
+    printf("     -p <path> Path to a text file containing a list of segmentation parameters.\n");
+    printf("     -b <path> Path to a text file containing a list of paths to 'BF' images used for segmentation.\n");
+    printf("     -f <path> Path to a text file containing a list of paths to 'FL' images used for quantification.\n");
+    printf("     -o <path> Output path prefix; the relative or absolute path where output files will be saved, including the file prefix (tipically 'out').\n");
+    printf("     -D <path> Path to a 'dark' image used for background correction (optional, correction skipped by default).\n");
+    printf("     -F <path> Path to a 'flat' image used for flattening correction (optional, correction skipped by default).\n");
+    printf("     -l        Set cell boundary pixel intensities proportional to each cellID, following the relationship 'cellID = 65535 - boundary_intensity - 1'. Also adds cellID numbers to the cells, with maximum pixel intensity (65535). (optional, enabled by default).\n");
+    printf("     -i        Set cell boundary and interior pixel intensities proportional to each cellID (optional, disabled by default). This overrides cell labeling with '-l'.\n");
+    printf("     -m        Replace contents of the BF.out TIFF files with segmentation masks only, removing image data (optional, disabled by default).\n");
+    printf("     -t        Output cell boundary and interior coords to a compressed TSV file (optional, disabled by default).\n");
+    printf("     -w        Offset boundary and interior pixel intensities by a calculated 'interior_offset' threshold. cellID will relate to interior pixel intensities with the relationship 'cellID = 65535 - boundary_intensity - interior_offset - 1'. The offset defaults to 5000, but may have a larger value for images or time series with more than 2500 cells.\n");
+    printf("     -z        Write the absolute time of the first image to a file (optional, disabled by default).\n");
+    printf("     -h        Show the help message.\n");
     printf("\n\n");
     return 0;
   }
