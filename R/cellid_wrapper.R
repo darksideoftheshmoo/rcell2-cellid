@@ -1056,6 +1056,7 @@ read_tsv.con.pos <- function(.path.archivo,
 #' @inheritParams cell.load.alt
 #' @param out_file_pattern Regex matching CellID's main output file.
 #' @param out_mapping_pattern Regex matching CellID's image mapping output file.
+#' @param id_columns_check Whether to check for problems in "ID" and "value" columns. If TRUE, the function checks the uniqueness of ID columns.
 #' @param fix_id_columns Whether apply the \code{fix_id_columns_fun} summary function to problematic ID columns (with non-unique vales per cell across channels).
 #' @param fix_id_columns_fun Summary function for \code{fix_id_columns}, uses dplyr's \code{first} by default (thereby using the value of the first channel).
 #' @import dplyr tidyr readr
@@ -1068,7 +1069,8 @@ load_out_all <- function(path,
                          out_file_pattern = "^out_all$",
                          out_mapping_pattern = "^out_bf_fl_mapping$",
                          fluorescence.pattern = ".*(BF|[A-Z]FP)_Position.*",
-                         fix_id_columns=F,
+                         id_columns_check=TRUE,
+                         fix_id_columns=FALSE,
                          fix_id_columns_fun=dplyr::first){
   
   # List position directories
@@ -1242,62 +1244,63 @@ load_out_all <- function(path,
 
   # ID cols checks ####
   # Check if "id columns" are really the same within each observation
-  id_cols_check <- d.out.map[,id_cols] %>% group_by_at(.vars = cell_idcols) %>% 
-    summarise_all(.funs = function(x) length(unique(x)) == 1) %>% 
-    arrange(pos, cellID, t.frame)
+  if(id_columns_check){
+    id_cols_check <- d.out.map[,id_cols] %>% group_by_at(.vars = cell_idcols) %>% 
+      summarise_all(.funs = function(x) length(unique(x)) == 1) %>% 
+      arrange(pos, cellID, t.frame)
+    
+    id_cols_check$any_bad <- !apply(id_cols_check[,id_cols_notcell], 
+                                    MARGIN = 1, 
+                                    FUN = all)  
   
-  id_cols_check$any_bad <- !apply(id_cols_check[,id_cols_notcell], 
-                                  MARGIN = 1, 
-                                  FUN = all)  
-
-  if(any(id_cols_check$any_bad)){
-    
-    which_bad <- id_cols_check %>%
-      filter(any_bad) %>% .[,id_cols_notcell] %>% {split(., 1:nrow(.))} %>% 
-      lapply(FUN = function(x) {
-        which_bad_idx <- which(!x)
-        
-        # Handle all-good columns with NA value (shouldnt be necessary but whatever).
-        if (length(which_bad_idx) == 0) {
-          which_bad <- c(NA_character_)
-        } else {
-          which_bad <- c(id_cols_notcell[which_bad_idx])
-        }
-        
-        return(which_bad)
-      })
-    
-    # Unlist!
-    which_bad <- which_bad %>% unlist() %>% unique()
-    
-    # Fix the problem
-    if (length(which_bad) > 0) {
-      # Prepare warning text
-      warning_text <- paste(
-        "Columns [",
-        paste(which_bad, collapse = ", "), 
-        "] are not ID columns, they have different values across channels of the same cell."
-      )
+    if(any(id_cols_check$any_bad)){
       
-      # Choose how to handle the problem
-      if(!fix_id_columns){
-        # Warn the user
-        warning(paste(warning_text, "Treating these variables to value columns (colnames in cdata will change!).\n"))
-        # Remove "bad" columns from the "id" vector
-        id_cols <- id_cols[!id_cols %in% which_bad]
-        # And add "bad" columns to the "values" vector
-        values_from <- unique(c(values_from, which_bad))
-      } else {
-        # Warn the user
-        warning(paste(warning_text, "Applying the 'fix_id_columns_fun' summary function to the problematic ID columns.\n"))
-        # Use the "fix_id_columns_fun" summary function to "fix" the ID variables with non-unique values
-        d.out.map <- d.out.map %>% group_by_at(.vars = cell_idcols) %>% 
-          arrange(channel) %>% 
-          mutate_at(.vars = id_cols, .funs = fix_id_columns_fun) %>% ungroup()
+      which_bad <- id_cols_check %>%
+        filter(any_bad) %>% .[,id_cols_notcell] %>% {split(., 1:nrow(.))} %>% 
+        lapply(FUN = function(x) {
+          which_bad_idx <- which(!x)
+          
+          # Handle all-good columns with NA value (shouldnt be necessary but whatever).
+          if (length(which_bad_idx) == 0) {
+            which_bad <- c(NA_character_)
+          } else {
+            which_bad <- c(id_cols_notcell[which_bad_idx])
+          }
+          
+          return(which_bad)
+        })
+      
+      # Unlist!
+      which_bad <- which_bad %>% unlist() %>% unique()
+      
+      # Fix the problem
+      if (length(which_bad) > 0) {
+        # Prepare warning text
+        warning_text <- paste(
+          "Columns [",
+          paste(which_bad, collapse = ", "), 
+          "] are not ID columns, they have different values across channels of the same cell."
+        )
+        
+        # Choose how to handle the problem
+        if(!fix_id_columns){
+          # Warn the user
+          warning(paste(warning_text, "Treating these variables to value columns (colnames in cdata will change!).\n"))
+          # Remove "bad" columns from the "id" vector
+          id_cols <- id_cols[!id_cols %in% which_bad]
+          # And add "bad" columns to the "values" vector
+          values_from <- unique(c(values_from, which_bad))
+        } else {
+          # Warn the user
+          warning(paste(warning_text, "Applying the 'fix_id_columns_fun' summary function to the problematic ID columns.\n"))
+          # Use the "fix_id_columns_fun" summary function to "fix" the ID variables with non-unique values
+          d.out.map <- d.out.map %>% group_by_at(.vars = cell_idcols) %>% 
+            arrange(channel) %>% 
+            mutate_at(.vars = id_cols, .funs = fix_id_columns_fun) %>% ungroup()
+        }
       }
     }
   }
-  
   # Convert to wide format ####
   # Right now the out_all is in a "long" format for the "channel" variable.
   # Spread it to match expectations:

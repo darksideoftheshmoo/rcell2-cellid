@@ -10,7 +10,8 @@ load_out_all(
   out_file_pattern = "^out_all$",
   out_mapping_pattern = "^out_bf_fl_mapping$",
   fluorescence.pattern = ".*(BF|[A-Z]FP)_Position.*",
-  fix_id_columns = F,
+  id_columns_check = TRUE,
+  fix_id_columns = FALSE,
   fix_id_columns_fun = dplyr::first
 )
 }
@@ -24,6 +25,8 @@ load_out_all(
 \item{out_mapping_pattern}{Regex matching CellID's image mapping output file.}
 
 \item{fluorescence.pattern}{Regex describing what the fluorescence/channel ID string looks like (default "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"). There must be only one capturing group, ant it must be for the channel identifier.}
+
+\item{id_columns_check}{Whether to check for problems in "ID" and "value" columns. If TRUE, the function checks the uniqueness of ID columns.}
 
 \item{fix_id_columns}{Whether apply the \code{fix_id_columns_fun} summary function to problematic ID columns (with non-unique vales per cell across channels).}
 

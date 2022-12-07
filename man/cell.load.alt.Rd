@@ -32,6 +32,7 @@ cell.load.alt(
   \describe{
     \item{\code{out_file_pattern}}{Regex matching CellID's main output file.}
     \item{\code{out_mapping_pattern}}{Regex matching CellID's image mapping output file.}
+    \item{\code{id_columns_check}}{Whether to check for problems in "ID" and "value" columns. If TRUE, the function checks the uniqueness of ID columns.}
     \item{\code{fix_id_columns}}{Whether apply the \code{fix_id_columns_fun} summary function to problematic ID columns (with non-unique vales per cell across channels).}
     \item{\code{fix_id_columns_fun}}{Summary function for \code{fix_id_columns}, uses dplyr's \code{first} by default (thereby using the value of the first channel).}
   }}
