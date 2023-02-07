@@ -657,6 +657,7 @@ int main(int argc, char *argv[]){
     printf("     -b <path> Path to a text file containing a list of paths to 'BF' images used for segmentation.\n");
     printf("     -f <path> Path to a text file containing a list of paths to 'FL' images used for quantification.\n");
     printf("     -o <path> Output path prefix; the relative or absolute path where output files will be saved, including the file prefix (tipically 'out').\n");
+    printf("     -f <path> Path to a text file containing a list of paths to 'third' images used for estimating the position of the nucleus or vacuole.\n");
     printf("     -D <path> Path to a 'dark' image used for background correction (optional, correction skipped by default).\n");
     printf("     -F <path> Path to a 'flat' image used for flattening correction (optional, correction skipped by default).\n");
     printf("     -l        Set cell boundary pixel intensities proportional to each cellID, following the relationship 'cellID = 65535 - boundary_intensity - 1'. Also adds cellID numbers to the cells, with maximum pixel intensity (65535). (optional, enabled by default).\n");

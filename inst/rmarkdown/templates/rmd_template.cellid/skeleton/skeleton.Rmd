@@ -938,7 +938,7 @@ Yo may filter out or select certain image sets at this stage:
 cellid.args %>% filter(pos == 2, t.frame %in% c(4,2,3))
 ```
 
-#### Nuclear or Vacuolart tags
+#### Nuclear or Vacuolar tags
 
 Images containing the location of the nucleus or vacuole can be used
 to derive extra measurements from those structures.
