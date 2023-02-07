@@ -938,6 +938,28 @@ Yo may filter out or select certain image sets at this stage:
 cellid.args %>% filter(pos == 2, t.frame %in% c(4,2,3))
 ```
 
+#### Nuclear or Vacuolart tags
+
+Images containing the location of the nucleus or vacuole can be used
+to derive extra measurements from those structures.
+
+A "third" image list must be added to the arguments. In the following example,
+the YPF channel is added to the arguments to a new column named "`third`" exactly.
+
+```{r}
+# Optionally Add "third" column
+cellid.args <-  left_join(
+  cellid.args,
+  cellid.args %>% filter(ch == "YFP") %>% select(pos, t.frame, image) %>% rename(third = image)
+)
+```
+
+The `cell2` function will look for this column and pass the images to Cell-ID if found.
+
+To enable this feature in Cell-ID, the parameters must have been 
+also configured (see `?parameters_default`) by setting `third_image` to
+"vacuole_label" or "nuclear_label".
+
 ### Preview images in ImageJ
 
 No analysis package exists (yet) that can replace a researcher's general visual assesment.

@@ -336,6 +336,12 @@ int main(int argc, char *argv[]){
       fluor_list_file=optarg;
       break;
       
+    case 'g':
+      printf(" -g third image (nucleus or vacuole): ");
+      printf("%s\n", optarg);
+      third_list_file=optarg;
+      break;
+      
     case 'o':
        printf(" -o output_prefix: ");
        printf("%s\n", optarg);
@@ -545,8 +551,15 @@ int main(int argc, char *argv[]){
             //printf("Adding BF image as additional fluorescence image.\n");
           }else if (strstr(line,"third_image")!=NULL){
             sscanf(line,"%s %s",line2,str_third_img_label);
-
-
+            // Label image: nuclear or vacuole.
+            // Here the "line" is read, the first value is stored in "line2",
+            // and the second in "str_third_img_label", which is used later on.
+            // As per "parameters_description.txt":
+            //   ## If there is a third image type included, then this describes how
+            //   ## to use it (nuclear_label means its a fluorescence tagged nucleus
+            //   ## channel, vacuole_label means vacuole label)
+            //   # third_image vacuole_label
+            //   # third_image nuclear_label
           }else if(strstr(line,"align_individual_cells")!=NULL){
             align_individual_cells=1;
             //see if "boundary" is part of name

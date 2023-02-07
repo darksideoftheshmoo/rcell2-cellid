@@ -16,7 +16,8 @@ parameters_default(
   align_fl_to_first = F,
   image_type = "brightfield",
   bf_fl_mapping = "list",
-  treat_brightfield_as_fluorescence_also = F
+  treat_brightfield_as_fluorescence_also = F,
+  third_image = F
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ parameters_default(
 \item{bf_fl_mapping}{Default: \code{"list"} Possible values: "list", "time". "bf_fl_mapping" option description (guessed from code, mask_mod branch). The mapping between brightfield and fluorescence images can be made by acquisition time, or derived from the order in the list of paths passed as command line options "-b" and "-f" to cell. If the order is by "list", then the paths must be grouped and ordered first by t.frame (ascending) and then by channel. If the order is by "time", cell derives the BF-FL mapping from the acquisition time in the TIFF metadata.}
 
 \item{treat_brightfield_as_fluorescence_also}{Default: \code{F} Calculate all the fluorescence images variables on the bright field image as if it were a fluorescence image. This is potentially a good idea since it allows a good way to reject spurious cells. For example, the average value of the boundary pixels in good cells will be lower than the background level, but not so for spurious cells, etc.}
+
+\item{third_image}{Set to "vacuole_label" or "nuclear_label" to enable third image processing in Cell-ID. These images show the location of the nucleus or vacuole, and are used to derive measurements specific to those structures.}
 }
 \value{
 A nice list of named parameters, input for \code{parameters_write}.

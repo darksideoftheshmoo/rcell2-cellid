@@ -266,15 +266,27 @@ cell2 <- function(arguments,
       base::write(x = flat.imgs, file = flat)
     }
     
+    # Third image support (nuclear/vacuole tagging)
+    use_third <- "third" %in% names(arguments_pos)
+    if(use_third){
+      # TODO: force error if parameter not in config.
+      third_rcell2 <- tempfile(tmpdir = arguments_pos$output[1],
+                               fileext = ".txt",
+                               pattern = "3rd_rcell2-")
+      third.imgs <- paste0(arguments_pos$path, "/", arguments_pos$third)
+      base::write(x = third.imgs, file = third_rcell2)
+    }
+    
     # Check cell path again (not really needed i guess)
     if(is.null(cell.command)) stop("\nError: cell.command must point to an existing CellID binary on your system.")
     
-    # Build the arguments for the CellID command
+    # Build the arguments for the Cell-ID command
     command.args <- paste0(
       # Mandatory arguments
       " -b ", bf_rcell2,
       " -f ", fl_rcell2,
       " -o ", output_prefix,
+      {if(use_third) paste0(" -g ", third_rcell2) else ""},
       " -p ", parameters,
       # Correction files
       {if(use_dark) paste0(" -D ", dark) else ""},
@@ -750,6 +762,7 @@ arguments_check <- function(arguments, check_fail=F){
 #' @param image_type Default: \code{"brightfield"} To-do: document or link to explanation.
 #' @param bf_fl_mapping Default: \code{"list"} Possible values: "list", "time". "bf_fl_mapping" option description (guessed from code, mask_mod branch). The mapping between brightfield and fluorescence images can be made by acquisition time, or derived from the order in the list of paths passed as command line options "-b" and "-f" to cell. If the order is by "list", then the paths must be grouped and ordered first by t.frame (ascending) and then by channel. If the order is by "time", cell derives the BF-FL mapping from the acquisition time in the TIFF metadata.
 #' @param treat_brightfield_as_fluorescence_also Default: \code{F} Calculate all the fluorescence images variables on the bright field image as if it were a fluorescence image. This is potentially a good idea since it allows a good way to reject spurious cells. For example, the average value of the boundary pixels in good cells will be lower than the background level, but not so for spurious cells, etc.
+#' @param third_image  Set to "vacuole_label" or "nuclear_label" to enable third image processing in Cell-ID. These images show the location of the nucleus or vacuole, and are used to derive measurements specific to those structures.
 #' @return A nice list of named parameters, input for \code{parameters_write}.
 #' 
 #' @export
@@ -768,7 +781,8 @@ parameters_default <- function(
   align_fl_to_first = F,
   image_type = "brightfield",
   bf_fl_mapping = "list",
-  treat_brightfield_as_fluorescence_also = F){
+  treat_brightfield_as_fluorescence_also = F,
+  third_image=F){
   
   return(list(
     max_split_over_minor = max_split_over_minor,
@@ -782,7 +796,8 @@ parameters_default <- function(
     align_fl_to_first = align_fl_to_first,
     image_type = image_type,
     bf_fl_mapping = bf_fl_mapping,
-    treat_brightfield_as_fluorescence_also = treat_brightfield_as_fluorescence_also
+    treat_brightfield_as_fluorescence_also = treat_brightfield_as_fluorescence_also,
+    third_image = third_image
   ))
 }
 
