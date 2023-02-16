@@ -1133,6 +1133,14 @@ load_out_all <- function(path,
                                  replacement = "\\1")) %>%
     mutate(channel = tolower(channel))
   
+  # Check if any fluorescence images are missing
+  missing_fl_test <- d.map %>% select(pos, flag, t.frame) %>% unique() %>% 
+    group_by(pos, t.frame) %>% summarise(count = n(), .groups = "drop") %>% 
+    with(length(unique(count)) == 1)
+  if(!missing_fl_test){
+    warning("One or more fluorescence images are missing from the set. This will generate missing values or cause unexpected errors.")
+  }
+  
   # keep flag-channel mapping for later...
   flag.channel.mapping <- unique(dplyr::select(d.map, flag, channel))
   
@@ -1292,9 +1300,8 @@ load_out_all <- function(path,
       if (length(which_bad) > 0) {
         # Prepare warning text
         warning_text <- paste(
-          "Columns [",
-          paste(which_bad, collapse = ", "), 
-          "] are not ID columns, they have different values across channels of the same cell."
+          "Columns [", paste(which_bad, collapse = ", "), "] are not ID columns, ",
+          "they have different values across channels of the same cell."
         )
         
         # Choose how to handle the problem
@@ -1346,7 +1353,7 @@ load_out_all <- function(path,
   
   # Check row number against expectation
   check_row_n <- nrow(cdata) == nrow(d.out.map)/length(unique(d.out.map$channel))
-  if(!check_row_n) warning("Casting fluorescence columns produced the wrong number of rows.")
+  if(!check_row_n) warning("Casting fluorescence columns produced the wrong number of rows per fluorescence channel.")
   
   cat("\rPreparing output...\033[K")
   # Unnecesary with DT dcast
