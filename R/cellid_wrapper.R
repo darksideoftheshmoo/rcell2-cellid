@@ -935,20 +935,6 @@ cell.load.alt <- function(path,
 
   # Delete the cellid.pad column
   d.list$d$cellid.pad <- NULL
-  
-  # Calculate el.p ####
-  # ellipse.perim = perimeter of theoretical ellipse, calculated using each
-  # cell's axis values.
-  # el.p = ratio of ellipse perim over the perimeter measured by cellID.
-  # If this number is small ( < ~0.7) it's probably not a cell.
-  cat("\rCreating el.p column...                            ")
-  d.list$d <- dplyr::mutate(d.list$d,
-                            ellipse.perim = pi *
-                              (3 * (maj.axis / 2 + min.axis / 2) -
-                                 sqrt((3 * maj.axis / 2 + min.axis / 2) *
-                                        (maj.axis / 2 + 3 * min.axis / 2))),
-
-                            el.p = ellipse.perim / perim)
 
   # Merge with pdata ####
   # if(exists("pdata", inherits = F)){
@@ -1189,6 +1175,20 @@ load_out_all <- function(path,
                       f.loc = f.tot - (f.local.bg * a.tot),
                       cf.loc = f.loc / a.tot)
   
+  
+  # Calculate el.p ####
+  ellipse_perimeter <- function(maj.axis, min.axis){
+    pi * (3 * (maj.axis / 2 + min.axis / 2) - sqrt((3 * maj.axis / 2 + min.axis / 2) * (maj.axis / 2 + 3 * min.axis / 2)))
+  }
+  # ellipse.perim = perimeter of theoretical ellipse, calculated using each
+  # cell's axis values.
+  # el.p = ratio of ellipse perim over the perimeter measured by cellID.
+  # If this number is small ( < ~0.7) it's probably not a cell.
+  cat("\rCreating el.p column...                            ")
+  d.out.map <- dplyr::mutate(d.out.map,
+                             ellipse.perim = ellipse_perimeter(maj.axis, min.axis),
+                             el.p = ellipse.perim / perim)
+  
   # d.out.map <- filter(d.out.map, cellID==1)  # test one cell
   
   # Define ID and value variables ####
@@ -1207,6 +1207,8 @@ load_out_all <- function(path,
               "perim",
               "maj.axis",
               "min.axis",
+              "ellipse.perim",
+              "el.p",
               "rot.vol",
               "con.vol",
               "a.tot.p1",  # should be moved from the id_cols, issue #32
