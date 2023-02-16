@@ -933,7 +933,7 @@ cell.load.alt <- function(path,
   if(any(d.list$d$cellid.pad < 0))
     stop("cellID too large to pad, increase ucid.zero.pad (and check for integer overflow).")
 
-  # Delethe the cellid.pad column
+  # Delete the cellid.pad column
   d.list$d$cellid.pad <- NULL
   
   # Calculate el.p ####
@@ -1138,7 +1138,7 @@ load_out_all <- function(path,
     group_by(pos, t.frame) %>% summarise(count = n(), .groups = "drop") %>% 
     with(length(unique(count)) == 1)
   if(!missing_fl_test){
-    warning("One or more fluorescence images are missing from the set. This will generate missing values or cause unexpected errors.")
+    warning("One or more fluorescence images are missing from the set. This will generate missing values or cause unexpected errors.\n")
   }
   
   # keep flag-channel mapping for later...
@@ -1182,6 +1182,7 @@ load_out_all <- function(path,
   }
   
   # Add f.tot columns to data
+  cat("\rCreating FL variables...                           ")
   d.out.map <- mutate(d.out.map,
                       f = f.tot - (a.tot * f.bg),
                       cf = f / a.tot,
@@ -1261,9 +1262,7 @@ load_out_all <- function(path,
                   "f.local.bg",
                   "f.local2.bg")
   
-  # browser()
   cat("\rChecking ID column uniqueness...\033[K")
-  
 
   # ID cols checks ####
   # Check if "id columns" are really the same within each observation
@@ -1300,21 +1299,27 @@ load_out_all <- function(path,
       if (length(which_bad) > 0) {
         # Prepare warning text
         warning_text <- paste(
-          "Columns [", paste(which_bad, collapse = ", "), "] are not ID columns, ",
-          "they have different values across channels of the same cell."
+          "Columns [", paste(which_bad, collapse = ", "), "] are not ID columns,",
+          "they have different values across channels of the same cell.",
+          "This might be due to enabling 'align_fl_to_bf' in Cell-ID."
         )
         
         # Choose how to handle the problem
         if(!fix_id_columns){
           # Warn the user
-          warning(paste(warning_text, "Treating these variables to value columns (colnames in cdata will change!).\n"))
+          warning(paste(warning_text, 
+                        "Treating these variables as 'value' columns.",
+                        "The column names in cdata will change!",
+                        "Try enabling 'fix_id_columns' and setting an appropriate 'fix_id_columns_fun' argument.\n"))
           # Remove "bad" columns from the "id" vector
           id_cols <- id_cols[!id_cols %in% which_bad]
           # And add "bad" columns to the "values" vector
           values_from <- unique(c(values_from, which_bad))
         } else {
           # Warn the user
-          warning(paste(warning_text, "Applying the 'fix_id_columns_fun' summary function to the problematic ID columns.\n"))
+          warning(paste(warning_text, 
+                        "Applying the 'fix_id_columns_fun' summary function to the problematic columns.",
+                        "Try disabling 'fix_id_columns' to treat these columns as regular 'value' columns.\n"))
           # Use the "fix_id_columns_fun" summary function to "fix" the ID variables with non-unique values
           d.out.map <- d.out.map %>% group_by_at(.vars = cell_idcols) %>% 
             arrange(channel) %>% 
@@ -1327,7 +1332,7 @@ load_out_all <- function(path,
   # Right now the out_all is in a "long" format for the "channel" variable.
   # Spread it to match expectations:
   cat("\rSpreading data from channels...\033[K")
-  
+
   # Replacing pivot_wider with dcast (it is 2x faster)
   # cdata <- d.out.map %>%
   #   tidyr::pivot_wider(
