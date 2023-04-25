@@ -1009,7 +1009,7 @@ check_and_fix_paths <- function(path, images){
   # images <- d.list$d.paths
   
   if(any(!file.exists(images$file))){
-    warning("Not all image files exist in the expected filesystem directory. Attempting to fix them... ")
+    warning("\nNot all image files exist in the expected filesystem directory. Attempting to fix them... ")
     new_paths <- paste0(path, "/", basename(images$file))
     if(all(file.exists(new_paths))){
       warning("Image paths fixed.\n")
