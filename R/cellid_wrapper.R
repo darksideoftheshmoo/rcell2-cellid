@@ -983,9 +983,12 @@ cell.load.alt <- function(path,
     output = d.list$pos.directories
   )
   
+  # Check that image paths exists, or try to fix them using the path to the data.
+  images <- check_and_fix_paths(path=path, images=d.list$d.paths)
+  
   # Make output list ####
   cell.data <- list(data = d.list$d,
-                    images = d.list$d.paths,
+                    images = images,
                     mapping = d.list$d.map,
                     channels = unique(d.list$flag.channel.mapping),
                     positions = positions,
@@ -997,6 +1000,28 @@ cell.load.alt <- function(path,
   return(cell.data)
 }
 
+#' Check and fix image paths
+#' 
+#' @param path Path to the data directory, holding the images.
+#' @param images Cell-ID dataframe with image paths, as loaded by \code{cell.load.alt}.
+check_and_fix_paths <- function(path, images){
+  # TEST:
+  # images <- d.list$d.paths
+  
+  if(any(!file.exists(images$file))){
+    warning("Not all image files exist in the expected filesystem directory. Attempting to fix them... ")
+    new_paths <- paste0(path, "/", basename(images$file))
+    if(all(file.exists(new_paths))){
+      warning("Image paths fixed.\n")
+      images$path <- data.dir
+      images$file <- paste0(data.dir, "/", basename(images$file))
+    } else {
+      warning("Could not fix image file paths, expect issues when loading images in rcell2.\n")
+    }
+  }
+  
+  return(images)
+}
 
 #' Una función que lea un .csv y les agregue una columna con un id del archivo (pos)
 #' @keywords internal
