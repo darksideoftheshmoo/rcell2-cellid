@@ -1015,8 +1015,8 @@ check_and_fix_paths <- function(path, images){
     new_paths <- paste0(path, "/", basename(images$file))
     if(all(file.exists(new_paths))){
       warning("Image paths fixed.\n")
-      images$path <- data.dir
-      images$file <- paste0(data.dir, "/", basename(images$file))
+      images$path <- path
+      images$file <- paste0(path, "/", basename(images$file))
     } else {
       warning("Could not fix image file paths, expect issues when loading images in rcell2.\n")
     }
