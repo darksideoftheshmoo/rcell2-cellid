@@ -7,12 +7,6 @@
 tiff_plane_info(path, frames = 1, ...)
 }
 \arguments{
-\item{path}{A string. The path to the tiff file to read.}
-
-\item{frames}{Which frames do you want to read tags from. Default first frame
-only. To read from the 2nd and 7th frames, use \code{frames = c(2, 7)}, to read
-from all frames, use \code{frames = "all"}.}
-
 \item{...}{
   Arguments passed on to \code{\link[XML:xmlToList]{XML::xmlToList}}
   \describe{

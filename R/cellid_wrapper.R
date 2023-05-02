@@ -1004,6 +1004,8 @@ cell.load.alt <- function(path,
 #' 
 #' @param path Path to the data directory, holding the images.
 #' @param images Cell-ID dataframe with image paths, as loaded by \code{cell.load.alt}.
+#' 
+#' @export
 check_and_fix_paths <- function(path, images){
   # TEST:
   # images <- d.list$d.paths
