@@ -1554,7 +1554,7 @@ rename_mda <- function(images.path = NULL,
   # Checks
   if(is.null(images.path) & is.null(file.names)) 
     stop("rename_mda: error, either images.path or file.names must be specified.")
-  if(!( setequal(identifier.info, c("ch", "pos", "t.frame") && length(identifier.info) == 3) ))
+  if(!( setequal(identifier.info, c("ch", "pos", "t.frame")) && length(identifier.info) == 3 ))
     stop("rename_mda: error, malformed identifier.info.")
   
   # Get file names
