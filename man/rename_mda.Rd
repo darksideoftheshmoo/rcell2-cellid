@@ -13,7 +13,7 @@ rename_mda(
   channel.maping.df = data.frame(ch = 1:3, ch.name = c("BF", "YFP", "TFP")),
   file.ext = ".tif",
   skip.thumbs.pat = ".*thumb.*",
-  cleanup.first = F,
+  cleanup.first = FALSE,
   file.names = NULL,
   ...
 )
