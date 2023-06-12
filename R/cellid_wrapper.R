@@ -1658,12 +1658,13 @@ rename_mda <- function(images.path = NULL,
     images.info$status <- status
     
     # Check
-    if(any(!status)) 
+    if(any(!status)) {
       warning("rename_mda: At least some files were not renamed, see warnings!")
-    else
-      cat(paste("rename_mda: It seems the renaming went well :) check your output directory at:", rename.path))
+    } else {
+      cat(paste("rename_mda: It seems the renaming went well :) check your output directory at:", rename.path, "\n"))
+    }
   } else {
-    cat(paste("rename_mda: rename.function set to NULL; no images were renamed.", rename.path))
+    cat(paste("rename_mda: rename.function set to NULL; no images were renamed to path:", rename.path, "\n"))
   }
   
   # Return mapping
