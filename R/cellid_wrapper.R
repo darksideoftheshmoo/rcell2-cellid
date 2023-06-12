@@ -1538,30 +1538,47 @@ NULL
 #' @export
 #' @return Invisibly returns a list with the rename.path (output directory), and a data.frame with the output from the renaming function (see the \code{rename.function} parameter's description) and name conversions.
 #' @import stringr dplyr
-rename_mda <- function(images.path = NULL, 
-                       rename.path = NULL, 
-                       rename.function = file.symlink, 
-                       identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$", 
+rename_mda <- function(images.path = NULL,
+                       rename.path = NULL,
+                       rename.function = file.symlink,
+                       identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
                        identifier.info = c("ch", Position="pos", time="t.frame"),
                        channel.maping.df = data.frame(ch=1:3, ch.name=c("BF", "YFP", "TFP")),
                        file.ext=".tif",
                        skip.thumbs.pat = ".*thumb.*",
-                       cleanup.first=F,
+                       cleanup.first=FALSE,
                        file.names = NULL,
                        ...
                        ){
   
+  if(F){
+    file.names <- c(
+      "timecourse1_w1LED-BF--YFPcube--cam_s1_t1.TIF",
+      "timecourse1_w1LED-BF--YFPcube--cam_s1_t10.TIF", 
+      "timecourse1_w1LED-BF--YFPcube--cam_s1_t11.TIF")
+    images.path = NULL
+    rename.path = NULL
+    rename.function = file.symlink
+    identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$"
+    identifier.info = c("ch", Position="pos", time="t.frame")
+    channel.maping.df = data.frame(ch=1:3, ch.name=c("BF", "YFP", "TFP"))
+    file.ext=".tif"
+    skip.thumbs.pat = ".*thumb.*"
+    cleanup.first=F
+  }
+  
   # Checks
-  if(is.null(images.path) & is.null(file.names)) 
-    stop("rename_mda: error, either images.path or file.names must be specified.")
-  if(!( setequal(identifier.info, c("ch", "pos", "t.frame")) && length(identifier.info) == 3 ))
-    stop("rename_mda: error, malformed identifier.info.")
+  if(is.null(images.path) & is.null(file.names)) {
+    stop("rename_mda: error, either images.path or file.names must be specified.")}
+  if(!( setequal(identifier.info, c("ch", "pos", "t.frame")) && length(identifier.info) == 3 )){
+    stop("rename_mda: error, malformed identifier.info.")}
   
   # Get file names
-  if(!is.null(images.path))
+  if(!is.null(images.path)){
     image.files <- dir(images.path, pattern = identifier.pattern, full.names = T)
-  else
+  } else {
     image.files <- file.names
+  }  
   
   # Skip thumbnails
   if(!is.null(skip.thumbs.pat)) image.files <- image.files[!grepl(skip.thumbs.pat, basename(image.files))]
@@ -1609,6 +1626,11 @@ rename_mda <- function(images.path = NULL,
     images.info$rename.path <- rename.path
   }
   
+  cero_a_la_izquierda <- function(x){
+    set_pad <- ceiling(log10(max(x)+1))
+    stringr::str_pad(string = x, width = set_pad, pad = "0")
+  }
+  
   # Make new names and paths
   images.info$rename.file <- paste0(
     
@@ -1618,11 +1640,11 @@ rename_mda <- function(images.path = NULL,
     "_",
     
     names(identifier.info[identifier.info=="pos"]),
-    images.info$pos,
+    cero_a_la_izquierda(as.numeric(images.info$pos)),
     "_",
     
     names(identifier.info[identifier.info=="t.frame"]),
-    images.info$t.frame,
+    cero_a_la_izquierda(as.numeric(images.info$t.frame)),
     
     file.ext
   )
