@@ -1629,7 +1629,13 @@ rename_mda <- function(images.path = NULL,
   
   # Checks
   channel.maping.df$ch <- as.character(channel.maping.df$ch)
-  stopifnot(all(unique(images.info$ch) %in% channel.maping.df$ch))
+  mapping_check <- all(unique(images.info$ch) %in% channel.maping.df$ch)
+  if(!mapping_check) stop(paste0("rename_mda: error. Expected channel indexes '",
+                                 paste(channel.maping.df$ch, collapse = ", "),
+                                 "' and found channel indexes '",
+                                 paste(unique(images.info$ch), collapse = ", "),
+                                 "'. Consider updating 'channel.maping.df' to add a missing channel index."
+                                 ))
   
   # Join extracted image info to the channel mapping data.frame
   images.info <- dplyr::left_join(images.info, channel.maping.df, by = "ch")
