@@ -15,6 +15,7 @@ rename_mda(
   skip.thumbs.pat = ".*thumb.*",
   cleanup.first = FALSE,
   file.names = NULL,
+  rename.dataframe = NULL,
   ...
 )
 }
@@ -38,6 +39,8 @@ rename_mda(
 \item{cleanup.first}{Set to TRUE to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.}
 
 \item{file.names}{A charachter vector of image names to be processed; as an alternative to listing files in \code{images.path}. Ignored if \code{images.path} is provided.}
+
+\item{rename.dataframe}{If \code{TRUE}, no renaming takes place. Instead, a data frame is returned, which can be adjusted by the user, and then passed to this same argument to rename the images with the adjusted names or mappings.}
 
 \item{...}{Further arguments passed onto \code{rename.function}.}
 }

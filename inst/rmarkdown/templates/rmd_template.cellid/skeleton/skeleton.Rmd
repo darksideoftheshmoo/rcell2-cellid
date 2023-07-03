@@ -377,7 +377,7 @@ data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
 > In the chunk above we set up `data.dir` to hold the path to samples images of a
 time-course experiment. This will replace any previous value!
 
-Finally, Cceck if the files are there:
+Finally, check if the files are there:
 
 ```{r}
 # List image files in the set:
@@ -388,7 +388,7 @@ dir(data.dir)
 
 Images are assumed to be in a single directory, and have names with identifiers for:
 
-* Imaging channel (birghtfield, transmission, fluorescence, z-slice, etc.).
+* Imaging channel (bright field, transmission, fluorescence, z-slice, etc.).
 * Microscope position (*pos*).
 * Time (*t.frame*, optional).
 
@@ -446,6 +446,34 @@ rename_mda(rename.function = NULL,
            file.names = one.filename) %>% 
   # Get the info we're interested in
   .$status %>% select(file, rename.file)
+```
+
+A "renaming data frame" (`images.info` below) can be extracted and examined before renaming all images:
+
+```{r}
+# Set rename.function to NULL (to avoid actually copying files).
+images.info <- 
+  rename_mda(rename.function = NULL, 
+             rename.dataframe = TRUE,
+             file.names = one.filename)
+
+images.info
+```
+
+The updated `images.info` data frame can also be adjusted and then used to rename images:
+
+```{r}
+# Example: adjust "t.frame".
+images.info <- images.info |> mutate(t.frame = 99)
+
+# Pass the updated data.frame to the "rename.dataframe" argument.
+# Set rename.function to NULL (to avoid actually copying files for now).
+images.info.final <- 
+  rename_mda(rename.function = NULL, 
+             rename.dataframe = images.info,
+             file.names = one.filename)
+
+images.info.final
 ```
 
 To run the function on all images, provide the path to the images directory.

@@ -1569,6 +1569,7 @@ cero_a_la_izquierda <- function(x, pad_char="0"){
 #' @param skip.thumbs.pat A regex pattern to filter out files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.
 #' @param cleanup.first Set to TRUE to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.
 #' @param file.names A charachter vector of image names to be processed; as an alternative to listing files in \code{images.path}. Ignored if \code{images.path} is provided.
+#' @param rename.dataframe If \code{TRUE}, no renaming takes place. Instead, a data frame is returned, which can be adjusted by the user, and then passed to this same argument to rename the images with the adjusted names or mappings.
 #' @param ... Further arguments passed onto \code{rename.function}.
 #' @export
 #' @return Invisibly returns a list with the rename.path (output directory), and a data.frame with the output from the renaming function (see the \code{rename.function} parameter's description) and name conversions.
@@ -1583,6 +1584,7 @@ rename_mda <- function(images.path = NULL,
                        skip.thumbs.pat = ".*thumb.*",
                        cleanup.first=FALSE,
                        file.names = NULL,
+                       rename.dataframe = NULL,
                        ...
                        ){
   
@@ -1602,72 +1604,77 @@ rename_mda <- function(images.path = NULL,
     cleanup.first=F
   }
   
-  # Checks
-  if(is.null(images.path) & is.null(file.names)) {
-    stop("rename_mda: error, either images.path or file.names must be specified.")}
-  if(!( setequal(identifier.info, c("ch", "pos", "t.frame")) && length(identifier.info) == 3 )){
-    stop("rename_mda: error, malformed identifier.info.")}
-  
-  # Get file names
-  if(!is.null(images.path)){
-    image.files <- dir(images.path, pattern = identifier.pattern, full.names = T)
-  } else {
-    image.files <- file.names
-  }  
-  
-  # Skip thumbnails
-  if(!is.null(skip.thumbs.pat)) image.files <- image.files[!grepl(skip.thumbs.pat, basename(image.files))]
-  
-  # Check if we got something
-  if(length(image.files) == 0){
-    stop(paste0(
-      "rename_mda: error, no file names were retrieved from directory ",
-      "'", images.path, "' ",
-      "using pattern: '", gsub("([\\])","\\\\\\\\", identifier.pattern), "'"
-    ))
-  }
-  
-  # Extract groups
-  images.info <- stringr::str_match(basename(image.files), identifier.pattern)[,-1,drop=F]
-  # Cnvert to dataframe
-  images.info <- setNames(data.frame(images.info), identifier.info)
-  
-  # Checks
-  channel.maping.df$ch <- as.character(channel.maping.df$ch)
-  mapping_check <- all(unique(images.info$ch) %in% channel.maping.df$ch)
-  if(!mapping_check) stop(paste0("rename_mda: error. Expected channel indexes '",
-                                 paste(channel.maping.df$ch, collapse = ", "),
-                                 "' and found channel indexes '",
-                                 paste(unique(images.info$ch), collapse = ", "),
-                                 "'. Consider updating 'channel.maping.df' to add a missing channel index."
-                                 ))
-  
-  # Join extracted image info to the channel mapping data.frame
-  images.info <- dplyr::left_join(images.info, channel.maping.df, by = "ch")
-  
-  # Add file name and path
-  images.info$path <- images.path
-  images.info$file <- image.files
-  
-  # Check if rename path was specified, use the images path otherwise
-  if(is.null(images.path)) rename.path <- ""
-  if(is.null(rename.path)) rename.path <- paste0(images.path, "/renamed")
-  
-  # Skip cleanup it images.path was not provided
-  if(!is.null(images.path)){
-    if(cleanup.first){
-      # Delete all files recursively
-      unlink(paste0(rename.path, "/*"), recursive = T)
+  # Prepare the renaming data.frame unless one has been provided.
+  if(!is.data.frame(rename.dataframe)){
+    # Checks
+    if(is.null(images.path) & is.null(file.names)) {
+      stop("rename_mda: error, either images.path or file.names must be specified.")}
+    if(!( setequal(identifier.info, c("ch", "pos", "t.frame")) && length(identifier.info) == 3 )){
+      stop("rename_mda: error, malformed identifier.info.")}
+    
+    # Get file names
+    if(!is.null(images.path)){
+      image.files <- dir(images.path, pattern = identifier.pattern, full.names = T)
+    } else {
+      image.files <- file.names
+    }  
+    
+    # Skip thumbnails
+    if(!is.null(skip.thumbs.pat)) image.files <- image.files[!grepl(skip.thumbs.pat, basename(image.files))]
+    
+    # Check if we got something
+    if(length(image.files) == 0){
+      stop(paste0(
+        "rename_mda: error, no file names were retrieved from directory ",
+        "'", images.path, "' ",
+        "using pattern: '", gsub("([\\])","\\\\\\\\", identifier.pattern), "'"
+      ))
     }
     
-    # Create output directory
-    dir.create(rename.path, showWarnings = F, recursive = T)
+    # Extract groups
+    images.info <- stringr::str_match(basename(image.files), identifier.pattern)[,-1,drop=F]
+    # Cnvert to dataframe
+    images.info <- setNames(data.frame(images.info), identifier.info)
     
-    # Make new names and paths
-    images.info$rename.path <- rename.path
+    # Checks
+    channel.maping.df$ch <- as.character(channel.maping.df$ch)
+    mapping_check <- all(unique(images.info$ch) %in% channel.maping.df$ch)
+    if(!mapping_check) stop(paste0("rename_mda: error. Expected channel indexes '",
+                                   paste(channel.maping.df$ch, collapse = ", "),
+                                   "' and found channel indexes '",
+                                   paste(unique(images.info$ch), collapse = ", "),
+                                   "'. Consider updating 'channel.maping.df' to add a missing channel index."
+    ))
+    
+    # Join extracted image info to the channel mapping data.frame
+    images.info <- dplyr::left_join(images.info, channel.maping.df, by = "ch")
+    
+    # Add file name and path
+    images.info$path <- images.path
+    images.info$file <- image.files
+    
+    # Check if rename path was specified, use the images path otherwise
+    if(is.null(images.path)) rename.path <- ""
+    if(is.null(rename.path)) rename.path <- paste0(images.path, "/renamed")
+    
+    # Skip cleanup it images.path was not provided
+    if(!is.null(images.path)){
+      if(cleanup.first){
+        # Delete all files recursively
+        unlink(paste0(rename.path, "/*"), recursive = T)
+      }
+      
+      # Create output directory
+      dir.create(rename.path, showWarnings = F, recursive = T)
+      
+      # Make new names and paths
+      images.info$rename.path <- rename.path
+    }
+  } else {
+    message("rename_mda: a data.frame was passed to 'rename.dataframe'. It's 'rename.file' will be updated (overwritten).")
   }
   
-  # Make new names and paths
+  # Make new names and paths.
   images.info$rename.file <- paste0(
     
     # ifelse(nzchar(names(identifier.info[identifier.info=="ch"])), "_", ""),
@@ -1685,7 +1692,14 @@ rename_mda <- function(images.path = NULL,
     file.ext
   )
   
-  # Rename
+  # If a "renaming data frame" (images.info) was not provided, but "rename.dataframe" is TRUE,
+  # then immediately return the prepared 'images.info' data frame.
+  if(isTRUE(rename.dataframe)){
+    message("rename_mda: rename.dataframe was set to TRUE, returning the 'images.info' dataframe. No renaming took place.")
+    return(images.info)
+  }
+  
+  # Rename the files.
   if(!is.null(rename.function)){
     status <- rename.function(from = normalizePath(images.info$file), 
                               to = paste0(rename.path, "/", images.info$rename.file),
@@ -1703,7 +1717,7 @@ rename_mda <- function(images.path = NULL,
     cat(paste("rename_mda: rename.function set to NULL; no images were renamed to path:", rename.path, "\n"))
   }
   
-  # Return mapping
+  # Return mapping.
   return(list(
     rename.path=rename.path,
     status=images.info
