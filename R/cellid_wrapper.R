@@ -1653,8 +1653,11 @@ rename_mda <- function(images.path = NULL,
     images.info$path <- images.path
     images.info$file <- image.files
     
-    # Check if rename path was specified, use the images path otherwise
-    if(is.null(images.path)) rename.path <- ""
+    # If no images.path was specified, set rename path to an empty string,
+    # which ends up being the current working directory.
+    if(is.null(images.path) & is.null(rename.path)) rename.path <- ""
+    
+    # Check if rename path was specified and use it as a sub-directory of "images.path".
     if(is.null(rename.path)) rename.path <- paste0(images.path, "/renamed")
     
     # Skip cleanup it images.path was not provided
@@ -1671,10 +1674,12 @@ rename_mda <- function(images.path = NULL,
       images.info$rename.path <- rename.path
     }
   } else {
-    message("rename_mda: a data.frame was passed to 'rename.dataframe'. It's 'rename.file' will be updated (overwritten).")
+    message("rename_mda: a data.frame was passed to 'rename.dataframe'. It's 'rename.file' will be updated (overwritten). Will update 'rename.path' if it was specified.")
+    # Make new paths.
+    if(!is.null(rename.path)) images.info$rename.path <- rename.path
   }
   
-  # Make new names and paths.
+  # Make new names.
   images.info$rename.file <- paste0(
     
     # ifelse(nzchar(names(identifier.info[identifier.info=="ch"])), "_", ""),
