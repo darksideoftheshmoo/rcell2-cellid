@@ -1521,6 +1521,11 @@ arguments_to_images <- function(arguments){
 #' # some examples if you want to highlight the usage in the package
 NULL
 
+#' Pad numbers to the same length with leading zeros
+cero_a_la_izquierda <- function(x, pad_char="0"){
+  set_pad <- ceiling(log10(max(x)+1))
+  stringr::str_pad(string = x, width = set_pad, pad = pad_char)
+}
 
 #' Image file renamer for Metamorph MDA
 #' 
@@ -1660,11 +1665,6 @@ rename_mda <- function(images.path = NULL,
     
     # Make new names and paths
     images.info$rename.path <- rename.path
-  }
-  
-  cero_a_la_izquierda <- function(x){
-    set_pad <- ceiling(log10(max(x)+1))
-    stringr::str_pad(string = x, width = set_pad, pad = "0")
   }
   
   # Make new names and paths
