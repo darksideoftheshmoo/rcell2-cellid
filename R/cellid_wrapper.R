@@ -641,8 +641,8 @@ arguments_check <- function(arguments_df, check_fail=F){
     warning(paste0(
       "\n\narguments_check: ",
       "Time frame index numbers in file names will not match those assigned by Cell-ID ",
-      "in the 'out_all' files. This is likely to cause errors when filtering by t.frame ",
-      "or when joining pdata to cdata. Cell-IDs time frames start at 0 and grow by 1 unit.",
+      "in the 'out_all' files. This is likely to cause some confusion when filtering by 't.frame' ",
+      "or when joining metadata to 'cdata'. Cell-ID's time frames start at 0 and grow by 1 unit.",
       "\n\n"
     ))
   }
