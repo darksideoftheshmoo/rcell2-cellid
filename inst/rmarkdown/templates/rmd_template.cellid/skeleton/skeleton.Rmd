@@ -1241,7 +1241,7 @@ test.chs = unique(cellid.args$ch)[1]         # e.g.: One channel.
 # Filter cellid.args to choose image sets for the scan
 scan.arguments <-  
   subset(cellid.args, 
-         pos %in% test.pos & t.frame %in% test.frames)
+         pos %in% test.pos & t.frame %in% test.frames & ch %in% test.chs)
 
 # Examine the subset
 scan.arguments
