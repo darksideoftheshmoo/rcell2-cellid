@@ -635,21 +635,32 @@ images <- rcell2.cellid::arguments_to_images(arguments = image_list)
 Add image metadata and replot the stage's "path":
 
 ```{r}
-plane_info_df %>% 
-  left_join(select(images, image, pos, t.frame, channel)) %>% 
+# Microscope details.
+magnification <- 40 # 40x
+ccd_pixel_size_microns <- 6.45 # 6.45 um
+
+# Calculate "Field Of View" size.
+fov_size_microns_x <- 1376 * ccd_pixel_size_microns / magnification  # um in the "X/width" direction
+fov_size_microns_y <- 1040 * ccd_pixel_size_microns / magnification  # um in the "Y/height" direction
+
+# Plot fields of view to check for overlaps visually.
+plt <- plane_info_df %>% 
+  left_join(select(images, image, pos, t.frame, channel)) %>% # filter(channel == "TFP") |> 
   arrange(pos) %>% 
   ggplot(aes(stage.position.x, stage.position.y, label = pos)) +
   geom_path(aes(group = t.frame)) +
-  geom_rect(aes(xmin=stage.position.x-1000, 
-                xmax=stage.position.x+1000, 
-                ymin=stage.position.y-1000, 
-                ymax=stage.position.y+1000,
+  geom_rect(aes(xmin=stage.position.x-fov_size_microns_x/2, 
+                xmax=stage.position.x+fov_size_microns_x/2, 
+                ymin=stage.position.y-fov_size_microns_y/2, 
+                ymax=stage.position.y+fov_size_microns_y/2,
                 group = pos, fill = factor(pos)), alpha =.5)+
   geom_text(size=10) +
-  facet_grid(t.frame~channel) + guides(fill = "none") +
-  scale_x_reverse() + #coord_fixed()+
+  facet_wrap(t.frame~channel) + guides(fill = "none") +
+  scale_x_reverse() + # coord_fixed() +
   ggtitle("Physical stage coordinates v.s. Position index",
           "Compare the index numbers with the expected physical distrubution in the well plate.\nThe shaded areas around index numbers shuould not overlap with each other.")
+
+plt
 ```
 
 > If any two shaded areas overlap, there will be duplicated cells in the dataset.
