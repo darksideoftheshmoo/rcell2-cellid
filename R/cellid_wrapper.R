@@ -1567,10 +1567,10 @@ cero_a_la_izquierda <- function(x, pad_char="0"){
 #' @param channel.maping.df A dataframe with two columns: "ch" holding the original channel names in the source files (coerced to character), and "ch.name" with the new names for each channel.
 #' @param file.ext File extension to use in the final file name, such as: ".tif".
 #' @param skip.thumbs.pat A regex pattern to filter out files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.
-#' @param cleanup.first Set to TRUE to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.
-#' @param file.names A charachter vector of image names to be processed; as an alternative to listing files in \code{images.path}. Ignored if \code{images.path} is provided.
-#' @param rename.dataframe If \code{TRUE}, no renaming takes place. Instead, a data frame is returned, which can be adjusted by the user, and then passed to this same argument to rename the images with the adjusted names or mappings.
-#' @param ... Further arguments passed onto \code{rename.function}.
+#' @param cleanup.first Set to \code{TRUE} to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.
+#' @param file.names A character vector of image names to be processed; as an alternative to listing files in \code{images.path}. Ignored if \code{images.path} is provided.
+#' @param rename.dataframe If \code{TRUE}, no renaming takes place and a data frame is returned instead. It can be altered by the user, and then passed to this same argument to rename the images with the adjusted names or mappings. The data frame is normally returned in the "status" item of the regular output.
+#' @param ... Further arguments passed on to \code{rename.function}.
 #' @export
 #' @return Invisibly returns a list with the rename.path (output directory), and a data.frame with the output from the renaming function (see the \code{rename.function} parameter's description) and name conversions.
 #' @import stringr dplyr
@@ -1607,8 +1607,8 @@ rename_mda <- function(images.path = NULL,
   # Prepare the renaming data.frame unless one has been provided.
   if(!is.data.frame(rename.dataframe)){
     # Checks
-    if(is.null(images.path) & is.null(file.names)) {
-      stop("rename_mda: error, either images.path or file.names must be specified.")}
+    if(is.null(images.path) & is.null(file.names) & is.null(rename.dataframe)) {
+      stop("rename_mda: error, either 'images.path', 'rename.dataframe' or 'file.names' must be specified.")}
     if(!( setequal(identifier.info, c("ch", "pos", "t.frame")) && length(identifier.info) == 3 )){
       stop("rename_mda: error, malformed identifier.info.")}
     
@@ -1653,30 +1653,35 @@ rename_mda <- function(images.path = NULL,
     images.info$path <- images.path
     images.info$file <- image.files
     
-    # If no images.path was specified, set rename path to an empty string,
-    # which ends up being the current working directory.
+    # If no "images.path" nor "rename.path" were specified, set "rename.path" to an empty string,
+    # which ends up being the current working directory. Cleanup will be skipped in this case.
     if(is.null(images.path) & is.null(rename.path)) rename.path <- ""
     
-    # Check if rename path was specified and use it as a sub-directory of "images.path".
+    # If "rename.path" was not specified, use "renamed" as a sub-directory of "images.path".
     if(is.null(rename.path)) rename.path <- paste0(images.path, "/renamed")
     
-    # Skip cleanup it images.path was not provided
-    if(!is.null(images.path)){
-      if(cleanup.first){
-        # Delete all files recursively
-        unlink(paste0(rename.path, "/*"), recursive = T)
-      }
-      
-      # Create output directory
-      dir.create(rename.path, showWarnings = F, recursive = T)
-      
-      # Make new names and paths
-      images.info$rename.path <- rename.path
-    }
+    # Make new names and paths
+    images.info$rename.path <- rename.path
+    
   } else {
-    message("rename_mda: a data.frame was passed to 'rename.dataframe'. It's 'rename.file' will be updated (overwritten). Will update 'rename.path' if it was specified.")
-    # Make new paths.
+    message("rename_mda: a data.frame was passed to 'rename.dataframe'. It's 'rename.file' column will be updated (overwritten). Will also update 'rename.path' if it was specified.")
+    
+    # Update rename path if specified.
+    images.info <- rename.dataframe
     if(!is.null(rename.path)) images.info$rename.path <- rename.path
+  }
+  
+  # Delete images in "rename.path" if requested (unless it is empty).
+  if(cleanup.first){
+    if((rename.path != "") & (!is.null(rename.path))){
+      # Delete all files recursively.
+      unlink(paste0(rename.path, "/*", file.ext))
+      
+      # Re create output directory.
+      dir.create(rename.path, showWarnings = F, recursive = T)
+    } else {
+      message("rename_mda: to prevent accidental deletions, cleanup was skipped because 'rename.path' is empty.")
+    }
   }
   
   # Make new names.
@@ -1707,7 +1712,7 @@ rename_mda <- function(images.path = NULL,
   # Rename the files.
   if(!is.null(rename.function)){
     status <- rename.function(from = normalizePath(images.info$file), 
-                              to = paste0(rename.path, "/", images.info$rename.file),
+                              to = paste0(images.info$rename.path, "/", images.info$rename.file),
                               ...)
     # Add status column to image into
     images.info$status <- status

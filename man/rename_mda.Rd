@@ -36,13 +36,13 @@ rename_mda(
 
 \item{skip.thumbs.pat}{A regex pattern to filter out files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.}
 
-\item{cleanup.first}{Set to TRUE to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.}
+\item{cleanup.first}{Set to \code{TRUE} to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.}
 
-\item{file.names}{A charachter vector of image names to be processed; as an alternative to listing files in \code{images.path}. Ignored if \code{images.path} is provided.}
+\item{file.names}{A character vector of image names to be processed; as an alternative to listing files in \code{images.path}. Ignored if \code{images.path} is provided.}
 
-\item{rename.dataframe}{If \code{TRUE}, no renaming takes place. Instead, a data frame is returned, which can be adjusted by the user, and then passed to this same argument to rename the images with the adjusted names or mappings.}
+\item{rename.dataframe}{If \code{TRUE}, no renaming takes place and a data frame is returned instead. It can be altered by the user, and then passed to this same argument to rename the images with the adjusted names or mappings. The data frame is normally returned in the "status" item of the regular output.}
 
-\item{...}{Further arguments passed onto \code{rename.function}.}
+\item{...}{Further arguments passed on to \code{rename.function}.}
 }
 \value{
 Invisibly returns a list with the rename.path (output directory), and a data.frame with the output from the renaming function (see the \code{rename.function} parameter's description) and name conversions.
