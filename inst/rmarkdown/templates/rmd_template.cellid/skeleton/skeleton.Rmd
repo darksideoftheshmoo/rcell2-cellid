@@ -1285,8 +1285,8 @@ Just run:
 ```{r eval=F}
 scan.results <- 
   parameter_scan(parameters.df = parameters.df,
-                 scan.arguments = scan.arguments, 
-                 test.dir = test.dir)
+                 # Optionally choose the temporary output directory by setting "test.dir".
+                 scan.arguments = scan.arguments)
 ```
 
 > Have a look at the function's source code if you like, its hopefully well commented.
