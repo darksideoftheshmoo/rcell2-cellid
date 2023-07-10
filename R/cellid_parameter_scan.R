@@ -317,3 +317,152 @@ make_scan_stacks <- function(scan.results,
     imagej.macros=macros
   ))
 }
+
+
+
+#' Prepare information text box to annotate an image with it's segmentation parameters and metadata
+#' 
+#' Internal use.
+#' 
+#' @param images The "results.bound" data frame produced by \code{parameter_scan}, filtered to contain only one channel.
+#' @return A character vector for an information "text box", with each line padded to square length.
+make_info_box <- function(images){
+  
+  if(length(unique(images$channel)) != 1) warning("make_info_box: multiple channel values were supplied.")
+  
+  # Generate contents of the text box with segmentation parameters.
+  images.files <- images %>% 
+    with(file)
+  
+  images.params <- images %>% 
+    with(parameters) %>% 
+    sapply(readr::read_file) %>% 
+    unname()
+  
+  images.meta <- images %>% 
+    with({
+      paste0("channel: ", channel, "\n", 
+             "t.frame: ", t.frame, "\n", 
+             "position: ",     pos,     "\n")
+    })
+  
+  images.info <- paste0(images.params, "\n", images.meta)
+  
+  images.info.padded <- sapply(images.info, function(images.info.pos){
+    st <- strsplit(images.info.pos, "\\n")[[1]]
+    mx <- max(nchar(st))
+    st.padded <- stringr::str_pad(st, width = mx, side = "right")
+    st.pasted <- paste(st.padded, collapse = "\n")
+    return(st.pasted)
+  })
+  
+  return(images.info.padded)
+}
+
+
+#' Annotate parameter scan output for reviewing the results in ImageJ
+#' 
+#' Warning: images in the scan result will be annotated and overwritten. Be sure to double check that your original "source" images are _not_ in the data frame (i.e. pass only output ".out.tif" images to this function).
+#'
+#' @param scan.results The full result from \code{parameter_scan}.
+#' @param annotate.channels Vector of channels which should be annotated.
+#' @param preserve.source.imgs If TRUE, an error will be raised when non-output (segmented) images are found in the input.
+#' @param in.place If TRUE, the provided images will be annotated and overwritten. Else, the annotated images will be saved to a subdirectory of \code{test.dir} named by \code{annotated.imgs.dir}.
+#' @param annotated.imgs.dir If \code{in.place} is FALSE, the annotated images will be saved to a sub-directory of \code{test.dir} named by \code{annotated.imgs.dir}, and suffixed by the channel names.
+#' @param annotation.font Font for the annotations. A mono-spaced font is recommended.
+#'
+#' @return ImageJ macros to open the annotated images as a virtual stack.
+#' @export
+#' @importFrom stringr str_pad
+#' @import dplyr
+#'
+annotate_scan_output <- function(scan.results, 
+                                 annotate.channels = "BF.out", 
+                                 preserve.source.imgs = TRUE,
+                                 in.place = FALSE,
+                                 annotated.imgs.dir = "annotated",
+                                 annotation.font = "Hack") {
+  
+  if(!requireNamespace("magick")){
+    stop("make_scan_stacks: requires functions from the 'magick' package, which is not installed.")
+  }
+  
+  # Load results
+  test.dir <- scan.results$test.dir
+  results.bound <- scan.results$results.bound
+  test.params <- scan.results$test.params
+  test.pos <- scan.results$test.pos
+  test.frames <- scan.results$test.frames
+  
+  # Check for source images in the input list.
+  if(any(results.bound$is.out) & in.place & preserve.source.imgs) 
+    stop("annotate_scan_output: non-output images detected for in place annotation. This would modify source data. To allow this, set 'preserve_non_out=FALSE'.")
+  
+  # Make stacks
+  stack.paths.split <- results.bound %>% 
+    dplyr::filter(channel %in% stack.channels) %>% 
+    dplyr::arrange(channel, id, t.frame, pos) %>% 
+    # {split(., list(.$channel, .$pos))} %>%  # Fix for R's old split
+    {split(., .$channel)}
+  
+  ## Annotate images, and prepare ImageJ macros and print them to the console
+  macros <- stack.paths.split %>%  # Split only by channel
+    lapply(function(images){
+      # images <- stack.paths[[1]]  # For testing
+      
+      # Sort images.
+      images.sorted <- images |> 
+        dplyr::arrange(channel, t.frame, pos, id)
+      # Get the file names and parameter set ID.
+      images.files <- images.sorted %>% with(file)
+      param.set.ids <- images.sorted %>% with(id)
+      # Make info text boxes.
+      images.info.padded <- make_info_box(images.sorted)
+      
+      # Make directory path for annotated images
+      image.new.dir <- paste0(test.dir, "/", annotated.imgs.dir, "-", images.sorted$channel[1])
+      
+      # Read one image at a time, annotate it, and overwrite the original file.
+      for (i in seq_along(images.files)) {
+        image.file <- images.files[i]
+        image.info.padded <- images.info.padded[i]
+        param.set.id <- param.set.ids[i]
+        
+        image.annotated <- image.file %>% 
+          magick::image_read() %>% 
+          magick::image_annotate(text = image.info.padded, boxcolor = "white", color = "black", size = 10,
+                                 font = annotation.font) %>% 
+          magick::image_convert(colorspace = "Gray", matte = F)
+        
+        if(in.place){
+          image.annotated %>% 
+            magick::image_write(path=image.file, format = "tiff", depth = 8)
+        } else {
+          image.new.path <- paste0(image.new.dir, "/", param.set.id, "-", basename(image.file))
+          dir.create(path = image.new.dir, showWarnings = FALSE)
+          image.annotated %>% 
+            magick::image_write(path=image.new.path, format = "tiff", depth = 8)
+        }
+      }
+      
+      # Prepare macro
+      n_ch <- length(test.params)
+      n_z <- length(test.pos)
+      n_t <- length(test.frames)
+      
+      macro <- glue::glue(
+        '// Macro',
+        'run("Image Sequence...", "open={image.new.dir} file=(.*tif$) sort use");',
+        'run("Stack to Hyperstack...", "order=xyczt(default) channels={n_t} slices={n_z} frames={n_ch} display=Grayscale"',
+        ');\n\n',
+        .sep = "\n"
+      )
+      
+      macro %>% cat()
+      
+      return(macro)
+    })
+  
+  return(macros)
+}
+
