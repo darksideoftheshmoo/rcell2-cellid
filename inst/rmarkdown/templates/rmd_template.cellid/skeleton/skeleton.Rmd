@@ -704,8 +704,7 @@ List the BF images from the `arguments` function, and symlink them to a separate
 # Get image paths
 cellid.args <- 
   rcell2.cellid::arguments(path = data.dir,
-                           file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$") %>% 
-  filter(pos %in% good.pos)
+                           file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$")
 
 # Save BF files
 bf.files <- cellid.args %>%
