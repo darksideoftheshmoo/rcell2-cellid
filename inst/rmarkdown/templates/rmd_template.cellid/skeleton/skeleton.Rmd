@@ -677,8 +677,8 @@ This can help Cell-ID find cells and reduce background artifacts.
 
 There are two ways to apply the filter:
 
-- [Parallel] run: paralellized execution, which is faster and uses more resources (recommended).
-- [Sequential] run: one image is processed at a time, which can be slow on large datasets.
+- **Parallel** run: paralellized execution, which is faster and uses more resources (recommended).
+- **Sequential** run: one image is processed at a time, which can be slow on large data sets.
 
 #### Sequential
 
@@ -712,12 +712,14 @@ bf.files <- cellid.args %>%
 
 # Make a directory to put them in
 fft.bfs.subdirectory <- "bf_subset"
-fft.bfs.dir <- paste0(new.data.dir, "/", fft.bfs.subdirectory)
+fft.bfs.dir <- paste0(data.dir, "/", fft.bfs.subdirectory)
 dir.create(fft.bfs.dir)
 
 # Link them over
-file.symlink(from = normalizePath(bf.files),
-             to = paste0(dirname(bf.files[1]), "/", fft.bfs.subdirectory, "/", basename(bf.files)))
+result <- file.symlink(from = normalizePath(bf.files),
+                       to = paste0(dirname(bf.files[1]), "/", fft.bfs.subdirectory, "/", basename(bf.files)))
+# Check that it worked.
+stopifnot(all(result))
 ```
 
 Run FFT filter on all images sequentially:
@@ -738,7 +740,7 @@ the.rest <- setdiff(all.files, bf.files)
 # Symlink over to the directory of the FFT-filtered BFs
 if(length(all.files) == length(bf.files) + length(the.rest)){
   file.symlink(from = normalizePath(the.rest),
-               to = paste0(dirname(the.rest[1]), "/bf_subset/filtered/", basename(the.rest)))
+               to = paste0(dirname(the.rest[1]), "/", fft.bfs.subdirectory, "/filtered/", basename(the.rest)))
 }
 ```
 
@@ -752,9 +754,8 @@ List the BF images from the `arguments` function:
 ```{r eval=F}
 # Get image paths
 cellid.args <-
-  rcell2.cellid::arguments(path = new.data.dir,
-                           file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$") %>% 
-  filter(pos %in% positions)
+  rcell2.cellid::arguments(path = data.dir,
+                           file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$")
 ```
 
 Split the BF files by position, and symlink them to different subdirectories:
@@ -764,14 +765,17 @@ cellid.args.split <- split(cellid.args, ~pos)
 
 fft.bfs.subdirs <- list()
 
+# Prefix or full path to where filtered images will be stored.
+fft.subdirs.prefix <- "bf_subset"
+
 for(i in seq_along(cellid.args.split)) {
   # Save BF files
   bf.files <- cellid.args.split[[i]] %>%
     select(bf, path) %>% with(paste0(path,"/",bf)) %>% unique()
   
   # Make a directory to put them in
-  fft.bfs.subdirectory <- paste0("bf_subset_", i)
-  fft.bfs.dir <- paste0(new.data.dir, "/", fft.bfs.subdirectory)
+  fft.bfs.subdirectory <- paste0(fft.subdirs.prefix, "_", i)
+  fft.bfs.dir <- paste0(data.dir, "/", fft.bfs.subdirectory)
   dir.create(fft.bfs.dir)
   
   # Link them over
@@ -797,9 +801,11 @@ cl <- parallel::makeCluster(
 )
 
 # This may take a while...
+library(foreach)
 doParallel::registerDoParallel(cl)
 foreach(fft.bfs.subdir=fft.bfs.subdirs, .packages = "rcell2.cellid") %dopar% {
-  imagej_fft_filter(pic.path = fft.bfs.subdir, imagej.path="~/Software/FIJI/Fiji.app/ImageJ-linux64")
+  imagej_fft_filter(pic.path = fft.bfs.subdir, 
+                    imagej.path="~/Software/FIJI/Fiji.app/ImageJ-linux64")
 }
 parallel::stopCluster(cl)
 ```
@@ -809,9 +815,11 @@ Symlink filtered BFs in each subdirectory to a single "filtered" images director
 ```{r eval=F}
 filtered.bfs <- dir(paste0(fft.bfs.subdirs, "/filtered"), full.names = T)
 
-filtered.bfs.dir <- paste0(new.data.dir, "/fft_images_dataset/")
+# Set a name and make a path for the final location of the FFT-filtered images.
+filtered.bfs.dir <- paste0(data.dir, "/fft_images_dataset/")
 dir.create(filtered.bfs.dir)
 
+# Symlink BF images to the final location.
 result <- file.symlink(from = normalizePath(filtered.bfs), 
                        to = paste0(filtered.bfs.dir, basename(filtered.bfs)))
 
@@ -821,7 +829,7 @@ all(result)  # Check
 Symlink the rest of the images (fluorescence imgs) to the filtered directory:
 
 ```{r eval=F}
-# Get all files
+# Get all FL files (no BF files).
 fl.files <- cellid.args %>% 
   with(paste0(path, "/", image)) %>% unique()
 
