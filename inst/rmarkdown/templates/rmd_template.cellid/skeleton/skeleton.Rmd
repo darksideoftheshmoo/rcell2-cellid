@@ -992,7 +992,7 @@ cellid.args <- rcell2.cellid::arguments(data.dir,
 cellid.args
 ```
 
-Yo may filter out or select certain image sets at this stage:
+You can filter out or select certain image sets at this stage:
 
 ```{r}
 cellid.args %>% filter(pos == 2, t.frame %in% c(4,2,3))
