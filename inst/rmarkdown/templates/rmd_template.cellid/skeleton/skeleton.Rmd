@@ -1069,125 +1069,6 @@ open another virtual hyperstack for the output images, and browse them in-sync.
 
 <!-- Si alguien sabe como reordenar fotos en un stack, que avise. Creo que se puede ¿reslice? ¿algo asi? -->
 
-### Run Cell-ID
-
-The `cell2` function generates system commands to run Cell-ID,
-and executes them in parallel by default.
-
-The `cell.command` argument must be the path to the Cell-ID binary executable.
-In this version of `rcell2`, it defaults to `NULL`, and the intenal executable 
-is used.
-
-Warning: existing output files **will be overwritten**. To check if this will happen 
-before running `cell2`, run "`arguments_check(cellid.args)`".
-
-```{r eval=F}
-cell2.result <- rcell2.cellid::cell2(arguments = cellid.args,
-                                     n_cores = 2)
-```
-
-> Run `?cell2` to learn about advanced segmentation parameters, and to generate additional
-output files with segmentation masks or identified cell-boundary pixel coordinates.
-
-> `n_cores` can be set to the number of CPU cores you want to use to parallelize
-> the segmentation (relying on `foreach`). It defaults to use all but one of the
-> available cores.
-
-### Output data
-
-Cell-ID's output consists mainly of:
-
-* Segmented images (named with the `.out.tif` posfix).
-  * *Optional:* "BF.out" with identified binary masks.
-* Tables with single-cell quantitative information (from their morphology and fluorescence).
-  * *Optional:* Tables with the boundary and interior pixels of identified cell.
-
-#### Output file pattern
-
-File patterns for the image set may vary slightly; depending on what images were 
-provided as input, and the identifiers in their file names.
-
-The pattern must match file names of fluorescent images, and have a capturing group
-for the channel identifier (e.g. `YFP`, `GFP`, etc.).
-
-The most common fluorescent channel patterns for `cell.load.alt` and `parameter_scan`
-are defined below.
-
-Choose one pattern and comment the others:
-
-```{r}
-# Default value: all fluorescent tags, including Z-stack fluorescence channels.
-fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
-
-# Default: add "BF" as a possible channel (when CellID was run with bf_as_fl=TRUE)
-# fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+|BF)_Position\\d+_time\\d+.tif$"
-
-# Same as defualt, but without t.frame information.
-# fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+.tif$"
-```
-
-List files that match the pattern, to check that it works as expected:
-
-```{r}
-data.dir %>% 
-  dir(pattern = fluorescence.pattern)
-```
-
-#### Load the output
-
-The output tables can be loaded with `cell.load.alt`.
-
-```{r eval=F}
-# Load output
-cell.data <- rcell2.cellid::cell.load.alt(path = data.dir,
-                                          fluorescence.pattern=fluorescence.pattern)
-```
-
-> Note: your `fluorescence.pattern` regex may vary (read the [Output file pattern] section above).
-
-Alternatively, function `load_cell_data` from `rcell2` can load those tables as well.
-
-```{r eval=F}
-# Install rcell2's main analysis package if unavailable.
-if(!requireNamespace("rcell2")){
-   devtools::install_github("darksideoftheshmoo/rcell2")
-}
-
-# Load output
-cell_data <- rcell2::load_cell_data(path = data.dir)
-```
-
-Both `rcell2.cellid` and `rcell2` provide the `cell.load.boundaries` function, which can 
-load the cell boundaries and interior pixels coordinates.
-
-This data is only available if either `output_coords_to_tsv` or `encode_cellID_in_pixels` 
-were set to `TRUE` when Cell-ID was run.
-
-To load the boundary pixels, use the `cell.load.boundaries` function. It can load this 
-information from two kinds of sources:
-
-* "`masks.tsv`": from TSV files, available if Cell-ID was run with `output_coords_to_tsv=TRUE`.
-* "`out.tif`": from binary masks in TIFF files, available if Cell-ID was run with `encode_cellID_in_pixels=TRUE`.
-
-```{r eval=F}
-# Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
-cell.boundaries <- 
-  rcell2::cell.load.boundaries(data.source = "masks.tsv",
-                               arguments = cellid.args,
-                               pixel.type = "b")
-```
-
-#### Variable descriptions
-
-To help understand CellID's output, we documented the descriptions of variables
-in `cell.data$data`. They are available through a function:
-
-```{r}
-rcell2.cellid::cellid_output_descriptions(list.output = F)
-```
-
-The 
-
 ### Tuning parameters
 
 Sometimes we want to test out many parameter combinations 
@@ -1431,7 +1312,7 @@ stack.paths$imagej.macros
 
 This parameter set was chosen for FFT-filtered BFs.
 
-Under 0.8 background_reject_factor, there were some "persisten" _ghosts_;
+Under 0.8 background_reject_factor, there were some "persistent" _ghosts_;
 elongated _chorizos_ on the sides of cells.
 
 ```{r eval=F}
@@ -1445,6 +1326,128 @@ parameters.list <- rcell2.cellid::parameters_default(
 ```
 
 <!-- TODO: nombrar los stacks por parameter modificado -->
+
+
+
+### Run Cell-ID
+
+The `cell2` function generates system commands to run Cell-ID,
+and executes them in parallel by default.
+
+The `cell.command` argument must be the path to the Cell-ID binary executable.
+In this version of `rcell2`, it defaults to `NULL`, and the intenal executable 
+is used.
+
+Warning: existing output files **will be overwritten** without warning. 
+To check if this will happen before running `cell2`, run "`arguments_check(cellid.args)`"
+on the output directory, and check for warnings.
+
+```{r eval=F}
+cell2.result <- rcell2.cellid::cell2(arguments = cellid.args,
+                                     n_cores = 2)
+```
+
+> Run `?cell2` to learn about advanced segmentation parameters, and to generate additional
+output files with segmentation masks or identified cell-boundary pixel coordinates.
+
+> `n_cores` can be set to the number of CPU cores you want to use to parallelize
+> the segmentation (relying on `foreach`). It defaults to use all but one of the
+> available cores.
+
+### Output data
+
+Cell-ID's output consists mainly of:
+
+* Segmented images (named with the `.out.tif` suffix).
+  * *Optional:* "BF.out" with identified binary masks.
+* Tables with single-cell quantitative information (from their morphology and fluorescence).
+  * *Optional:* Tables with the boundary and interior pixels of identified cell.
+
+#### Output file pattern
+
+File patterns for the image set may vary slightly; depending on what images were 
+provided as input, and the identifiers in their file names.
+
+The pattern must match file names of fluorescent images, and have a capturing group
+for the channel identifier (e.g. `YFP`, `GFP`, etc.).
+
+The most common fluorescent channel patterns for `cell.load.alt` and `parameter_scan`
+are defined below.
+
+Choose one pattern and comment the others:
+
+```{r}
+# Default value: all fluorescent tags, including Z-stack fluorescence channels.
+fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
+
+# Default: add "BF" as a possible channel (when CellID was run with bf_as_fl=TRUE)
+# fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+|BF)_Position\\d+_time\\d+.tif$"
+
+# Same as defualt, but without t.frame information.
+# fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+.tif$"
+```
+
+List files that match the pattern, to check that it works as expected:
+
+```{r}
+data.dir %>% 
+  dir(pattern = fluorescence.pattern)
+```
+
+#### Load the output
+
+The output tables can be loaded with `cell.load.alt`.
+
+```{r eval=F}
+# Load output
+cell.data <- rcell2.cellid::cell.load.alt(path = data.dir,
+                                          fluorescence.pattern=fluorescence.pattern)
+```
+
+> Note: your `fluorescence.pattern` regex may vary (read the [Output file pattern] section above).
+
+Alternatively, function `load_cell_data` from `rcell2` can load those tables as well.
+
+```{r eval=F}
+# Install rcell2's main analysis package if unavailable.
+if(!requireNamespace("rcell2")){
+   devtools::install_github("darksideoftheshmoo/rcell2")
+}
+
+# Load output
+cell_data <- rcell2::load_cell_data(path = data.dir)
+```
+
+Both `rcell2.cellid` and `rcell2` provide the `cell.load.boundaries` function, which can 
+load the cell boundaries and interior pixels coordinates.
+
+This data is only available if either `output_coords_to_tsv` or `encode_cellID_in_pixels` 
+were set to `TRUE` when Cell-ID was run.
+
+To load the boundary pixels, use the `cell.load.boundaries` function. It can load this 
+information from two kinds of sources:
+
+* "`masks.tsv`": from TSV files, available if Cell-ID was run with `output_coords_to_tsv=TRUE`.
+* "`out.tif`": from binary masks in TIFF files, available if Cell-ID was run with `encode_cellID_in_pixels=TRUE`.
+
+```{r eval=F}
+# Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
+cell.boundaries <- 
+  rcell2::cell.load.boundaries(data.source = "masks.tsv",
+                               arguments = cellid.args,
+                               pixel.type = "b")
+```
+
+#### Variable descriptions
+
+To help understand CellID's output, we documented the descriptions of variables
+in `cell.data$data`.
+
+They are available through a function:
+
+```{r}
+rcell2.cellid::cellid_output_descriptions(list.output = F)
+```
 
 ## Data analysis
 
