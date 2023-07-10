@@ -400,7 +400,7 @@ annotate_scan_output <- function(scan.results,
   
   # Make stacks
   stack.paths.split <- results.bound %>% 
-    dplyr::filter(channel %in% stack.channels) %>% 
+    dplyr::filter(channel %in% annotate.channels) %>% 
     dplyr::arrange(channel, id, t.frame, pos) %>% 
     # {split(., list(.$channel, .$pos))} %>%  # Fix for R's old split
     {split(., .$channel)}
