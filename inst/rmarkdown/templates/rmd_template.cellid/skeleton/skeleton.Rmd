@@ -1367,13 +1367,36 @@ results.bound %>% filter(channel == "BF.out", t.frame == 0) %>%
 
 #### Review result in ImageJ
 
-Make TIFF stacks for a one or more imaging channels, with the `make_scan_stacks` function.
+Prepare virtual TIFF stacks for a one or more imaging channels, with the `make_scan_stacks` function.
 
 To help the user choose a parameter set, the stacks are annotated with the parameters used
 for the segmentation, and other metadata (position, time frame, and channel).
 
-A copy-paste-ready ImageJ Macro will be printed out, 
+There are two alternatives: `annotate_scan_output` and `make_scan_stacks`. The first will
+annotate the images and save them, and the latter will annotate the images and save them
+to a stack. Note that making a stack can consume all your system's RAM if the scan is 
+moderately large. We recommend using `annotate_scan_output`.
+
+A copy-paste-ready ImageJ Macro will be printed out by either function, 
 to easily load the stacks as virtual Hyperstacks in ImageJ.
+
+##### Option A: annotate_scan_output
+
+```{r}
+imagej_macros <- annotate_scan_output(scan.results = scan.results, 
+                                      stack.channels = "BF.out", 
+                                      in.place = FALSE,
+                                      preserve.source.imgs = TRUE,
+                                      annotated.imgs.dir = "annotated",
+                                      annotation.font = "Hack")
+```
+
+> Copy paste the macro to a new macro window in ImageJ, and hit run!
+> The stack should be loaded auto-magically.
+
+Macros are saved to the output.
+
+##### Option B: make_scan_stacks
 
 ```{r eval=F}
 stack.paths <- 
@@ -1382,9 +1405,6 @@ stack.paths <-
 ```
 
 > Have a look at the function's source code if you like, its hopefully well commented.
-
-Copy paste the macro to a new macro window in ImageJ, and hit run!
-The stack should be loaded automagically.
 
 Paths and macros are saved in the output:
 
