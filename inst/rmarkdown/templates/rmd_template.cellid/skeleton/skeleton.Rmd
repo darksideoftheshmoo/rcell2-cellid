@@ -512,12 +512,14 @@ To use the function with different file name patterns, adjust `identifier.patter
 The following sections may help improve the result of the segmentation,
 to catch severe issues early on.
 
-### Check that all images are there
+### Check that yor images are there
 
 The arguments function will run several tests (using `arguments_check` internally)
 before returning the list of images for cell-ID.
 
 Warnings (or errors if desired) will be generated if the checks fail.
+
+You can also set `check_fail = FALSE` to inspect all warnings without raising an error.
 
 ```{r}
 # Get images and their metadata.
@@ -542,7 +544,7 @@ if(!requireNamespace("XML")) install.packages("XML")
 <!-- Internal note: The xml2 package does not convert the attributes automatically, 
 so I stuck to the XML package. See tiff_plane_info's help and source for details. -->
 
-#### Load TIFF metadata
+#### List your images
 
 Get paths to the images:
 
@@ -554,22 +556,31 @@ metamorph_pics_dir <- "/path/to/your/data"
 metamorph_pics_dir <- system.file("extdata/sample_datasets/sample_images/",
                                   package = "rcell2.examples")
 
-# List files
+# List some files
 dir(metamorph_pics_dir)
 ```
 
-Get the path to an example image:
+Make the paths to the images:
 
 ```{r}
 # Path to a sample image
 image_list <- rcell2.cellid::arguments(metamorph_pics_dir, 
                                        file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)().tif$")
 metamorph_pics <- paste0(image_list$path, "/", image_list$image)
-metamorph_pic <- metamorph_pics[2]
 ```
 
 > Note: the usage of the "file.pattern" argument is explained below, at the
 > [Arguments] section of this notebook.
+
+#### Load TIFF metadata
+
+##### Example image
+
+Get the path to an example image:
+
+```{r}
+metamorph_pic <- metamorph_pics[2]
+```
 
 List plane info for the image:
 
@@ -593,6 +604,8 @@ subset(pic_plane_info, grepl("stage-position", id))
 > Our motorized stage works in negative coordinate space, as most CNC machines do.
 > Take this into account when plotting.
 
+##### All images
+
 Get the metadata of all images:
 
 ```{r}
@@ -610,7 +623,7 @@ plane_info_df <- setNames(metamorph_pics, basename(metamorph_pics)) %>%
 plane_info_df
 ```
 
-Plot XY stage positions:
+#### Plot stage positions
 
 ```{r}
 ggplot(plane_info_df) +
@@ -619,26 +632,30 @@ ggplot(plane_info_df) +
 
 > This plot is specially useful when tracing a path for positions in a many-well time-course experiment.
 
-#### Check position indexes and overlap
+#### Plot position overlaps
 
 The following code match the images' _position_ (Pos) to their microscope stage _physical_ XY coordinates,
 which are stored in the TIFF tags of the original images.
 
 It requires the `images` dataframe in `cell.data` to get the file names,
 _but_ you could also use `dir` to get the files by pattern, and `sub` to get the position IDs,
-independently of CellID.
+independently of Cell-ID.
 
 ```{r}
 images <- rcell2.cellid::arguments_to_images(arguments = image_list)
 ```
 
-Add image metadata and replot the stage's "path":
+Set details from your microscope: magnification and physical size of the camera's pixels.
 
 ```{r}
 # Microscope details.
 magnification <- 40 # 40x
 ccd_pixel_size_microns <- 6.45 # 6.45 um
+```
 
+Add image metadata and replot the stage's "path":
+
+```{r}
 # Calculate "Field Of View" size.
 fov_size_microns_x <- 1376 * ccd_pixel_size_microns / magnification  # um in the "X/width" direction
 fov_size_microns_y <- 1040 * ccd_pixel_size_microns / magnification  # um in the "Y/height" direction

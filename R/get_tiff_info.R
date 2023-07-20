@@ -80,3 +80,74 @@ tiff_plane_info <- function(path, frames = 1, ...) {
   
   return(result)
 }
+
+#' Plot positions and field of view overlaps
+#' 
+#' @param image_list The output from the \code{arguments} function. Consider fltering to include only the first position.
+#' @inheritParams arguments
+#' @import dplyr ggplot2
+#' @export
+#' @examples 
+#' image_list <- rcell2.cellid::arguments(metamorph_pics_dir, 
+#'                                        file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
+#'   filter(t.frame == min(t.frame)) |> 
+#'   plot_pos_overlaps(file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
+#' 
+plot_pos_overlaps <- function(
+    image_list,
+    file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$",
+    magnification = 40, # 40x
+    ccd_pixel_size_microns = 6.45 # 6.45 um
+    ){
+  
+  # Path to images.
+  metamorph_pics <- paste0(image_list$path, "/", image_list$bf) |> unique()
+  
+  # Get the metadata of all images:
+  plane_info_df <- setNames(metamorph_pics, basename(metamorph_pics)) %>% 
+    # Get metadata
+    lapply(rcell2.cellid::tiff_plane_info) %>% 
+    bind_rows(.id="image") %>% 
+    # Fix variable names and types
+    mutate(variable = make.names(id)) %>% 
+    filter(grepl("stage.position", variable)) %>% 
+    mutate(value = as.numeric(value)) %>% 
+    # Make it wider
+    pivot_wider(id_cols = "image", names_from = "variable", values_from = "value")
+  
+  # Generate "images" dataframe.
+  images <- arguments_to_images(arguments = image_list)
+  
+  # Microscope details.
+  magnification <- 40 # 40x
+  ccd_pixel_size_microns <- 6.45 # 6.45 um
+  
+  # Calculate "Field Of View" size.
+  fov_size_microns_x <- 1376 * ccd_pixel_size_microns / magnification  # um in the "X/width" direction
+  fov_size_microns_y <- 1040 * ccd_pixel_size_microns / magnification  # um in the "Y/height" direction
+  
+  # Plot fields of view to check for overlaps visually.
+  plt <- plane_info_df %>% 
+    left_join(select(images, image, pos, t.frame, channel) |> filter(channel == "BF") |> unique()) |> 
+    arrange(pos) %>% 
+    ggplot(aes(stage.position.x, stage.position.y, label = pos)) +
+    geom_path(aes(group = t.frame)) +
+    geom_rect(aes(xmin=stage.position.x-fov_size_microns_x/2, 
+                  xmax=stage.position.x+fov_size_microns_x/2, 
+                  ymin=stage.position.y-fov_size_microns_y/2, 
+                  ymax=stage.position.y+fov_size_microns_y/2,
+                  group = pos, fill = factor(pos)), alpha =.5)+
+    geom_text(size=10) +
+    facet_wrap(t.frame~channel) + guides(fill = "none") +
+    scale_x_reverse() + # coord_fixed() +
+    ggtitle("Physical stage coordinates v.s. Position index",
+            "Compare the index numbers with the expected physical distrubution in the well plate.\nThe shaded areas around index numbers shuould not overlap with each other.")
+  
+  print(plt)
+  
+  return(invisible(list(
+    plt=plt,
+    plane_info_df=plane_info_df,
+    images=images
+  )))
+}
