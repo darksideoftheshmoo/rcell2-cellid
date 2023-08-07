@@ -420,7 +420,8 @@ annotate_scan_output <- function(scan.results,
       images.info.padded <- make_info_box(images.sorted)
       
       # Make directory path for annotated images
-      image.new.dir <- paste0(test.dir, "/", annotated.imgs.dir, "-", images.sorted$channel[1])
+      image.new.dir <- paste0(test.dir, "/", annotated.imgs.dir, "-", images.sorted$channel[1]) |> 
+        normalizePath()
       
       # Read one image at a time, annotate it, and overwrite the original file.
       for (i in seq_along(images.files)) {
