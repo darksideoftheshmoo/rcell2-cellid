@@ -6,24 +6,35 @@
 \usage{
 plot_pos_overlaps(
   image_list,
-  file.pattern = "^(BF|[A-Z]FP)_Position(\\\\d+)_time(\\\\d+).tif$",
   magnification = 40,
-  ccd_pixel_size_microns = 6.45
+  ccd_pixel_size_microns = 6.45,
+  well_size_microns_x = 4500,
+  well_size_microns_y = 4500,
+  image_width_x = 1376,
+  image_height_y = 1040
 )
 }
 \arguments{
 \item{image_list}{The output from the \code{arguments} function. Consider fltering to include only the first position.}
 
-\item{file.pattern}{Regex pattern for all tif files, with one group for each of \code{c("ch", "pos", "t.frame")} in \code{file.pattern.groups.order}. Uses \code{"^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"} by default. To omit time, use an empty group for the t.frame in the regex, for example: \code{"^(BF|[A-Z]FP)_Position(\\d+)().tif$"}.
-To consider Z-stacks, use something like "^(BF|[A-Z]\\d+)_Position(\\d+)_time(\\d+).tif$"}
+\item{magnification}{Total image magnification.}
+
+\item{ccd_pixel_size_microns}{Physical size of the camera's pixel.}
+
+\item{well_size_microns_x}{Physical size of the well in the plate (used to draw breaks in the plot).}
+
+\item{well_size_microns_y}{Physical size of the well in the plate (used to draw breaks in the plot).}
+
+\item{image_width_x}{Size of the images in pixels.}
+
+\item{image_height_y}{Size of the images in pixels.}
 }
 \description{
 Plot positions and field of view overlaps
 }
 \examples{
-image_list <- rcell2.cellid::arguments(metamorph_pics_dir, 
-                                       file.pattern = "^(BF|[A-Z]FP)_Position(\\\\d+)_time(\\\\d+).tif$") |> 
+plot <- rcell2.cellid::arguments(metamorph_pics_dir, file.pattern = "^(BF|[A-Z]FP)_Position(\\\\d+)_time(\\\\d+).tif$") |> 
   filter(t.frame == min(t.frame)) |> 
-  plot_pos_overlaps(file.pattern = "^(BF|[A-Z]FP)_Position(\\\\d+)_time(\\\\d+).tif$")
+  plot_pos_overlaps()
 
 }

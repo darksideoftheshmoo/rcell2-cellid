@@ -84,20 +84,28 @@ tiff_plane_info <- function(path, frames = 1, ...) {
 #' Plot positions and field of view overlaps
 #' 
 #' @param image_list The output from the \code{arguments} function. Consider fltering to include only the first position.
-#' @inheritParams arguments
+#' @param magnification Total image magnification.
+#' @param ccd_pixel_size_microns Physical size of the camera's pixel.
+#' @param well_size_microns_x Physical size of the well in the plate (used to draw breaks in the plot).
+#' @param well_size_microns_y Physical size of the well in the plate (used to draw breaks in the plot).
+#' @param image_width_x Size of the images in pixels.
+#' @param image_height_y Size of the images in pixels.
 #' @import dplyr ggplot2
 #' @export
 #' @examples 
-#' image_list <- rcell2.cellid::arguments(metamorph_pics_dir, 
-#'                                        file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
+#' plot <- rcell2.cellid::arguments(metamorph_pics_dir, file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
 #'   filter(t.frame == min(t.frame)) |> 
-#'   plot_pos_overlaps(file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
+#'   plot_pos_overlaps()
 #' 
 plot_pos_overlaps <- function(
     image_list,
-    file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$",
-    magnification = 40, # 40x
-    ccd_pixel_size_microns = 6.45 # 6.45 um
+    # file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$",
+    magnification = 40,            # 40x
+    ccd_pixel_size_microns = 6.45, # 6.45 um
+    well_size_microns_x = 4500,    # 4500 um
+    well_size_microns_y = 4500,    # 4500 um
+    image_width_x = 1376,
+    image_height_y = 1040
     ){
   
   # Path to images.
@@ -119,16 +127,27 @@ plot_pos_overlaps <- function(
   images <- arguments_to_images(arguments = image_list)
   
   # Microscope details.
-  magnification <- 40 # 40x
-  ccd_pixel_size_microns <- 6.45 # 6.45 um
+  # magnification <- 40 # 40x
+  # ccd_pixel_size_microns <- 6.45 # 6.45 um
+  
+  # Well size
+  # well_size_microns_x <- 9000 / 2
+  # well_size_microns_y <- 9000 / 2
   
   # Calculate "Field Of View" size.
-  fov_size_microns_x <- 1376 * ccd_pixel_size_microns / magnification  # um in the "X/width" direction
-  fov_size_microns_y <- 1040 * ccd_pixel_size_microns / magnification  # um in the "Y/height" direction
+  fov_size_microns_x <- image_width_x * ccd_pixel_size_microns / magnification  # um in the "X/width" direction
+  fov_size_microns_y <- image_height_y * ccd_pixel_size_microns / magnification  # um in the "Y/height" direction
+  
+  x_min <- min(plane_info_df$stage.position.x) - well_size_microns_x / 2
+  x_max <- max(plane_info_df$stage.position.x) + well_size_microns_x / 2
+  y_min <- min(plane_info_df$stage.position.y) - well_size_microns_x / 2
+  y_max <- max(plane_info_df$stage.position.y) + well_size_microns_x / 2
+  
+  images_bf <- select(images, image, pos, t.frame, channel) |> filter(channel == "BF") |> unique()
   
   # Plot fields of view to check for overlaps visually.
   plt <- plane_info_df %>% 
-    left_join(select(images, image, pos, t.frame, channel) |> filter(channel == "BF") |> unique()) |> 
+    left_join(images_bf, by = "image") |> 
     arrange(pos) %>% 
     ggplot(aes(stage.position.x, stage.position.y, label = pos)) +
     geom_path(aes(group = t.frame)) +
@@ -139,7 +158,14 @@ plot_pos_overlaps <- function(
                   group = pos, fill = factor(pos)), alpha =.5)+
     geom_text(size=10) +
     facet_wrap(t.frame~channel) + guides(fill = "none") +
-    scale_x_reverse() + # coord_fixed() +
+    
+    scale_x_continuous(trans = "reverse", limits = c(x_max,x_min),
+                       breaks=seq(0,-well_size_microns_x*10,by=-well_size_microns_x),
+                       minor_breaks=NULL) + 
+    scale_y_continuous(limits=c(y_min,y_max),
+                       breaks=seq(0,-well_size_microns_y*10,by=-well_size_microns_y),
+                       minor_breaks=NULL) +
+    
     ggtitle("Physical stage coordinates v.s. Position index",
             "Compare the index numbers with the expected physical distrubution in the well plate.\nThe shaded areas around index numbers shuould not overlap with each other.")
   
