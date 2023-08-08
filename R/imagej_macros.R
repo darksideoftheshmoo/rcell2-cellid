@@ -9,12 +9,12 @@
 #' @param macro_file TRUE: write to temporary file/directory. FALSE: do not write macro to a file. Else, a path to the file where to save the macro.
 #' @export
 ijm_open_hyperstack <- function(images, use_out = FALSE, macro_file=TRUE){
-  n_axis1 <- images %>% filter(use_out) %>% with(unique(t.frame)) %>% length()
-  n_axis2 <- images %>% filter(use_out) %>% with(unique(pos)) %>% length()
-  n_axis3 <- images %>% filter(use_out) %>% with(unique(channel)) %>% length()
+  n_axis1 <- images %>% filter(is.out == use_out) %>% with(unique(t.frame)) %>% length()
+  n_axis2 <- images %>% filter(is.out == use_out) %>% with(unique(pos)) %>% length()
+  n_axis3 <- images %>% filter(is.out == use_out) %>% with(unique(channel)) %>% length()
   
   # Check
-  stopifnot((n_axis1 * n_axis2 * n_axis3) ==  nrow(unique(filter(images, use_out))))
+  stopifnot((n_axis1 * n_axis2 * n_axis3) ==  nrow(unique(filter(images, is.out == use_out))))
   
   # Get dir
   img.dir <- images$path[1]
