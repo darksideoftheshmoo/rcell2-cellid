@@ -212,7 +212,7 @@ tsv_paths_from_args <- function(positions,
 #' @inheritParams tsv_paths_from_args
 #' @inheritParams read_tiff_masks
 #' @return A "cell.boundaries" data.frame.
-#' 
+#' @import data.table
 #' @export
 cell.load.boundaries <- function(data.source,
                                  # Arguments for the tsv_paths_from_args function:
@@ -261,16 +261,22 @@ cell.load.boundaries <- function(data.source,
                           position_pattern=position_pattern,
                           tsv_pattern=tsv_pattern) %>% 
       with(setNames(path, pos)) %>% 
-      lapply(readr::read_tsv,
-             # col_types = "iiiiif") %>%  # types: 5 int columns, 1 factor column 
-             col_types = readr::cols(
-               cellID=readr::col_integer(),
-               t.frame=readr::col_integer(),
-               flag=readr::col_integer(),
-               x=readr::col_integer(),
-               y=readr::col_integer(),
-               pixtype=readr::col_factor(levels = c("b", "i"))
-             )) %>%  # types: 5 int columns, 1 factor column 
+      
+      # lapply(readr::read_tsv,
+      #        # col_types = "iiiiif") %>%  # types: 5 int columns, 1 factor column 
+      #        col_types = readr::cols(
+      #          cellID=readr::col_integer(),
+      #          t.frame=readr::col_integer(),
+      #          flag=readr::col_integer(),
+      #          x=readr::col_integer(),
+      #          y=readr::col_integer(),
+      #          pixtype=readr::col_factor(levels = c("b", "i"))
+      #        )) %>%  # types: 5 int columns, 1 factor column 
+      lapply(function(file.name) data.table::fread(
+        cmd = paste0("gunzip -c '", normalizePath(file.name), "' | grep -P 'cellID|", paste(pixel.type, collapse = "|") ,"'"),
+       stringsAsFactors=TRUE,
+       colClasses=c("integer", "integer", "integer", "integer", "integer", "factor")
+     )) %>% 
       bind_rows(.id = "pos") %>% 
       mutate(pos = as.integer(pos),
              # CellID positions are zero-indexed, add 1 and enter the R inferno:
