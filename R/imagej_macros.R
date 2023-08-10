@@ -53,6 +53,12 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
   )
   
   cat(macro)
+  paste('// Additional tools:',
+        'run("Channels Tool...");',
+        'run("Brightness/Contrast...");',
+        'setTool("multipoint");',
+        'run("Point Tool...");',
+        sep = "\n") |> cat()
   cat("\n\n")
   
   if(isFALSE(macro_file))
