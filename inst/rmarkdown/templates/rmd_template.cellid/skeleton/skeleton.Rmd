@@ -1501,9 +1501,11 @@ information from two kinds of sources:
 ```{r eval=F}
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
-  rcell2::cell.load.boundaries(data.source = "masks.tsv",
-                               arguments = cellid.args,
-                               pixel.type = "b")
+  rcell2.cellid::cell.load.boundaries(
+    data = cellid.args,
+    data.source = "masks.tsv",
+    pixel.type = "b"
+  )
 ```
 
 #### Variable descriptions
