@@ -83,7 +83,7 @@ tiff_plane_info <- function(path, frames = 1, ...) {
 
 #' Plot positions and field of view overlaps
 #' 
-#' @param image_list The output from the \code{arguments} function. Consider fltering to include only the first position.
+#' @param image_list The output from the \code{arguments} function. Consider filtering to include only the first position.
 #' @param magnification Total image magnification.
 #' @param ccd_pixel_size_microns Physical size of the camera's pixel.
 #' @param well_size_microns_x Physical size of the well in the plate (used to draw breaks in the plot).

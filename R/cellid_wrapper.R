@@ -1560,7 +1560,7 @@ cero_a_la_izquierda <- function(x, pad_char="0"){
 #' 
 #' @import dplyr
 #' @param images.path Path to the directory containing the original images. Can be NULL if \code{file.names} is provided.
-#' @param rename.path Path to the target directory. If \code{NULL} (the default) images are sent to a "renamed" subdirectory of \code{images.path}.
+#' @param rename.path Path to the target directory. If \code{NULL} (the default) images are sent to a new "renamed" sub directory of \code{images.path}. The directory will be created if it does not exist.
 #' @param rename.function Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function. Set to \code{NULL} to disable renaming (i.e. for testing purposes).
 #' @param identifier.pattern Regex defining the iamge file pattern, with gropus for identifier in the file names.
 #' @param identifier.info Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. If an element in the vector is named, the name is prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).
@@ -1633,7 +1633,7 @@ rename_mda <- function(images.path = NULL,
     
     # Extract groups
     images.info <- stringr::str_match(basename(image.files), identifier.pattern)[,-1,drop=F]
-    # Cnvert to dataframe
+    # Convert to data frame
     images.info <- setNames(data.frame(images.info), identifier.info)
     
     # Checks
@@ -1653,12 +1653,21 @@ rename_mda <- function(images.path = NULL,
     images.info$path <- images.path
     images.info$file <- image.files
     
-    # If no "images.path" nor "rename.path" were specified, set "rename.path" to an empty string,
-    # which ends up being the current working directory. Cleanup will be skipped in this case.
-    if(is.null(images.path) & is.null(rename.path)) rename.path <- ""
-    
-    # If "rename.path" was not specified, use "renamed" as a sub-directory of "images.path".
-    if(is.null(rename.path)) rename.path <- paste0(images.path, "/renamed")
+    # Figure out the path where renamed images will be written.
+    if(is.null(rename.path)){ 
+      if(is.null(images.path)){
+        # If no "images.path" nor "rename.path" were specified, set "rename.path" to an empty string,
+        # which ends up being the current working directory. Cleanup will be skipped in this case.
+        rename.path <- ""
+      } else{
+        # If "rename.path" was not specified, use "renamed" as a sub-directory of "images.path".
+        rename.path <- paste0(images.path, "/renamed")
+        dir.create(rename.path)
+      }
+    } else {
+      # Just create the path if it was specified.
+      dir.create(rename.path)
+    }
     
     # Make new names and paths
     images.info$rename.path <- rename.path

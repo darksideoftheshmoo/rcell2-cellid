@@ -22,7 +22,7 @@ rename_mda(
 \arguments{
 \item{images.path}{Path to the directory containing the original images. Can be NULL if \code{file.names} is provided.}
 
-\item{rename.path}{Path to the target directory. If \code{NULL} (the default) images are sent to a "renamed" subdirectory of \code{images.path}.}
+\item{rename.path}{Path to the target directory. If \code{NULL} (the default) images are sent to a new "renamed" sub directory of \code{images.path}. The directory will be created if it does not exist.}
 
 \item{rename.function}{Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function. Set to \code{NULL} to disable renaming (i.e. for testing purposes).}
 

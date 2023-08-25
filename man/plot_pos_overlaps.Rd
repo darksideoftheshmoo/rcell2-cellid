@@ -15,7 +15,7 @@ plot_pos_overlaps(
 )
 }
 \arguments{
-\item{image_list}{The output from the \code{arguments} function. Consider fltering to include only the first position.}
+\item{image_list}{The output from the \code{arguments} function. Consider filtering to include only the first position.}
 
 \item{magnification}{Total image magnification.}
 
