@@ -580,9 +580,15 @@ independently of Cell-ID.
 Optionally set details from your microscope (e.g. magnification and physical size of the camera's pixels).
 
 ```{r}
-result <- plot_pos_overlaps(image_list)
+# Get images.
+image_list <- rcell2.cellid::arguments(path = data.dir,
+                                       file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
 
-result$plt
+# Extract metadata and plot stage positions.
+result <- plot_pos_overlaps(image_list, channels = "TFP")
+
+# The plot can be found in the output list.
+# result$plt
 ```
 
 > If any two shaded areas overlap, there will be duplicated cells in the dataset.
@@ -590,6 +596,45 @@ result$plt
 We do not yet offer a way to remove them automatically. You may do this yourself
 by finding the XY coordinates of the first cells not shared between images, and using
 their coordinates to remove the overlapping set from one position.
+
+### Preview images using ImageJ
+
+No analysis package exists (yet) that can replace a researcher's general visual assessment.
+
+This section helps you open your images with FIJI-ImageJ before you begin.
+
+A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment.
+
+> Note: this macro uses a "file" pattern that only matches input images (and not ".out")
+> in a tipically-named set of images.
+
+Steps:
+
+1. Run the following code, copy its output to the clipboard.
+2. Open ImageJ/FIJI, and open a new "Macro" window by clicking on "Plugins -> New -> Macro".
+3. Paste the macro into the macro editor, and click on "Run". A new hyperstack window will open.
+4. Browse the images using the sliders.
+
+```{r}
+# Get images and their metadata.
+image_list <- rcell2.cellid::arguments(data.dir,
+                                       file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
+
+# Convert the "arguments" to a list of "images" required to make the ImageJ macro.
+image_list |> 
+  arguments_to_images() |>
+  ijm_open_hyperstack(use_out = F)
+```
+
+> Note: the dimensions names may be mismatched between R and the macro if `fix_order=F`. 
+> This is because virtual stacks must be in `xyczt` order (time is likely to end up as the "channels" dimension),
+> but the order in which the "Image Sequence..." is loaded depends on how their files are named.
+
+The only restriction of this approach is that only "3" dimensions are available for
+browsing: `frame`, `plane`, and `channel`. This is relevant if you wish to browse
+segmentation results (which adds another dimension to the set: "original" vs "out").
+A fourth dimension would be needed, but Hyperstacks only provide 3. The default is to
+load "out" files as new channels.
 
 ### Apply FFT filter on BF images
 
@@ -873,55 +918,6 @@ The `cell2` function will look for this column and pass the images to Cell-ID if
 To enable this feature in Cell-ID, the parameters must have been 
 also configured (see `?parameters_default`) by setting `third_image` to
 "vacuole_label" or "nuclear_label".
-
-### Preview images in ImageJ
-
-No analysis package exists (yet) that can replace a researcher's general visual assesment.
-
-This section helps you open your images with FIJI-ImageJ before you begin.
-
-A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment.
-
-> Note: this macro uses a "file" pattern that only matches input images (and not ".out")
-> in a tipically-named set of images.
-
-Steps:
-
-1. Run the following code, copy its output to the clipboard.
-2. Open ImageJ/FIJI, and open a new "Macro" window by clicking on "Plugins -> New -> Macro".
-3. Paste the macro into the macro editor, and click on "Run". A new hyperstack window will open.
-4. Browse the images using the sliders.
-
-```{r}
-# Make an ImageJ macro to browse the images before segmentation
-n_axis1 <- length(unique(cellid.args$t.frame))
-n_axis2 <- length(unique(cellid.args$pos))
-n_axis3 <- length(unique(cellid.args$ch))
-
-# Add 1 to include the BF images as a possible channel
-n_axis3 <- n_axis3 + 1
-
-macro <- glue::glue(
-  '// Macro',
-  'run("Image Sequence...", "open={data.dir} file=(.*\\\\d.tif$) sort use");',
-  'run("Stack to Hyperstack...", "order=xyczt(default) channels={n_axis1} slices={n_axis2} frames={n_axis3} display=Grayscale");',
-  .sep = "\n"
-)
-
-cat(macro)
-```
-
-> Note: the dimensions names may be mismatched between R and the macro. This is because 
-virtual stacks must be in `xyczt` order (time is likely to end up as the "channels" dimension), 
-but the order in which the "Image Sequence..." is loaded depends on how their files are named.
-
-The only restriction of this approach is that only "3" dimensions are available for
-browsing: `frame`, `plane`, and `channel`. This is relevant if you wish to browse
-segmentation results (which adds another dimension to the set: original vs "out").
-A fourth dimension would be needed, but Hyperstacks only provide 3. Alternatively, 
-open another virtual hyperstack for the output images, and browse them in-sync.
-
-<!-- Si alguien sabe como reordenar fotos en un stack, que avise. Creo que se puede ¿reslice? ¿algo asi? -->
 
 ### Tuning parameters
 
