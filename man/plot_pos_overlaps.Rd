@@ -6,16 +6,20 @@
 \usage{
 plot_pos_overlaps(
   image_list,
+  channels = "BF",
   magnification = 40,
   ccd_pixel_size_microns = 6.45,
   well_size_microns_x = 4500,
   well_size_microns_y = 4500,
   image_width_x = 1376,
-  image_height_y = 1040
+  image_height_y = 1040,
+  print_plot = T
 )
 }
 \arguments{
 \item{image_list}{The output from the \code{arguments} function. Consider filtering to include only the first position.}
+
+\item{channels}{Vector of channel IDs (e.g. "BF").}
 
 \item{magnification}{Total image magnification.}
 
@@ -28,6 +32,8 @@ plot_pos_overlaps(
 \item{image_width_x}{Size of the images in pixels.}
 
 \item{image_height_y}{Size of the images in pixels.}
+
+\item{print_plot}{Print the plot.}
 }
 \description{
 Plot positions and field of view overlaps

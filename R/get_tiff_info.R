@@ -73,8 +73,8 @@ tiff_plane_info <- function(path, frames = 1, ...) {
     error = function(e){
       warning(e)
       warning(paste0(
-        "tiff_plane_info: error while parsing metadata from file '",
-        basename(path), "'. Returning NULL."))
+        "\ntiff_plane_info: error while parsing metadata from file '",
+        basename(path), "'. Returning NULL.\n"))
       return(NULL)
     })
   
@@ -84,12 +84,14 @@ tiff_plane_info <- function(path, frames = 1, ...) {
 #' Plot positions and field of view overlaps
 #' 
 #' @param image_list The output from the \code{arguments} function. Consider filtering to include only the first position.
+#' @param channels Vector of channel IDs (e.g. "BF").
 #' @param magnification Total image magnification.
 #' @param ccd_pixel_size_microns Physical size of the camera's pixel.
 #' @param well_size_microns_x Physical size of the well in the plate (used to draw breaks in the plot).
 #' @param well_size_microns_y Physical size of the well in the plate (used to draw breaks in the plot).
 #' @param image_width_x Size of the images in pixels.
 #' @param image_height_y Size of the images in pixels.
+#' @param print_plot Print the plot.
 #' @import dplyr ggplot2
 #' @export
 #' @examples 
@@ -99,17 +101,23 @@ tiff_plane_info <- function(path, frames = 1, ...) {
 #' 
 plot_pos_overlaps <- function(
     image_list,
+    channels = "BF",
     # file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$",
     magnification = 40,            # 40x
     ccd_pixel_size_microns = 6.45, # 6.45 um
     well_size_microns_x = 4500,    # 4500 um
     well_size_microns_y = 4500,    # 4500 um
     image_width_x = 1376,
-    image_height_y = 1040
+    image_height_y = 1040,
+    print_plot=T
     ){
   
+  # Generate "images" dataframe.
+  images <- rcell2.cellid::arguments_to_images(arguments = image_list) |> 
+    filter(channel %in% channels)
+  
   # Path to images.
-  metamorph_pics <- paste0(image_list$path, "/", image_list$bf) |> unique()
+  metamorph_pics <- images$file |> unique()
   
   # Get the metadata of all images:
   plane_info_df <- setNames(metamorph_pics, basename(metamorph_pics)) %>% 
@@ -123,17 +131,6 @@ plot_pos_overlaps <- function(
     # Make it wider
     pivot_wider(id_cols = "image", names_from = "variable", values_from = "value")
   
-  # Generate "images" dataframe.
-  images <- arguments_to_images(arguments = image_list)
-  
-  # Microscope details.
-  # magnification <- 40 # 40x
-  # ccd_pixel_size_microns <- 6.45 # 6.45 um
-  
-  # Well size
-  # well_size_microns_x <- 9000 / 2
-  # well_size_microns_y <- 9000 / 2
-  
   # Calculate "Field Of View" size.
   fov_size_microns_x <- image_width_x * ccd_pixel_size_microns / magnification  # um in the "X/width" direction
   fov_size_microns_y <- image_height_y * ccd_pixel_size_microns / magnification  # um in the "Y/height" direction
@@ -143,7 +140,7 @@ plot_pos_overlaps <- function(
   y_min <- min(plane_info_df$stage.position.y) - well_size_microns_x / 2
   y_max <- max(plane_info_df$stage.position.y) + well_size_microns_x / 2
   
-  images_bf <- select(images, image, pos, t.frame, channel) |> filter(channel == "BF") |> unique()
+  images_bf <- select(images, image, pos, t.frame, channel) |> filter(channel %in% channels) |> unique()
   
   # Plot fields of view to check for overlaps visually.
   plt <- plane_info_df %>% 
@@ -169,7 +166,7 @@ plot_pos_overlaps <- function(
     ggtitle("Physical stage coordinates v.s. Position index",
             "Compare the index numbers with the expected physical distrubution in the well plate.\nThe shaded areas around index numbers shuould not overlap with each other.")
   
-  print(plt)
+  if(print_plot) print(plt)
   
   return(invisible(list(
     plt=plt,
