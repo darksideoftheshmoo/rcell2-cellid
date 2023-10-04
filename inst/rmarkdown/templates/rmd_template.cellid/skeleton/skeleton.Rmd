@@ -764,7 +764,7 @@ Show a data.frame with the description of each Cell-ID parameter:
 rcell2.cellid::cellid_parameter_descriptions(list_format = F)
 ```
 
-#### Example parameters
+#### Example parameter set
 
 `parameters_default` is a helper function to prepare parameters more easily:
 
@@ -948,9 +948,9 @@ Define working paths for parameter testing:
 * `test.dir`: directory for temporary files of the tuning process.
 
 ```{r}
-# Use the example images or set your own path
-data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
-                        package = "rcell2.examples")
+# Set your own path, or uncomment the following to use example images.
+# data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
+#                         package = "rcell2.examples")
 
 # The output of the parameter scan will be saved here:
 test.dir <- "/tmp/images_directory/test.dir"
@@ -1126,7 +1126,6 @@ to easily load the stacks as virtual Hyperstacks in ImageJ.
 
 ```{r}
 imagej_macros <- annotate_scan_output(scan.results = scan.results, 
-                                      stack.channels = "BF.out", 
                                       in.place = FALSE,
                                       preserve.source.imgs = TRUE,
                                       annotated.imgs.dir = "annotated",

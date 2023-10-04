@@ -20,8 +20,8 @@
 #'
 #' @param parameters.df Dataframe with one combination of parameters per row.
 #' @param scan.arguments Output from \code{arguments}, filtered to your scanning needs.
-#' @param test.dir Working directory for the parameter scan.
-#' @param progress Print a progress bar. Requires the \code{doSNOW} package.
+#' @param test.dir Working directory for the parameter scan. Creates a sub-directory of \code{tempdir()} if NULL (the default).
+#' @param progress Print a progress bar if TRUE. Requires the \code{doSNOW} package.
 #' @inheritParams cell.load.alt
 #' @inheritDotParams cell2
 #'
@@ -32,11 +32,15 @@
 #' @examples Have a look at the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.
 parameter_scan <- function(parameters.df, 
                            scan.arguments,
-                           test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"),
-                                                    mustWork = F), 
+                           test.dir = NULL, 
                            fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+(?:_time\\d+)?.tif$",
                            progress = TRUE,
                            ...) {
+  
+  if(is.null(test.dir)){
+    test.dir <- normalizePath(path = paste0(tempdir(check = T), "/images_directory/test.dir"),
+                              mustWork = F)
+  }
   
   # Record the amount of combinations
   test.params <- 1:nrow(parameters.df)
@@ -421,7 +425,7 @@ annotate_scan_output <- function(scan.results,
       
       # Make directory path for annotated images
       image.new.dir <- paste0(test.dir, "/", annotated.imgs.dir, "-", images.sorted$channel[1]) |> 
-        normalizePath()
+        normalizePath(mustWork = F)
       
       # Read one image at a time, annotate it, and overwrite the original file.
       for (i in seq_along(images.files)) {

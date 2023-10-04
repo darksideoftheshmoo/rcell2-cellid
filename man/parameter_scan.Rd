@@ -7,8 +7,7 @@
 parameter_scan(
   parameters.df,
   scan.arguments,
-  test.dir = normalizePath(paste0(tempdir(check = T), "/images_directory/test.dir"),
-    mustWork = F),
+  test.dir = NULL,
   fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\\\d+)_Position\\\\d+(?:_time\\\\d+)?.tif$",
   progress = TRUE,
   ...
@@ -19,11 +18,11 @@ parameter_scan(
 
 \item{scan.arguments}{Output from \code{arguments}, filtered to your scanning needs.}
 
-\item{test.dir}{Working directory for the parameter scan.}
+\item{test.dir}{Working directory for the parameter scan. Creates a sub-directory of \code{tempdir()} if NULL (the default).}
 
 \item{fluorescence.pattern}{Regex describing what the fluorescence/channel ID string looks like (default "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"). There must be only one capturing group, ant it must be for the channel identifier.}
 
-\item{progress}{Print a progress bar. Requires the \code{doSNOW} package.}
+\item{progress}{Print a progress bar if TRUE. Requires the \code{doSNOW} package.}
 
 \item{...}{
   Arguments passed on to \code{\link[=cell2]{cell2}}
