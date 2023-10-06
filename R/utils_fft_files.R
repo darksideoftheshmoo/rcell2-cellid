@@ -19,17 +19,21 @@
 #' @param data.dir Data directory of the original images, appropriately named.
 #' @param cellid.args Arguments dataframe as produced by \code{rcell2.cellid::arguments} at \code{data.dir}.
 #' @param imagej.path Path to the ImageJ/FIJI binary.
+#' @param fft.subdirs.prefix Name prefix for intermediate filtered BF files. 
+#' @param filtered.bfs.dir.name Name for the final output directory,
 #' @import foreach doParallel parallel
 #' @export
 run_fft_filter_on_bfs <- function(data.dir, 
                                   cellid.args, 
+                                  fft.subdirs.prefix="bf_subset", 
+                                  filtered.bfs.dir.name="fft_images_dataset",
                                   imagej.path="~/Software/ImageJ/Fiji.app/ImageJ-linux64"){
   #### Split and symlink BFs
   # Split the BF files by position, and symlink them to different subdirectories:
   cellid.args.split <- split(cellid.args, ~pos)
   
   # Prefix or full path to where filtered images will be stored.
-  fft.subdirs.prefix <- "bf_subset"
+  # fft.subdirs.prefix <- "bf_subset"
   
   fft.bfs.subdirs <- list()
   for(i in seq_along(cellid.args.split)) {
@@ -89,7 +93,7 @@ run_fft_filter_on_bfs <- function(data.dir,
   filtered.bfs <- dir(file.path(fft.bfs.subdirs, "filtered"), full.names = T)
   
   # Set a name and make a path for the final location of the FFT-filtered images.
-  filtered.bfs.dir <- file.path(data.dir, "fft_images_dataset")
+  filtered.bfs.dir <- file.path(data.dir, filtered.bfs.dir.name)
   dir.create(filtered.bfs.dir)
   
   # Symlink BF images to the final location.

@@ -7,6 +7,8 @@
 run_fft_filter_on_bfs(
   data.dir,
   cellid.args,
+  fft.subdirs.prefix = "bf_subset",
+  filtered.bfs.dir.name = "fft_images_dataset",
   imagej.path = "~/Software/ImageJ/Fiji.app/ImageJ-linux64"
 )
 }
@@ -14,6 +16,10 @@ run_fft_filter_on_bfs(
 \item{data.dir}{Data directory of the original images, appropriately named.}
 
 \item{cellid.args}{Arguments dataframe as produced by \code{rcell2.cellid::arguments} at \code{data.dir}.}
+
+\item{fft.subdirs.prefix}{Name prefix for intermediate filtered BF files.}
+
+\item{filtered.bfs.dir.name}{Name for the final output directory,}
 
 \item{imagej.path}{Path to the ImageJ/FIJI binary.}
 }

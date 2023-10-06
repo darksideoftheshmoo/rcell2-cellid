@@ -6,8 +6,8 @@
 \usage{
 imagej_fft_filter(
   pic.path,
-  script.path = system.file("imagej_macros/FFT_filter_on_BFs_R.txt", package =
-    "rcell2.cellid"),
+  script.path = system.file(file.path("imagej_macros", "FFT_filter_on_BFs_R.txt"),
+    package = "rcell2.cellid"),
   ...
 )
 }
