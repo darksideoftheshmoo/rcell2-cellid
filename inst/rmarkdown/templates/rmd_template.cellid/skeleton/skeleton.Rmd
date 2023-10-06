@@ -448,10 +448,11 @@ A preview of how files will be renamed can be generated:
 one.filename <- "far6_w2LED-BF--YFPcube--cam_s7_t2.TIF"
 
 # Pass it to rename_mda, setting rename.function to NULL (to avoid actually copying files).
-rename_mda(rename.function = NULL, 
-           file.names = one.filename) %>% 
-  # Get the info we're interested in
-  .$status %>% select(file, rename.file)
+result <- rename_mda(rename.function = NULL, 
+                     file.names = one.filename)
+
+# Get the info we're interested in
+result$status %>% select(file, rename.file)
 ```
 
 A "renaming data frame" (`images.info` below) can be extracted and examined before renaming all images:
@@ -486,7 +487,7 @@ A _dummy_ example follows:
 
 ```{r}
 # Path to the images produced by MetaMorph's MDA.
-images.path <- "/tmp/images/"  
+images.path <- file.path(tempdir(), "images")
 # Create a temporary directory
 dir.create(images.path)
 # Create a dummy file
@@ -511,6 +512,11 @@ To run the function on all images, provide the path to the images directory.
 result <- rename_mda(images.path = data.dir)
 ```
 
+Update the value of the `data.dir` variable:
+
+```{r}
+data.dir <- result[["rename.path"]]
+```
 
 The defaults are easily adaptable to other use cases. 
 To use the function with different file name patterns, adjust `identifier.pattern`,
@@ -536,7 +542,7 @@ You can also set `check_fail = FALSE` to inspect all warnings without raising an
 
 ```{r}
 # Get images and their metadata.
-image_list <- rcell2.cellid::arguments(paste0(data.dir, "/renamed"), 
+image_list <- rcell2.cellid::arguments(data.dir, 
                                        check_fail = TRUE,
                                        file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
 ```
