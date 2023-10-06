@@ -13,7 +13,7 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
   
   if(fix_order){
     # Temporary directory for renamed symlinks
-    img.dir <- tempdir(check = T) |> paste0("/ijm_set/")
+    img.dir <- file.path(tempdir(check = T), "ijm_set")
     try(unlink(img.dir, recursive = T), silent = T)
     dir.create(img.dir, showWarnings = F)
     # Rearrange images
@@ -21,7 +21,7 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
       filter(is.out %in% use_out) |> select(-image, -path) |> dplyr::rename(original.file = file) |> 
       mutate(path = img.dir) |> 
       mutate(image = paste0("time-", t.frame, "-pos-", pos, "-ch-", channel, ".tif")) |> 
-      unite(file, path, image, sep = "/", remove = F)
+      unite(file, path, image, sep = .Platform$file.sep, remove = F)
     # Link images to new tmp dir
     res <- file.symlink(exp.images$original.file, to = exp.images$file)
     # Get axes
@@ -88,7 +88,7 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
 #' 
 imagej_fft_filter <- function(
   pic.path,
-  script.path = system.file("imagej_macros/FFT_filter_on_BFs_R.txt", 
+  script.path = system.file(file.path("imagej_macros", "FFT_filter_on_BFs_R.txt"),
                             package = "rcell2.cellid"),
   ...
   ){
