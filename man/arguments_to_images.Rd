@@ -10,10 +10,10 @@ arguments_to_images(arguments)
 \item{arguments}{The "arguments" dataframe, output from \code{rcell2.cellid::arguments()}.}
 }
 \value{
-A data.frame similar to \code{cell.load.alt()$images}.
+A data.frame similar to \code{get_cell_data()$images}.
 }
 \description{
-The images dataframe is needed by many rcell2 functions. If it is not available from the output of \code{load_cell_data} or \code{cell.load.alt}, then this function can help.
+The images dataframe is needed by many rcell2 functions. If it is not available from the output of \code{load_cell_data} or \code{get_cell_data}, then this function can help.
 }
 \details{
 It essentially does a pivot_longer of the arguments.

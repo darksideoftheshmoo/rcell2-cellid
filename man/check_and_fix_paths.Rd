@@ -9,7 +9,7 @@ check_and_fix_paths(path, images)
 \arguments{
 \item{path}{Path to the data directory, holding the images.}
 
-\item{images}{Cell-ID dataframe with image paths, as loaded by \code{cell.load.alt}.}
+\item{images}{Cell-ID dataframe with image paths, as loaded by \code{get_cell_data}.}
 }
 \description{
 Check and fix image paths

@@ -170,11 +170,11 @@ cell2.out
 
 ### Load the output
 
-The output tables can be loaded with `cell.load.alt` provided by this package.
+The output tables can be loaded with `get_cell_data` provided by this package.
 
 ```{r eval=F}
 # Load output
-cell.data <- cell.load.alt(path = data.dir)
+cell.data <- get_cell_data(path = data.dir)
 ```
 
 > Note: detailed usage of this function is described at the [Output data] section of this
@@ -870,7 +870,7 @@ The path to the images of your experiment must be alredy defined,
 as explained in the [Path to the dataset] section of this notebook.
 
 > **Important**: the patterns used in `arguments` must match the ones used in
-> `cell.load.alt` when loading Cell-ID's output (later on).
+> `get_cell_data` when loading Cell-ID's output (later on).
 
 Original images file pattern examples; choose one and comment the others:
 
@@ -1277,7 +1277,7 @@ provided as input, and the identifiers in their file names.
 The pattern must match file names of fluorescent images, and have a capturing group
 for the channel identifier (e.g. `YFP`, `GFP`, etc.).
 
-The most common fluorescent channel patterns for `cell.load.alt` and `parameter_scan`
+The most common fluorescent channel patterns for `get_cell_data` and `parameter_scan`
 are defined below.
 
 Choose one pattern and comment the others:
@@ -1302,11 +1302,11 @@ data.dir %>%
 
 #### Load the output
 
-The output tables can be loaded with `cell.load.alt`.
+The output tables can be loaded with `get_cell_data`.
 
 ```{r eval=F}
 # Load output
-cell.data <- rcell2.cellid::cell.load.alt(path = data.dir,
+cell.data <- rcell2.cellid::get_cell_data(path = data.dir,
                                           fluorescence.pattern=fluorescence.pattern)
 ```
 

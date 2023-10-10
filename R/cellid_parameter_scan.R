@@ -22,7 +22,7 @@
 #' @param scan.arguments Output from \code{arguments}, filtered to your scanning needs.
 #' @param test.dir Working directory for the parameter scan. Creates a sub-directory of \code{tempdir()} if NULL (the default).
 #' @param progress Print a progress bar if TRUE. Requires the \code{doSNOW} package.
-#' @inheritParams cell.load.alt
+#' @inheritParams get_cell_data
 #' @inheritDotParams cell2
 #'
 #' @rawNamespace import(foreach, except = c("when", "accumulate"))
@@ -132,7 +132,7 @@ parameter_scan <- function(parameters.df,
                                                  ...)
               
               # Load output
-              cell.data <- rcell2.cellid::cell.load.alt(
+              cell.data <- rcell2.cellid::get_cell_data(
                 tmp.path,
                 fluorescence.pattern = fluorescence.pattern
               )

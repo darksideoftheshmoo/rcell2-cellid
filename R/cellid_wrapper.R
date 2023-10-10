@@ -103,7 +103,7 @@ cell2_test <- function(){
 #' @param progress Print a progress bar. Requires the \code{doSNOW} package.
 #' @inheritParams arguments
 #' 
-#' @return A data.frame with one column indicating the issued commands and exit codes (in the command.output column). If the execution was successful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the Cell-ID output, typically located at the images path.
+#' @return A data.frame with one column indicating the issued commands and exit codes (in the command.output column). If the execution was successful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::get_cell_data} to get the results from the Cell-ID output, typically located at the images path.
 #' 
 #' @import purrr dplyr stringr tidyr doParallel readr parallel
 #' @importFrom foreach foreach %dopar% %do%
@@ -909,11 +909,11 @@ parameters_write <- function(parameters.list = rcell2.cellid::parameters_default
 #' @inheritDotParams load_out_all
 #' @return A list of dataframes: data (CellID data), images (images metadata and paths), image_maping (extra mapping metadata from CellID: BF to FL correspondence, channel flag, bf_as_fl flag, and one-letter channel encoding).
 # @examples
-# cell.data <- cell.load(path = path, pdata = pdata)
+# cell_data <- get_cell_data(path = path, pdata = pdata)
 #' @import dplyr stringr tidyr readr
 #' @importFrom purrr map
 #' @export
-cell.load.alt <- function(path,
+get_cell_data <- function(path,
                           pdata = NULL,
                           position.pattern = ".*Position(\\d+).*",
                           # fluorescence.pattern = "^([GCYRT]FP)_Position\\d+.tif$",
@@ -924,16 +924,6 @@ cell.load.alt <- function(path,
                           ...){
   # Normalize the path
   path <- normalizePath(path, mustWork = T)
-  
-  if(F){
-    library(tidyverse)
-    path <- "/run/media/nicomic/ACLN1/ACL/Uscope/datos_RtCC/2022-03-08-rtcc-far1-cepas-redescongeladas/multidimensional_exp/renamed"
-    position.pattern = ".*Position(\\d+).*"
-    fluorescence.pattern = "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
-    ucid.zero.pad = 4
-    append.posfix = NULL
-    cell.data <- cell.load.alt(path = path)
-  }
   
   # Load data ####
   # Cargar datos out_all y juntar en un solo dataframe usando metadata de "out_bf_fl_mapping"
@@ -1030,10 +1020,14 @@ cell.load.alt <- function(path,
   return(cell.data)
 }
 
+#' @rdname get_cell_data
+#' @export
+cell.load.alt <- get_cell_data
+
 #' Check and fix image paths
 #' 
 #' @param path Path to the data directory, holding the images.
-#' @param images Cell-ID dataframe with image paths, as loaded by \code{cell.load.alt}.
+#' @param images Cell-ID dataframe with image paths, as loaded by \code{get_cell_data}.
 #' 
 #' @export
 check_and_fix_paths <- function(path, images){
@@ -1111,7 +1105,7 @@ read_tsv.con.pos <- function(.path.archivo,
 
 #' Una función para leer y combinar todos los archivos "out".
 #'
-#' @inheritParams cell.load.alt
+#' @inheritParams get_cell_data
 #' @param out_file_pattern Regex matching CellID's main output file.
 #' @param out_mapping_pattern Regex matching CellID's image mapping output file.
 #' @param id_columns_check Whether to check for problems in "ID" and "value" columns. If TRUE, the function checks the uniqueness of ID columns.
@@ -1477,13 +1471,13 @@ arguments_summary <- function(arguments){
 
 #' Make and "images" dataframe from "arguments" dataframe
 #' 
-#' The images dataframe is needed by many rcell2 functions. If it is not available from the output of \code{load_cell_data} or \code{cell.load.alt}, then this function can help.
+#' The images dataframe is needed by many rcell2 functions. If it is not available from the output of \code{load_cell_data} or \code{get_cell_data}, then this function can help.
 #' 
 #' It essentially does a pivot_longer of the arguments.
 #' 
 #' @param arguments The "arguments" dataframe, output from \code{rcell2.cellid::arguments()}.
 #' 
-#' @return A data.frame similar to \code{cell.load.alt()$images}.
+#' @return A data.frame similar to \code{get_cell_data()$images}.
 #' @import dplyr
 #' @export
 arguments_to_images <- function(arguments){

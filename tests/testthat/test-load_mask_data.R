@@ -1,9 +1,9 @@
-test_that("cell.load.alt works on examples", {
+test_that("get_cell_data works on examples", {
   # Example: Choose one set of example images:
   data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
                           package = "rcell2.examples")
   # Load X
-  X <- cell.load.alt(path = data.dir)
+  X <- get_cell_data(path = data.dir)
   # saveRDS(X, "inst/extdata/test_data/cell.load.alt.RDS")  # Save X ref
   
   # Load X ref
@@ -20,7 +20,7 @@ test_that("cell.load.boundaries works on examples", {
   data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
                           package = "rcell2.examples")
   # Load X
-  # X <- cell.load.alt(path = data.dir)
+  # X <- get_cell_data(path = data.dir)
   # saveRDS(X, "inst/extdata/test_data/cell.load.alt.RDS")  # Save X ref
   
   # Load X ref

@@ -54,7 +54,7 @@ cell2(
 \item{check_fail}{Whether to produce an error if any output file or directory already exists.}
 }
 \value{
-A data.frame with one column indicating the issued commands and exit codes (in the command.output column). If the execution was successful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::cell.load.alt} to get the results from the Cell-ID output, typically located at the images path.
+A data.frame with one column indicating the issued commands and exit codes (in the command.output column). If the execution was successful, now you may run \code{rcell2::load_cell_data} or \code{rcell2.cellid::get_cell_data} to get the results from the Cell-ID output, typically located at the images path.
 }
 \description{
 Handles Cell-ID executions: creates necessary directories, sets-up parallelization, wraps the Cell-ID binary, and checks exit status.
