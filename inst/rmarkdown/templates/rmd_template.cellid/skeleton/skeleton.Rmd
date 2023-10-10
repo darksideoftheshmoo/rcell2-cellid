@@ -657,100 +657,30 @@ cellid.args <-
                            file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$")
 ```
 
-Split the BF files by position, and symlink them to different subdirectories:
+The `run_fft_filter_on_bfs` will launch ImageJ in the background and apply the FFT filter on a copy of the images.
+
+In brief, it will:
+
+- Split the BF files by position, and symlink them to different subdirectories.
+- Run FFT filter in parallel using a macro, with one ImageJ instance per subdirectory.
+- Symlink filtered BFs from each subdirectory to a single "filtered" images directory.
+- Symlink the rest of the images (i.e. fluorescence images) to the "filtered" directory.
+
+Run the filter:
 
 ```{r eval=F}
-# Prefix or full path to where filtered images will be stored.
-fft.subdirs.prefix <- "bf_subset"
+new.data.dir <- run_fft_filter_on_bfs(
+  data.dir = data.dir,
+  cellid.args = cellid.args,
+  imagej.path="~/Software/ImageJ/Fiji.app/ImageJ-linux64") # Adjust to your system
 
-# Prepare variables
-fft.bfs.subdirs <- list()
-
-# Iterate over positions
-cellid.args.split <- split(cellid.args, ~pos)
-for(i in seq_along(cellid.args.split)) {
-  # Save BF files
-  bf.files <- cellid.args.split[[i]] %>%
-    select(bf, path) %>% with(paste0(path,"/",bf)) %>% unique()
-  
-  # Make a directory to put them in
-  fft.bfs.subdirectory <- paste0(fft.subdirs.prefix, "_", i)
-  fft.bfs.dir <- paste0(data.dir, "/", fft.bfs.subdirectory)
-  dir.create(fft.bfs.dir)
-  
-  # Link them over
-  file.symlink(from = normalizePath(bf.files),
-               to = paste0(dirname(bf.files[1]), "/", fft.bfs.subdirectory, "/", basename(bf.files)))
-  
-  fft.bfs.subdirs[i] <- fft.bfs.dir
-}
-
-# Inspect the result
-fft.bfs.subdirs
+new.data.dir
 ```
 
-Run FFT filter in parallel, with one thread per subdirectory:
+You can run Cell-ID using the new directory as the new `data.dir`:
 
 ```{r eval=F}
-library(foreach)
-library(doParallel)
-
-# Make cluster
-n_cores <- parallel::detectCores()
-n_chunks <- length(fft.bfs.subdirs)
-cl <- parallel::makeCluster(
-  spec = min(n_chunks,n_cores), 
-  setup_strategy = "sequential"  #https://github.com/rstudio/rstudio/issues/6692
-)
-
-# Iterate (this can take a while...)
-doParallel::registerDoParallel(cl)
-
-foreach(fft.bfs.subdir=fft.bfs.subdirs, 
-        .packages="rcell2.cellid") %dopar% {
-  imagej_fft_filter(pic.path = fft.bfs.subdir, 
-                    imagej.path="~/Software/FIJI/Fiji.app/ImageJ-linux64")
-        }
-
-parallel::stopCluster(cl)
-```
-
-Symlink filtered BFs in each subdirectory to a single "filtered" images directory:
-
-```{r eval=F}
-filtered.bfs <- dir(paste0(fft.bfs.subdirs, "/filtered"), full.names = T)
-
-# Set a name and make a path for the final location of the FFT-filtered images.
-filtered.bfs.dir <- paste0(data.dir, "/fft_images_dataset/")
-dir.create(filtered.bfs.dir)
-
-# Symlink BF images to the final location.
-result <- file.symlink(from = normalizePath(filtered.bfs), 
-                       to = paste0(filtered.bfs.dir, basename(filtered.bfs)))
-# Check
-all(result)
-```
-
-Symlink the rest of the images (i.e. fluorescence images) to the "filtered" directory:
-
-```{r eval=F}
-# Get all FL files (no BF files).
-fl.files <- cellid.args %>% 
-  with(paste0(path, "/", image)) %>% unique()
-
-# Symlink over to the directory of the FFT-filtered BFs
-result <- file.symlink(from = normalizePath(fl.files),
-                       to = paste0(filtered.bfs.dir, basename(fl.files)))
-# Check
-all(result)
-```
-
-> Done!
-
-You can run Cell-ID using the following directory as the new `data.dir`:
-
-```{r eval=F}
-data.dir <- normalizePath(filtered.bfs.dir)
+data.dir <- normalizePath(new.data.dir)
 ```
 
 ## Segmentation
