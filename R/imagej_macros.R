@@ -23,6 +23,7 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
     exp.images <- images %>%
       dplyr::filter(is.out %in% use_out) |> select(-image, -path) |> dplyr::rename(original.file = file) |> 
       mutate(path = img.dir) |> 
+      mutate(channel = ifelse(is.out, paste0(channel, ",out"), channel)) |> 
       mutate(image = paste0("time-", t.frame, "-pos-", pos, "-ch-", channel, ".tif")) |> 
       unite(file, path, image, sep = .Platform$file.sep, remove = F)
     # Link images to new tmp dir
@@ -80,6 +81,30 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
   return(macro_file)
 }
 
+#' IJ macro to open .out files as a virtual hyperstack
+#' @export
+#' @param cellid.args The "arguments" dataframe, as produced by \code{rcell2.cellid::arguments}.
+ijm_open_segmentation <- function(cellid.args){
+  # Make an ImageJ macro to browse the images before segmentation
+  n_axis1 <- length(unique(cellid.args$t.frame))
+  n_axis2 <- length(unique(cellid.args$pos))
+  n_axis3 <- length(unique(cellid.args$ch))
+  
+  # Add 1 to include the BF images as a possible channel
+  if(!"BF" %in% cellid.args$ch)
+    n_axis3 <- n_axis3 + 1
+  
+  macro <- glue::glue(
+    '// Macro',
+    'run("Image Sequence...", "open={data.dir} file=(.*\\\\d.tif.out.tif$) sort use");',
+    'run("Stack to Hyperstack...", "order=xyczt(default) channels={n_axis1} slices={n_axis2} frames={n_axis3} display=Grayscale");',
+    .sep = "\n"
+  )
+  
+  cat(macro)
+  
+  return(invisible(macro))
+}
 
 #' Run ImageJ FFT filter macro from R
 #' 

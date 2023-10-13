@@ -1117,7 +1117,19 @@ parameters.list <- rcell2.cellid::parameters_default(
 
 <!-- TODO: nombrar los stacks por parameter modificado -->
 
+#### Recreate arguments
 
+Arguments for cellid must be recreated to use the updated parameters instead.
+
+```{r}
+parameters.txt <- rcell2.cellid::parameters_write(parameters.list)
+
+cellid.args <- rcell2.cellid::arguments(data.dir,
+                                        file.pattern = arguments.file.pattern,
+                                        parameters = parameters.txt)  # Parameters are specified here.
+
+cellid.args
+```
 
 ### Run Cell-ID
 
@@ -1133,8 +1145,8 @@ To check if this will happen before running `cell2`, run "`arguments_check(celli
 on the output directory, and check for warnings.
 
 ```{r eval=F}
-cell2.result <- rcell2.cellid::cell2(arguments = cellid.args,
-                                     n_cores = 2)
+cell2.result <- rcell2.cellid::cell2(arguments = cellid.args, 
+                                     output_coords_to_tsv = T)
 ```
 
 > Run `?cell2` to learn about advanced segmentation parameters, and to generate additional
@@ -1162,22 +1174,7 @@ Steps:
 4. Browse the images using the sliders.
 
 ```{r}
-# Make an ImageJ macro to browse the images before segmentation
-n_axis1 <- length(unique(cellid.args$t.frame))
-n_axis2 <- length(unique(cellid.args$pos))
-n_axis3 <- length(unique(cellid.args$ch))
-
-# Add 1 to include the BF images as a possible channel
-n_axis3 <- n_axis3 + 1
-
-macro <- glue::glue(
-  '// Macro',
-  'run("Image Sequence...", "open={data.dir} file=(.*\\\\d.tif.out.tif$) sort use");',
-  'run("Stack to Hyperstack...", "order=xyczt(default) channels={n_axis1} slices={n_axis2} frames={n_axis3} display=Grayscale");',
-  .sep = "\n"
-)
-
-cat(macro)
+ijm_open_segmentation(cellid.args)
 ```
 
 > Note: the dimensions names may be mismatched between R and the macro. This is because 
