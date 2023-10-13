@@ -10,6 +10,9 @@
 #' @param fix_order Symlinks images in a temporary directory using new file names, that will be displayed with the correct channel-slice-frame mapping in ImageJ.
 #' @export
 ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_order=TRUE){
+  # Check arguments.
+  if(!all(use_out %in% 0:1) | length(use_out) > 2) 
+    stop("Error: use_out can only be TRUE, FALSE, an array of both, or their integer representations (0, 1).")
   
   if(fix_order){
     # Temporary directory for renamed symlinks
@@ -18,12 +21,12 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
     dir.create(img.dir, showWarnings = F)
     # Rearrange images
     exp.images <- images %>%
-      filter(is.out %in% use_out) |> select(-image, -path) |> dplyr::rename(original.file = file) |> 
+      dplyr::filter(is.out %in% use_out) |> select(-image, -path) |> dplyr::rename(original.file = file) |> 
       mutate(path = img.dir) |> 
       mutate(image = paste0("time-", t.frame, "-pos-", pos, "-ch-", channel, ".tif")) |> 
       unite(file, path, image, sep = .Platform$file.sep, remove = F)
     # Link images to new tmp dir
-    res <- file.symlink(exp.images$original.file, to = exp.images$file)
+    res <- file.symlink(from = exp.images$original.file, to = exp.images$file)
     # Get axes
     n_axis1_c <- exp.images %>% filter(is.out %in% use_out) %>% with(unique(channel)) %>% length()
     n_axis2_s <- exp.images %>% filter(is.out %in% use_out) %>% with(unique(pos)) %>% length()
@@ -43,11 +46,16 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
   # Check
   stopifnot((n_axis1_c * n_axis2_s * n_axis3_f) ==  nrow(unique(filter(exp.images, is.out %in% use_out))))
   
+  if(isTRUE(as.logical(use_out))) 
+    import_command <- 'run("Image Sequence...", "open={img.dir} file=(.*out.tif$) sort use");'
+  else if(isFALSE(as.logical(use_out))) 
+    import_command <- 'run("Image Sequence...", "open={img.dir} file=(.*(?!out).tif$) sort use");'
+  else 
+    import_command <- 'run("Image Sequence...", "open={img.dir} file=(.*.tif$) sort use");'
+  
   macro <- glue::glue(
     '// Macro',
-    if(isTRUE(use_out)) 'run("Image Sequence...", "open={img.dir} file=(.*out.tif$) sort use");'
-    else if(isFALSE(use_out)) 'run("Image Sequence...", "open={img.dir} file=(.*(?!out).tif$) sort use");'
-    else 'run("Image Sequence...", "open={img.dir} file=(.*.tif$) sort use");',
+    import_command,
     'run("Stack to Hyperstack...", "order=xyczt(default) channels={n_axis1_c} slices={n_axis2_s} frames={n_axis3_f} display=Grayscale");',
     .sep = "\n"
   )
