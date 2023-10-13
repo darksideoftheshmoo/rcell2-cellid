@@ -41,7 +41,7 @@ run_fft_filter_on_bfs <- function(data.dir,
   for(i in seq_along(cellid.args.split)) {
     # Save BF files
     bf.files <- cellid.args.split[[i]] %>%
-      select(bf, path) %>% with(paste0(path,"/",bf)) %>% unique()
+      select(bf, path) %>% with(file.path(path, bf)) %>% unique()
     
     # Make a directory to put them in
     fft.bfs.subdirectory <- paste0(fft.subdirs.prefix, "_", i)

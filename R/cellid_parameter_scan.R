@@ -100,10 +100,8 @@ parameter_scan <- function(parameters.df,
               # Create shortcuts to the original images
               apply(scan.arguments, MARGIN = 1, function(i){
                 # From the original path to the new temporary directory
-                file.symlink(from = paste0(i["path"], "/",
-                                           c(i["image"],i["bf"])),
-                             to =   paste0(tmp.path, "/", 
-                                           c(i["image"], i["bf"]))
+                file.symlink(from = file.path(i["path"], c(i["image"], i["bf"])),
+                             to =   file.path(tmp.path,  c(i["image"], i["bf"]))
                 )
               })
               
@@ -122,9 +120,8 @@ parameter_scan <- function(parameters.df,
               
               # Replace the original base paths
               cellid.args.tmp$path <- tmp.path
-              cellid.args.tmp$output <- paste(tmp.path, 
-                                              basename(cellid.args.tmp$output),
-                                              sep = "/")
+              cellid.args.tmp$output <- file.path(tmp.path, 
+                                                  basename(cellid.args.tmp$output))
               
               # Run Cell-ID
               cellid.out <- rcell2.cellid::cell2(arguments = cellid.args.tmp,
@@ -250,9 +247,11 @@ make_scan_stacks <- function(scan.results,
     lapply(function(images){
         
         # Prepare a file name for the stack
-        stack.name <- paste0(
-          test.dir, "/", images$channel[1], "_stack", # "-pos_", images$pos[1], #"-time", images$t.frame[1],
-          ".tif"
+        stack.name <- file.path(test.dir, 
+          paste0(
+            images$channel[1], "_stack", # "-pos_", images$pos[1], #"-time", images$t.frame[1],
+            ".tif"
+          )
         )
         
         images.files <- images %>% 
@@ -424,7 +423,7 @@ annotate_scan_output <- function(scan.results,
       images.info.padded <- make_info_box(images.sorted)
       
       # Make directory path for annotated images
-      image.new.dir <- paste0(test.dir, "/", annotated.imgs.dir, "-", images.sorted$channel[1]) |> 
+      image.new.dir <- file.path(test.dir, paste0(annotated.imgs.dir, "-", images.sorted$channel[1])) |> 
         normalizePath(mustWork = F)
       
       # Read one image at a time, annotate it, and overwrite the original file.
@@ -443,7 +442,7 @@ annotate_scan_output <- function(scan.results,
           image.annotated %>% 
             magick::image_write(path=image.file, format = "tiff", depth = 8)
         } else {
-          image.new.path <- paste0(image.new.dir, "/", param.set.id, "-", basename(image.file))
+          image.new.path <- file.path(image.new.dir, paste0(param.set.id, "-", basename(image.file)))
           dir.create(path = image.new.dir, showWarnings = FALSE)
           image.annotated %>% 
             magick::image_write(path=image.new.path, format = "tiff", depth = 8)

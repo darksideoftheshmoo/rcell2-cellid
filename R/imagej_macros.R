@@ -96,7 +96,7 @@ imagej_fft_filter <- function(
   is.dir <- file.info(pic.path)$isdir
   
   if(is.dir) {
-    pic.path <- paste0(normalizePath(pic.path), "/")
+    pic.path <- paste0(normalizePath(pic.path), .Platform$file.sep)
   } else {
     stop("The provided 'pic.path' is not a directory.")
   }

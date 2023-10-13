@@ -331,7 +331,7 @@ cell.load.boundaries <- function(data,
 #' 
 load_tiff_masks <- function(images, image_bits, cell_id_offset = -1, return_points = F){
   paths <- images %>% 
-    mutate(file = paste0(path, "/", image)) %>% 
+    mutate(file = file.path(path, image)) %>% 
     filter(channel == "BF.out")
   
   tiff.masks.df <- apply(paths, MARGIN = 1, FUN = function(pic_metadata){

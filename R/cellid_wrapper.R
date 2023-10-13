@@ -238,8 +238,8 @@ cell2 <- function(arguments,
                      pattern = "flat-")
     
     # Image path vectors
-    bf.imgs <- paste0(arguments_pos$path, "/", arguments_pos$bf)
-    fl.imgs <- paste0(arguments_pos$path, "/", arguments_pos$image)
+    bf.imgs <- file.path(arguments_pos$path, arguments_pos$bf)
+    fl.imgs <- file.path(arguments_pos$path, arguments_pos$image)
     
     # Check file existence
     stopifnot(all(
@@ -254,7 +254,7 @@ cell2 <- function(arguments,
     use_dark <- "dark" %in% names(arguments_pos)
     if(use_dark) {
       if(verbose) cat(paste0("\nUsing dark image corrections from file: ", dark, "\n"))
-      dark.imgs <- paste0(arguments_pos$path, "/", arguments_pos$dark)
+      dark.imgs <- file.path(arguments_pos$path, arguments_pos$dark)
       base::write(x = dark.imgs, file = dark)
     }
     
@@ -262,7 +262,7 @@ cell2 <- function(arguments,
     use_flat <- "flat" %in% names(arguments_pos)
     if(use_flat) {
       if(verbose) cat(paste0("\nUsing flat image corrections from file: ", flat, "\n"))
-      flat.imgs <- paste0(arguments_pos$path, "/", arguments_pos$flat)
+      flat.imgs <- file.path(arguments_pos$path, arguments_pos$flat)
       base::write(x = flat.imgs, file = flat)
     }
     
@@ -273,7 +273,7 @@ cell2 <- function(arguments,
       third_rcell2 <- tempfile(tmpdir = arguments_pos$output[1],
                                fileext = ".txt",
                                pattern = "3rd_rcell2-")
-      third.imgs <- paste0(arguments_pos$path, "/", arguments_pos$third)
+      third.imgs <- file.path(arguments_pos$path, arguments_pos$third)
       base::write(x = third.imgs, file = third_rcell2)
     }
     
@@ -313,7 +313,7 @@ cell2 <- function(arguments,
     if(save.logs){
       # Save parameters
       cellid.pars <- arguments_pos$parameters[1]
-      file.copy(from = cellid.pars, to = paste0(arguments_pos$output[1], "/"),
+      file.copy(from = cellid.pars, to = paste0(arguments_pos$output[1], .Platform$file.sep),
                 overwrite = T)
       # Save cellid standard output
       cellid.log <- tempfile(tmpdir = arguments_pos$output[1],
@@ -522,7 +522,7 @@ arguments <- function(path,
   # Add output column ####
   # and arrange by position and t.frame
   arguments.df.out <- arguments.df %>% 
-    mutate(output = paste0(path, "/", output.dir.basename, pos)) %>% 
+    mutate(output = paste0(path, .Platform$file.sep, output.dir.basename, pos)) %>% 
     mutate(pos = as.integer(pos),
            t.frame = as.integer(t.frame)) %>% 
     arrange(pos, t.frame)
@@ -688,7 +688,7 @@ arguments_check <- function(arguments_df, check_fail=F){
   }
   
   # Check BF exists ####
-  n_bf <- sum(file.exists(paste0(arguments_df$path, "/", arguments_df$bf, ".out.tif")))
+  n_bf <- sum(file.exists(paste0(arguments_df$path, .Platform$file.sep, arguments_df$bf, ".out.tif")))
   if(n_bf>0){
     # Warning
     warning(paste0("\n\narguments_check: ", 
@@ -700,7 +700,7 @@ arguments_check <- function(arguments_df, check_fail=F){
   }
   
   # Check FL exists ####
-  n_fl <- sum(file.exists(paste0(arguments_df$path, "/", arguments_df$image, ".out.tif")))
+  n_fl <- sum(file.exists(paste0(arguments_df$path, .Platform$file.sep, arguments_df$image, ".out.tif")))
   if(n_fl>0){ 
     # Warning
     warning(paste0("\n\narguments_check: ", 
@@ -860,7 +860,7 @@ parameters_write <- function(parameters.list = rcell2.cellid::parameters_default
     param.file <- tempfile(tmpdir = param.dir, pattern = "parameters_", fileext = ".txt")
     cat(paste0("\nSaving parameters file to: ", param.file, "\n"))
   } else {
-    param.file <- paste(param.dir, param.file, sep = "/")
+    param.file <- file.path(param.dir, param.file)
   }
   
   # Process the list into a valid parameter list
@@ -1036,11 +1036,11 @@ check_and_fix_paths <- function(path, images){
   
   if(any(!file.exists(images$file))){
     warning("\nNot all image files exist in the expected filesystem directory. Attempting to fix them... ")
-    new_paths <- paste0(path, "/", basename(images$file))
+    new_paths <- file.path(path, basename(images$file))
     if(all(file.exists(new_paths))){
       warning("Image paths fixed.\n")
       images$path <- path
-      images$file <- paste0(path, "/", basename(images$file))
+      images$file <- file.path(path, basename(images$file))
     } else {
       warning("Could not fix image file paths, expect issues when loading images in rcell2.\n")
     }
@@ -1494,7 +1494,7 @@ arguments_to_images <- function(arguments){
   
   images <- 
     dplyr::bind_rows(bf, fl) %>% 
-    mutate(file = paste0(path, "/", image),
+    mutate(file = file.path(path, image),
            is.out = F) %>% 
     select(pos, t.frame, ch, file, path, is.out, image) %>% 
     rename(channel = ch) #%>% 
@@ -1678,7 +1678,9 @@ rename_mda <- function(images.path = NULL,
   if(cleanup.first){
     if((rename.path != "") & (!is.null(rename.path))){
       # Delete all files recursively.
-      unlink(paste0(rename.path, "/*", file.ext))
+      cleanup.files <- dir(path = rename.path, full.names = T,
+                           pattern = paste0(".*", file.ext))
+      unlink(cleanup.files)
       
       # Re create output directory.
       dir.create(rename.path, showWarnings = F, recursive = T)
@@ -1715,7 +1717,7 @@ rename_mda <- function(images.path = NULL,
   # Rename the files.
   if(!is.null(rename.function)){
     status <- rename.function(from = normalizePath(images.info$file), 
-                              to = paste0(images.info$rename.path, "/", images.info$rename.file),
+                              to = file.path(images.info$rename.path, images.info$rename.file),
                               ...)
     # Add status column to image into
     images.info$status <- status

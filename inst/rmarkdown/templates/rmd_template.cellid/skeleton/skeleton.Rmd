@@ -889,7 +889,8 @@ Define working paths for parameter testing:
 #                         package = "rcell2.examples")
 
 # The output of the parameter scan will be saved here:
-test.dir <- "/tmp/images_directory/test.dir"
+test.dir <- file.path(tempdir(), "images_directory", "test.dir")
+test.dir
 ```
 
 Setup arguments and patterns as usual (if not done already):
