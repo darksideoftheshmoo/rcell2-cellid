@@ -32,6 +32,8 @@ run_fft_filter_on_bfs <- function(data.dir,
   # Split the BF files by position, and symlink them to different subdirectories:
   cellid.args.split <- split(cellid.args, ~pos)
   
+  if(!file.exists(imagej.path)) stop("Error! File not found at" |> paste(imagej.path))
+  
   # Prefix or full path to where filtered images will be stored.
   # fft.subdirs.prefix <- "bf_subset"
   
