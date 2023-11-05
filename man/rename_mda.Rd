@@ -7,6 +7,7 @@
 rename_mda(
   images.path = NULL,
   rename.path = NULL,
+  rename.dataframe = NULL,
   rename.function = file.symlink,
   identifier.pattern = ".*_w(\\\\d).*_s(\\\\d{1,2})_t(\\\\d{1,2}).TIF$",
   identifier.info = c("ch", Position = "pos", time = "t.frame"),
@@ -15,7 +16,6 @@ rename_mda(
   skip.thumbs.pat = ".*thumb.*",
   cleanup.first = FALSE,
   file.names = NULL,
-  rename.dataframe = NULL,
   ...
 )
 }
@@ -23,6 +23,8 @@ rename_mda(
 \item{images.path}{Path to the directory containing the original images. Can be NULL if \code{file.names} is provided.}
 
 \item{rename.path}{Path to the target directory. If \code{NULL} (the default) images are sent to a new "renamed" sub directory of \code{images.path}. The directory will be created if it does not exist.}
+
+\item{rename.dataframe}{If \code{TRUE}, no renaming takes place and a data frame is returned instead. It can be altered by the user, and then passed to this same argument to rename the images with the adjusted names or mappings. The data frame is normally returned in the "status" item of the regular output.}
 
 \item{rename.function}{Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function. Set to \code{NULL} to disable renaming (i.e. for testing purposes).}
 
@@ -40,12 +42,10 @@ rename_mda(
 
 \item{file.names}{A character vector of image names to be processed; as an alternative to listing files in \code{images.path}. Ignored if \code{images.path} is provided.}
 
-\item{rename.dataframe}{If \code{TRUE}, no renaming takes place and a data frame is returned instead. It can be altered by the user, and then passed to this same argument to rename the images with the adjusted names or mappings. The data frame is normally returned in the "status" item of the regular output.}
-
 \item{...}{Further arguments passed on to \code{rename.function}.}
 }
 \value{
-Invisibly returns a list with the rename.path (output directory), and a data.frame with the output from the renaming function (see the \code{rename.function} parameter's description) and name conversions.
+Invisibly returns a list with the unique rename.paths (output directories), and a \code{data.frame} with the mappings for name conversions and the output value from the renaming function (see the \code{rename.function} parameter's description).
 }
 \description{
 MDA: "Multi dimensional acquisition" app in Metamorph.

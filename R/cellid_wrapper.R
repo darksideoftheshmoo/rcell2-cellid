@@ -1555,6 +1555,7 @@ cero_a_la_izquierda <- function(x, pad_char="0"){
 #' @import dplyr
 #' @param images.path Path to the directory containing the original images. Can be NULL if \code{file.names} is provided.
 #' @param rename.path Path to the target directory. If \code{NULL} (the default) images are sent to a new "renamed" sub directory of \code{images.path}. The directory will be created if it does not exist.
+#' @param rename.dataframe If \code{TRUE}, no renaming takes place and a data frame is returned instead. It can be altered by the user, and then passed to this same argument to rename the images with the adjusted names or mappings. The data frame is normally returned in the "status" item of the regular output.
 #' @param rename.function Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function. Set to \code{NULL} to disable renaming (i.e. for testing purposes).
 #' @param identifier.pattern Regex defining the iamge file pattern, with gropus for identifier in the file names.
 #' @param identifier.info Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. If an element in the vector is named, the name is prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).
@@ -1563,13 +1564,13 @@ cero_a_la_izquierda <- function(x, pad_char="0"){
 #' @param skip.thumbs.pat A regex pattern to filter out files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.
 #' @param cleanup.first Set to \code{TRUE} to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.
 #' @param file.names A character vector of image names to be processed; as an alternative to listing files in \code{images.path}. Ignored if \code{images.path} is provided.
-#' @param rename.dataframe If \code{TRUE}, no renaming takes place and a data frame is returned instead. It can be altered by the user, and then passed to this same argument to rename the images with the adjusted names or mappings. The data frame is normally returned in the "status" item of the regular output.
 #' @param ... Further arguments passed on to \code{rename.function}.
 #' @export
-#' @return Invisibly returns a list with the rename.path (output directory), and a data.frame with the output from the renaming function (see the \code{rename.function} parameter's description) and name conversions.
+#' @return Invisibly returns a list with the unique rename.paths (output directories), and a \code{data.frame} with the mappings for name conversions and the output value from the renaming function (see the \code{rename.function} parameter's description).
 #' @import stringr dplyr
 rename_mda <- function(images.path = NULL,
                        rename.path = NULL,
+                       rename.dataframe = NULL,
                        rename.function = file.symlink,
                        identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
                        identifier.info = c("ch", Position="pos", time="t.frame"),
@@ -1578,7 +1579,6 @@ rename_mda <- function(images.path = NULL,
                        skip.thumbs.pat = ".*thumb.*",
                        cleanup.first=FALSE,
                        file.names = NULL,
-                       rename.dataframe = NULL,
                        ...
                        ){
   
@@ -1667,7 +1667,9 @@ rename_mda <- function(images.path = NULL,
     images.info$rename.path <- rename.path
     
   } else {
-    message("rename_mda: a data.frame was passed to 'rename.dataframe'. It's 'rename.file' column will be updated (overwritten). Will also update 'rename.path' if it was specified.")
+    warning("rename_mda: a data.frame was passed to 'rename.dataframe'.",
+            " It's 'rename.file' column will be regenerated (overwritten).",
+            " Will also update the 'rename.path' column if the parameter was specified.")
     
     # Update rename path if specified.
     images.info <- rename.dataframe
@@ -1726,15 +1728,17 @@ rename_mda <- function(images.path = NULL,
     if(any(!status)) {
       warning("rename_mda: At least some files were not renamed, see warnings!")
     } else {
-      cat(paste("rename_mda: It seems the renaming went well :) check your output directory at:", rename.path, "\n"))
+      cat(paste("rename_mda: It seems the renaming went well :) check your output directory at:", 
+                unique(images.info$rename.path), "\n"))
     }
   } else {
-    cat(paste("rename_mda: rename.function set to NULL; no images were renamed to path:", rename.path, "\n"))
+    cat(paste("rename_mda: rename.function set to NULL; no images were renamed to path:", 
+              unique(images.info$rename.path), "\n"))
   }
   
   # Return mapping.
   return(list(
-    rename.path=rename.path,
+    rename.path=unique(images.info$rename.path),
     status=images.info
   ))
 }
