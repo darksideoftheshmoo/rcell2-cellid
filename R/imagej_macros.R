@@ -81,14 +81,22 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
   return(macro_file)
 }
 
-#' IJ macro to open .out files as a virtual hyperstack
+#' ImageJ macro to open ".out" files as a virtual hyperstack
+#' 
+#' @param cellid.args The "arguments" data frame, as produced by \code{rcell2.cellid::arguments}.
+#' @param write_macro Write the generated macro to an ".ijm" text file at the image's path.
 #' @export
-#' @param cellid.args The "arguments" dataframe, as produced by \code{rcell2.cellid::arguments}.
-ijm_open_segmentation <- function(cellid.args){
+ijm_open_segmentation <- function(cellid.args, write_macro=T){
   # Make an ImageJ macro to browse the images before segmentation
   n_axis1 <- length(unique(cellid.args$t.frame))
   n_axis2 <- length(unique(cellid.args$pos))
   n_axis3 <- length(unique(cellid.args$ch))
+  
+  data.dir <- unique(cellid.args$path) |> normalizePath(mustWork = T)
+  
+  if(length(data.dir) !=1 ) {
+    stop("ijm_open_segmentation error: images reside in more than one unique path, check the 'path' column in your 'cellid.args' data frame.")
+  }
   
   # Add 1 to include the BF images as a possible channel
   if(!"BF" %in% cellid.args$ch)
@@ -100,6 +108,10 @@ ijm_open_segmentation <- function(cellid.args){
     'run("Stack to Hyperstack...", "order=xyczt(default) channels={n_axis1} slices={n_axis2} frames={n_axis3} display=Grayscale");',
     .sep = "\n"
   )
+  
+  if(write_macro) {
+    writeLines(text = macro, con = file.path(data.dir, "view_segmentation.ijm"))
+  }
   
   cat(macro)
   

@@ -2,13 +2,15 @@
 % Please edit documentation in R/imagej_macros.R
 \name{ijm_open_segmentation}
 \alias{ijm_open_segmentation}
-\title{IJ macro to open .out files as a virtual hyperstack}
+\title{ImageJ macro to open ".out" files as a virtual hyperstack}
 \usage{
-ijm_open_segmentation(cellid.args)
+ijm_open_segmentation(cellid.args, write_macro = T)
 }
 \arguments{
-\item{cellid.args}{The "arguments" dataframe, as produced by \code{rcell2.cellid::arguments}.}
+\item{cellid.args}{The "arguments" data frame, as produced by \code{rcell2.cellid::arguments}.}
+
+\item{write_macro}{Write the generated macro to an ".ijm" text file at the image's path.}
 }
 \description{
-IJ macro to open .out files as a virtual hyperstack
+ImageJ macro to open ".out" files as a virtual hyperstack
 }
