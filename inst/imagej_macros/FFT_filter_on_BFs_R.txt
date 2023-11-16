@@ -10,7 +10,9 @@ list = getFileList(dir1);
 
 setBatchMode(true);
 for (i=0; i<list.length; i++) {
-    if( matches(list[i], "BF.*.tif") & !matches(list[i], "BF.*.out.tif") ){
+	// matches: https://wsr.imagej.net/developer/macro/functions.html
+	// Returns true if string matches the specified regular expression.
+    if( matches(list[i], ".*\.[tT][iI][fF]$") & !matches(list[i], ".*\.out\.[tT][iI][fF]$") ){
 		print("Opening: " + list[i]);
 		open(dir1+list[i]);
 
