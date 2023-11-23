@@ -5,7 +5,8 @@
 \title{Plot positions and field of view overlaps}
 \usage{
 plot_pos_overlaps(
-  image_list,
+  image_list = NULL,
+  images = NULL,
   channels = "BF",
   magnification = 40,
   ccd_pixel_size_microns = 6.45,
@@ -18,6 +19,8 @@ plot_pos_overlaps(
 }
 \arguments{
 \item{image_list}{The output from the \code{arguments} function. Consider filtering to include only the first position.}
+
+\item{images}{The images dataframe as loaded from Cell-ID's output by \code{get_cell_data}.}
 
 \item{channels}{Vector of channel IDs (e.g. "BF").}
 

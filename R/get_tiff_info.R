@@ -84,6 +84,7 @@ tiff_plane_info <- function(path, frames = 1, ...) {
 #' Plot positions and field of view overlaps
 #' 
 #' @param image_list The output from the \code{arguments} function. Consider filtering to include only the first position.
+#' @param images The images dataframe as loaded from Cell-ID's output by \code{get_cell_data}.
 #' @param channels Vector of channel IDs (e.g. "BF").
 #' @param magnification Total image magnification.
 #' @param ccd_pixel_size_microns Physical size of the camera's pixel.
@@ -100,7 +101,8 @@ tiff_plane_info <- function(path, frames = 1, ...) {
 #'   plot_pos_overlaps()
 #' 
 plot_pos_overlaps <- function(
-    image_list,
+    image_list=NULL,
+    images=NULL,
     channels = "BF",
     # file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$",
     magnification = 40,            # 40x
@@ -112,9 +114,18 @@ plot_pos_overlaps <- function(
     print_plot=T
     ){
   
-  # Generate "images" dataframe.
-  images <- rcell2.cellid::arguments_to_images(arguments = image_list) |> 
-    filter(channel %in% channels)
+  # Prepare the "images" dataframe.
+  if (!is.null(image_list)) {
+    # Convert Cell-ID arguments to images.
+    images <- rcell2.cellid::arguments_to_images(arguments = image_list) |> 
+      filter(channel %in% channels)
+  } else if(is.null(images)){
+    stop("Either 'image_list' or 'images' must be supplied.")
+  } else {
+    # Use images from Cell-ID's output.
+    images <- images |> 
+      filter(channel %in% channels)
+  }
   
   # Path to images.
   metamorph_pics <- images$file |> unique()
@@ -126,6 +137,7 @@ plot_pos_overlaps <- function(
     bind_rows(.id="image") %>% 
     # Fix variable names and types
     mutate(variable = make.names(id)) %>% 
+    # Get the stage positions.
     filter(grepl("stage.position", variable)) %>% 
     mutate(value = as.numeric(value)) %>% 
     # Make it wider
@@ -173,4 +185,59 @@ plot_pos_overlaps <- function(
     plane_info_df=plane_info_df,
     images=images
   )))
+}
+
+
+#' Load acquisition time information from MetaMorph's TIFF files
+#' 
+#' @inheritParams plot_pos_overlaps
+#' @param join_to_images If TRUE, the position/frame metadata form the images datafram will be joined to the extracted acquisition times.
+#' @export
+get_time_info <- function(
+    image_list=NULL,
+    images=NULL,
+    channels = "BF",
+    join_to_images=T){
+  
+  # Prepare the "images" dataframe.
+  if (!is.null(image_list)) {
+    # Convert Cell-ID arguments to images.
+    images <- rcell2.cellid::arguments_to_images(arguments = image_list) |> 
+      filter(channel %in% channels)
+  } else if(is.null(images)){
+    stop("Either 'image_list' or 'images' must be supplied.")
+  } else {
+    # Use images from Cell-ID's output.
+    images <- images |> 
+      filter(channel %in% channels)
+  }
+  
+  # Path to images.
+  metamorph_pics <- images |> 
+    with(file) |> unique()
+  
+  # Get the metadata of all images:
+  tiff_info_df <- setNames(metamorph_pics, basename(metamorph_pics)) %>% 
+    # Get metadata
+    lapply(rcell2.cellid::tiff_plane_info) %>% 
+    bind_rows(.id="image") %>% 
+    # Fix variable names and types
+    mutate(variable = make.names(id))
+  
+  time_info_df <- tiff_info_df %>% 
+    # Get the stage positions.
+    filter(grepl("acquisition.time.local|modification.time.local", variable)) %>% 
+    # 20231010 16:26:37.071
+    mutate(value = strptime(value, "%Y%m%d %H:%M:%OS")) %>% 
+    # Make it wider
+    pivot_wider(id_cols = "image", names_from = "variable", values_from = "value")
+  
+  # Join position and frame information.
+  if(join_to_images){
+    time_info_df <- time_info_df |> left_join(
+      images |> select(pos, t.frame, image) |> unique()
+    )
+  }
+  
+  return(time_info_df)
 }

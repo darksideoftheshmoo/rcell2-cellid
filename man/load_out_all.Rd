@@ -16,7 +16,7 @@ load_out_all(
 )
 }
 \arguments{
-\item{path}{Path to CellID's output directory, tipically also the images directory.}
+\item{path}{Path to Cell-ID's output directory, tipically also the images directory.}
 
 \item{position.pattern}{Regex describing what the position string looks like (default ".*Position(\\d+).*") including a capturing group for the position ID number (coerced to integer).}
 

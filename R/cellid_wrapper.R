@@ -897,9 +897,9 @@ parameters_write <- function(parameters.list = rcell2.cellid::parameters_default
 }
 
 
-#' Cargar el output de cell-id
+#' Load Cell-ID's output files into R
 #'
-#' @param path Path to CellID's output directory, tipically also the images directory.
+#' @param path Path to Cell-ID's output directory, tipically also the images directory.
 #' @param pdata Path to metadata CSV file.
 #' @param position.pattern Regex describing what the position string looks like (default ".*Position(\\d+).*") including a capturing group for the position ID number (coerced to integer).
 #' @param fluorescence.pattern Regex describing what the fluorescence/channel ID string looks like (default "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"). There must be only one capturing group, ant it must be for the channel identifier.

@@ -3,7 +3,7 @@
 \name{get_cell_data}
 \alias{get_cell_data}
 \alias{cell.load.alt}
-\title{Cargar el output de cell-id}
+\title{Load Cell-ID's output files into R}
 \usage{
 get_cell_data(
   path,
@@ -26,7 +26,7 @@ cell.load.alt(
 )
 }
 \arguments{
-\item{path}{Path to CellID's output directory, tipically also the images directory.}
+\item{path}{Path to Cell-ID's output directory, tipically also the images directory.}
 
 \item{pdata}{Path to metadata CSV file.}
 
@@ -52,5 +52,5 @@ cell.load.alt(
 A list of dataframes: data (CellID data), images (images metadata and paths), image_maping (extra mapping metadata from CellID: BF to FL correspondence, channel flag, bf_as_fl flag, and one-letter channel encoding).
 }
 \description{
-Cargar el output de cell-id
+Load Cell-ID's output files into R
 }
