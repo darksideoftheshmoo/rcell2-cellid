@@ -32,12 +32,12 @@ tiff_plane_info <- function(path, frames = 1, ...) {
     frames <- frames[1]
   }
   
-  if(!requireNamespace("XML")){
+  if(!requireNamespace("XML", quietly = T)){
     warning("tiff_plane_info requires xmlToList from the 'XML' package, which is not installed. Aborting.")
     return(NULL)
   }
   
-  if(!requireNamespace("ijtiff")){
+  if(!requireNamespace("ijtiff", quietly = T)){
     warning("tiff_plane_info requires read_tags from the 'ijtiff' package, which is not installed. Aborting.")
     return(NULL)
   }
@@ -93,7 +93,7 @@ tiff_plane_info <- function(path, frames = 1, ...) {
 #' @param image_width_x Size of the images in pixels.
 #' @param image_height_y Size of the images in pixels.
 #' @param print_plot Print the plot.
-#' @import dplyr ggplot2
+#' @import dplyr ggplot2 tidyr
 #' @export
 #' @examples 
 #' plot <- rcell2.cellid::arguments(metamorph_pics_dir, file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
@@ -118,30 +118,30 @@ plot_pos_overlaps <- function(
   if (!is.null(image_list)) {
     # Convert Cell-ID arguments to images.
     images <- rcell2.cellid::arguments_to_images(arguments = image_list) |> 
-      filter(channel %in% channels)
+      dplyr::filter(channel %in% channels)
   } else if(is.null(images)){
     stop("Either 'image_list' or 'images' must be supplied.")
   } else {
     # Use images from Cell-ID's output.
     images <- images |> 
-      filter(channel %in% channels)
+      dplyr::filter(channel %in% channels)
   }
   
   # Path to images.
-  metamorph_pics <- images$file |> unique()
+  metamorph_pics <- images |> with(file) |> unique()
   
   # Get the metadata of all images:
   plane_info_df <- setNames(metamorph_pics, basename(metamorph_pics)) %>% 
     # Get metadata
     lapply(rcell2.cellid::tiff_plane_info) %>% 
-    bind_rows(.id="image") %>% 
+    dplyr::bind_rows(.id="image") %>% 
     # Fix variable names and types
-    mutate(variable = make.names(id)) %>% 
+    dplyr::mutate(variable = make.names(id)) %>% 
     # Get the stage positions.
-    filter(grepl("stage.position", variable)) %>% 
-    mutate(value = as.numeric(value)) %>% 
+    dplyr::filter(grepl("stage.position", variable)) %>% 
+    dplyr::mutate(value = as.numeric(value)) %>% 
     # Make it wider
-    pivot_wider(id_cols = "image", names_from = "variable", values_from = "value")
+    tidyr::pivot_wider(id_cols = "image", names_from = "variable", values_from = "value")
   
   # Calculate "Field Of View" size.
   fov_size_microns_x <- image_width_x * ccd_pixel_size_microns / magnification  # um in the "X/width" direction
@@ -156,27 +156,27 @@ plot_pos_overlaps <- function(
   
   # Plot fields of view to check for overlaps visually.
   plt <- plane_info_df %>% 
-    left_join(images_bf, by = "image") |> 
-    arrange(pos) %>% 
+    dplyr::left_join(images_bf, by = "image") |> 
+    dplyr::arrange(pos) %>% 
     ggplot(aes(stage.position.x, stage.position.y, label = pos)) +
-    geom_path(aes(group = t.frame)) +
-    geom_rect(aes(xmin=stage.position.x-fov_size_microns_x/2, 
-                  xmax=stage.position.x+fov_size_microns_x/2, 
-                  ymin=stage.position.y-fov_size_microns_y/2, 
-                  ymax=stage.position.y+fov_size_microns_y/2,
-                  group = pos, fill = factor(pos)), alpha =.5)+
-    geom_text(size=10) +
-    facet_wrap(t.frame~channel) + guides(fill = "none") +
-    
-    scale_x_continuous(trans = "reverse", limits = c(x_max,x_min),
-                       breaks=seq(0,-well_size_microns_x*10,by=-well_size_microns_x),
-                       minor_breaks=NULL) + 
-    scale_y_continuous(limits=c(y_min,y_max),
-                       breaks=seq(0,-well_size_microns_y*10,by=-well_size_microns_y),
-                       minor_breaks=NULL) +
-    
-    ggtitle("Physical stage coordinates v.s. Position index",
-            "Compare the index numbers with the expected physical distrubution in the well plate.\nThe shaded areas around index numbers shuould not overlap with each other.")
+      geom_path(aes(group = t.frame)) +
+      geom_rect(aes(xmin=stage.position.x-fov_size_microns_x/2, 
+                    xmax=stage.position.x+fov_size_microns_x/2, 
+                    ymin=stage.position.y-fov_size_microns_y/2, 
+                    ymax=stage.position.y+fov_size_microns_y/2,
+                    group = pos, fill = factor(pos)), alpha =.5)+
+      geom_text(size=10) +
+      facet_wrap(t.frame~channel) + guides(fill = "none") +
+      
+      scale_x_continuous(trans = "reverse", limits = c(x_max,x_min),
+                         breaks=seq(0,-well_size_microns_x*10,by=-well_size_microns_x),
+                         minor_breaks=NULL) + 
+      scale_y_continuous(limits=c(y_min,y_max),
+                         breaks=seq(0,-well_size_microns_y*10,by=-well_size_microns_y),
+                         minor_breaks=NULL) +
+      
+      ggtitle("Physical stage coordinates v.s. Position index",
+              "Compare the index numbers with the expected physical distrubution in the well plate.\nThe shaded areas around index numbers shuould not overlap with each other.")
   
   if(print_plot) print(plt)
   
@@ -190,8 +190,13 @@ plot_pos_overlaps <- function(
 
 #' Load acquisition time information from MetaMorph's TIFF files
 #' 
+#' Time information is loaded from the XML inserted by MetaMorph into the TIFF files' metadata.
+#' 
+#' Time is loaded as POSIXlt and POSIXct into different columns (the 'ct' suffix indicates POSIXct). See \code{DateTimeClasses} for details.
+#' 
 #' @inheritParams plot_pos_overlaps
 #' @param join_to_images If TRUE, the position/frame metadata form the images datafram will be joined to the extracted acquisition times.
+#' @import dplyr tidyr
 #' @export
 get_time_info <- function(
     image_list=NULL,
@@ -203,13 +208,13 @@ get_time_info <- function(
   if (!is.null(image_list)) {
     # Convert Cell-ID arguments to images.
     images <- rcell2.cellid::arguments_to_images(arguments = image_list) |> 
-      filter(channel %in% channels)
+      dplyr::filter(channel %in% channels)
   } else if(is.null(images)){
     stop("Either 'image_list' or 'images' must be supplied.")
   } else {
     # Use images from Cell-ID's output.
     images <- images |> 
-      filter(channel %in% channels)
+      dplyr::filter(channel %in% channels)
   }
   
   # Path to images.
@@ -220,23 +225,30 @@ get_time_info <- function(
   tiff_info_df <- setNames(metamorph_pics, basename(metamorph_pics)) %>% 
     # Get metadata
     lapply(rcell2.cellid::tiff_plane_info) %>% 
-    bind_rows(.id="image") %>% 
+    dplyr::bind_rows(.id="image") %>% 
     # Fix variable names and types
-    mutate(variable = make.names(id))
+    dplyr::mutate(variable = make.names(id))
   
   time_info_df <- tiff_info_df %>% 
     # Get the stage positions.
-    filter(grepl("acquisition.time.local|modification.time.local", variable)) %>% 
+    dplyr::filter(grepl("acquisition.time.local|modification.time.local", variable)) %>% 
     # 20231010 16:26:37.071
-    mutate(value = strptime(value, "%Y%m%d %H:%M:%OS")) %>% 
+    dplyr::mutate(value = strptime(value, "%Y%m%d %H:%M:%OS")) %>% 
     # Make it wider
-    pivot_wider(id_cols = "image", names_from = "variable", values_from = "value")
+    tidyr::pivot_wider(id_cols = "image", names_from = "variable", values_from = "value")
+  
+  # Create columns with "POSIXct" time (required by ggplot).
+  time_info_df <- time_info_df |> 
+    mutate(acquisition.time.ct = as.POSIXct(acquisition.time.local),
+           modification.time.ct = as.POSIXct(modification.time.local))
   
   # Join position and frame information.
   if(join_to_images){
-    time_info_df <- time_info_df |> left_join(
-      images |> select(pos, t.frame, image) |> unique()
-    )
+    time_info_df <- time_info_df |> 
+      dplyr::left_join(
+        images |> dplyr::select(pos, t.frame, image) |> unique(),
+        by = dplyr::join_by(image)
+      )
   }
   
   return(time_info_df)

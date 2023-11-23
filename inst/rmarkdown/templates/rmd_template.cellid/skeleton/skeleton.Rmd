@@ -642,6 +642,35 @@ segmentation results (which adds another dimension to the set: "original" vs "ou
 A fourth dimension would be needed, but Hyperstacks only provide 3. The default is to
 load "out" files as new channels.
 
+### Check acquisition times
+
+Acquisition times can be extracted from metadata in the TIFF files produced by MetaMorph.
+
+```{r}
+# Get images.
+image_list <- rcell2.cellid::arguments(path = data.dir,
+                                       file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
+  suppressWarnings()
+```
+
+Extract time information for the BF channel only:
+
+```{r}
+time_info <- get_time_info(image_list = image_list, channels = "BF")
+```
+
+Time plotted against `t.frame` should be diagonal:
+
+```{r}
+time_info |> 
+  ggplot(aes(acquisition.time.ct, t.frame)) +
+  geom_line() + 
+  facet_wrap(~pos)
+```
+
+> Note that ImageJ's FFT filter will not add MetaMorph's metadata to the filtered BFs.
+> This means that `get_time_info` will only work on the original TIFF files.
+
 ### Apply FFT filter on BF images
 
 Optionally, use ImageJ's band-pass FFT filter on the defocused bright field images.

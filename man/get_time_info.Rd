@@ -21,5 +21,8 @@ get_time_info(
 \item{join_to_images}{If TRUE, the position/frame metadata form the images datafram will be joined to the extracted acquisition times.}
 }
 \description{
-Load acquisition time information from MetaMorph's TIFF files
+Time information is loaded from the XML inserted by MetaMorph into the TIFF files' metadata.
+}
+\details{
+Time is loaded as POSIXlt and POSIXct into different columns (the 'ct' suffix indicates POSIXct). See \code{DateTimeClasses} for details.
 }
