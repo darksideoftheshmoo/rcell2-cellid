@@ -659,6 +659,15 @@ Extract time information for the BF channel only:
 time_info <- get_time_info(image_list = image_list, channels = "BF")
 ```
 
+Distribution of time intervals:
+
+```{r}
+time_info |> filter(pos == first(pos)) |> 
+  with(acquisition.time.ct) |>as.numeric() |> diff() |> 
+  hist(main="Distribution of time interval between frames", 
+       xlab="Interval time (seconds)")
+```
+
 Time plotted against `t.frame` should be diagonal:
 
 ```{r}
