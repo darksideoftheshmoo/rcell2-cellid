@@ -160,7 +160,15 @@ cell2.out <-
                        # cell.command = "~/Software/cellID-linux/cell",  # You may use an external executable.
                        output_coords_to_tsv = T  # Optional! Only works with newer CellID (>= 1.5).
                        )
+```
 
+The returned dataframe contains the following information:
+
+- The return status of each Cell-ID process (zero if successful).
+- The shell command used to run each Cell-ID process (can be used outside R).
+- Paths to log files with information about the execution.
+
+```{r eval=F}
 # Check the output messages:
 cell2.out
 ```
