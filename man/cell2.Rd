@@ -18,7 +18,7 @@ cell2(
   write_initial_time = F,
   save.logs = T,
   verbose = T,
-  progress = F,
+  progress = T,
   check_fail = F
 )
 }

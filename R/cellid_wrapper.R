@@ -122,7 +122,7 @@ cell2 <- function(arguments,
                   interior_offset = F,         # -w flag
                   write_initial_time = F,      # -z flag
                   save.logs = T, verbose=T,
-                  progress=F,
+                  progress=T,
                   check_fail=F){
   
   if(F){
@@ -192,6 +192,12 @@ cell2 <- function(arguments,
     
     # Export arguments dataframe to cluster
     parallel::clusterExport(cl, "arguments", envir = environment())
+    
+    # Check progressbar config.
+    if(progress & !requireNamespace("doSNOW", quietly = T)){
+      warning("cell2: a progressbar was requrested but the 'doSNOW' is not installed. Disabling progress bar.")
+      progress <- FALSE
+    }
     
     # Register cluster
     if(!progress){
