@@ -1333,6 +1333,32 @@ They are available through a function:
 rcell2.cellid::cellid_output_descriptions(list.output = F)
 ```
 
+## Export results to RDS files
+
+The two main objects in `cell.data` are the `data` and `images` data frames, containing
+measurements of individual cells and metadata about the image set of the experiment.
+
+These data frames are used in downstream analyses with `rcell2` and `rcell2.magick`, 
+and are often referred to as `cdata` and `paths` respectively.
+
+You may optionally export these to individual RDS files.
+
+```{r}
+# Save the full cell.data object to an RDS file.
+cell.data |> 
+  saveRDS("data/cell.data.RDS")
+
+# Save cdata to an RDS file.
+cell.data |> with(data) |> 
+  saveRDS("data/cdata.RDS")
+
+# Save images to an RDS file.
+cell.data |> with(images) |> 
+  saveRDS("data/images.RDS")
+```
+
+If you export the results to RDS files, you can load them later on using `readRDS`.
+
 ## Data analysis
 
 Helping with data analysis is `rcell2`'s purpose.
