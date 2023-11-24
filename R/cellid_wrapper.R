@@ -1645,7 +1645,7 @@ rename_mda <- function(images.path = NULL,
     
     # Add file name and path
     images.info$path <- images.path
-    images.info$file <- image.files
+    images.info$file <- image.files |> basename()
     
     # Figure out the path where renamed images will be written.
     if(is.null(rename.path)){ 
@@ -1656,11 +1656,7 @@ rename_mda <- function(images.path = NULL,
       } else{
         # If "rename.path" was not specified, use "renamed" as a sub-directory of "images.path".
         rename.path <- paste0(images.path, "/renamed")
-        dir.create(rename.path)
       }
-    } else {
-      # Just create the path if it was specified.
-      dir.create(rename.path)
     }
     
     # Make new names and paths
@@ -1673,8 +1669,15 @@ rename_mda <- function(images.path = NULL,
     
     # Update rename path if specified.
     images.info <- rename.dataframe
-    if(!is.null(rename.path)) images.info$rename.path <- rename.path
+    if(!is.null(rename.path)){
+      images.info$rename.path <- rename.path
+    } else {
+      rename.path <- images.info$rename.path |> unique()
+    }
   }
+  
+  # Create the directory for renamed images.
+  if(!is.null(rename.path)) dir.create(rename.path, showWarnings = F)
   
   # Delete images in "rename.path" if requested (unless it is empty).
   if(cleanup.first){
@@ -1718,8 +1721,10 @@ rename_mda <- function(images.path = NULL,
   
   # Rename the files.
   if(!is.null(rename.function)){
-    status <- rename.function(from = normalizePath(images.info$file), 
-                              to = file.path(images.info$rename.path, images.info$rename.file),
+    status <- rename.function(from = normalizePath(file.path(images.info$path, 
+                                                             basename(images.info$file))), 
+                              to = file.path(images.info$rename.path, 
+                                             images.info$rename.file),
                               ...)
     # Add status column to image into
     images.info$status <- status
