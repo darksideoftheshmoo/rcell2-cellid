@@ -9,7 +9,8 @@ run_fft_filter_on_bfs(
   cellid.args,
   fft.subdirs.prefix = "bf_subset",
   filtered.bfs.dir.name = "fft_images_dataset",
-  imagej.path = "~/Software/ImageJ/Fiji.app/ImageJ-linux64"
+  imagej.path = "~/Software/ImageJ/Fiji.app/ImageJ-linux64",
+  n_cores = NULL
 )
 }
 \arguments{
@@ -22,7 +23,14 @@ run_fft_filter_on_bfs(
 \item{filtered.bfs.dir.name}{Name for the final output directory,}
 
 \item{imagej.path}{Path to the ImageJ/FIJI binary.}
+
+\item{n_cores}{Integer amout of processor cores to use.}
 }
 \description{
-Run Imagej's FFT filter on BF files
+Use ImageJ's bandpass FFT filter on the defocused brightfield images. This is optional, but can help Cell-ID find cells and reduce background artifacts.
+}
+\details{
+Note that several intermediate files and directories are created during execution, which can remain there if the execution is interrupted for any reason.
+
+To save disk space, fluorescence images are linked to the final directory as symbolic links instead of being duplicated by copying. Your milage may vary on a "non-unix OS" (i.e. Windows).
 }

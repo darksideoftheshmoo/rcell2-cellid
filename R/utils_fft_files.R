@@ -1,38 +1,45 @@
 ### Apply FFT filter on BF images
 
-# Optionally, use ImageJ's bandpass FFT filter on the defocused brightfield images.
-# 
-# This can help Cell-ID find cells and reduce background artifacts.
-# 
-# List the BF images from the `arguments` function:
-
-# Get renamed image paths
-# data.dir <- file.path(data.dir, "renamed")
-# 
-# cellid.args <-
-#   rcell2.cellid::arguments(path = data.dir,
-#                            file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$") |> 
-#   filter(pos %in% 7:8)
-
 #' Run Imagej's FFT filter on BF files
+#' 
+#' Use ImageJ's bandpass FFT filter on the defocused brightfield images. This is optional, but can help Cell-ID find cells and reduce background artifacts.
+#' 
+#' Note that several intermediate files and directories are created during execution, which can remain there if the execution is interrupted for any reason.
+#' 
+#' To save disk space, fluorescence images are linked to the final directory as symbolic links instead of being duplicated by copying. Your milage may vary on a "non-unix OS" (i.e. Windows).
 #' 
 #' @param data.dir Data directory of the original images, appropriately named.
 #' @param cellid.args Arguments dataframe as produced by \code{rcell2.cellid::arguments} at \code{data.dir}.
 #' @param imagej.path Path to the ImageJ/FIJI binary.
 #' @param fft.subdirs.prefix Name prefix for intermediate filtered BF files. 
 #' @param filtered.bfs.dir.name Name for the final output directory,
+#' @param n_cores Integer amout of processor cores to use.
 #' @import foreach doParallel parallel
 #' @export
 run_fft_filter_on_bfs <- function(data.dir, 
                                   cellid.args, 
                                   fft.subdirs.prefix="bf_subset", 
                                   filtered.bfs.dir.name="fft_images_dataset",
-                                  imagej.path="~/Software/ImageJ/Fiji.app/ImageJ-linux64"){
+                                  imagej.path="~/Software/ImageJ/Fiji.app/ImageJ-linux64",
+                                  n_cores=NULL){
+  
+  # Default value for n_cores.
+  if(is.null(n_cores)) n_cores <- max(1, parallel::detectCores() - 1)
+  
+  # Limit cores to the count of BFs if it is lower.
+  n_cores <- length(unique(cellid.args$bf)) |> min(n_cores) |> max(1)
+  
   #### Split and symlink BFs
   # Split the BF files by position, and symlink them to different subdirectories:
-  cellid.args.split <- split(cellid.args, ~pos)
+  # cellid.args.split <- split(cellid.args, ~pos)
   
-  if(!file.exists(imagej.path)) stop("Error! File not found at" |> paste(imagej.path))
+  # Split the BF files by thread chunk, and symlink them to different subdirectories:
+  cellid.args.split <- split(
+    x = cellid.args, 
+    f = rep(x = 1:n_cores, length.out = nrow(cellid.args))
+  )
+  
+  if(!file.exists(imagej.path)) stop("Error! ImageJ executable not found at:" |> paste(imagej.path))
   
   # Prefix or full path to where filtered images will be stored.
   # fft.subdirs.prefix <- "bf_subset"
@@ -55,18 +62,17 @@ run_fft_filter_on_bfs <- function(data.dir,
     fft.bfs.subdirs[i] <- fft.bfs.dir
   }
   
-  # fft.bfs.subdirs
-  
   #### Run filter
   
   # Run FFT filter in parallel, with one thread per subdirectory:
+  # n_chunks <- length(fft.bfs.subdirs)
   
-  n_cores <- parallel::detectCores() #- 1
-  n_chunks <- length(fft.bfs.subdirs)
+  # Run FFT filter in parallel, with one subdirectory per thread:
+  n_chunks <- n_cores
   
   # Make cluster
   cl <- parallel::makeCluster(
-    spec = min(n_chunks,n_cores), 
+    spec = min(n_chunks, n_cores), 
     setup_strategy = "sequential"  # https://github.com/rstudio/rstudio/issues/6692
   )
   
@@ -98,9 +104,14 @@ run_fft_filter_on_bfs <- function(data.dir,
   filtered.bfs.dir <- file.path(data.dir, filtered.bfs.dir.name)
   dir.create(filtered.bfs.dir)
   
-  # Symlink BF images to the final location.
-  result <- file.symlink(from = normalizePath(filtered.bfs), 
-                         to = file.path(filtered.bfs.dir, basename(filtered.bfs)))
+  # Move the BF images to the final location.
+  result <- file.rename(from = normalizePath(filtered.bfs), 
+                        # file.rename attempts to rename files (and from and to must be of the same length). 
+                        # Where file permissions allow this will overwrite an existing element of to.
+                        to = file.path(filtered.bfs.dir, basename(filtered.bfs)))
+  
+  # Remove intermediate directories.
+  lapply(fft.bfs.subdirs, unlink, recursive=T) |> invisible()
   
   # all(result)  # Check
   

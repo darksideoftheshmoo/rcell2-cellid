@@ -30,6 +30,8 @@ knit: (function(inputFile, encoding) {
 
 <!-- Download a copy of this file with rcell2.cellid::get_workflow_template_cellid() -->
 
+# Setup
+
 ```{r setup, include=FALSE}
 # Set chunk options
 knitr::opts_chunk$set(echo = T, message = F, out.width = "100%", eval = F,
