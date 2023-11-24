@@ -678,12 +678,18 @@ time_info |> filter(pos == first(pos)) |>
        xlab="Interval time (seconds)")
 ```
 
-Time plotted against `t.frame` should be diagonal:
+`t.frame` plotted against the acquisition time difference should be completely flat,
+if acquisition intervals were perfectly even.
 
 ```{r}
 time_info |> 
-  ggplot(aes(acquisition.time.ct, t.frame)) +
+  # Compute acq. time differences by position.
+  group_by(pos) |> 
+  mutate(acquisition.time.diff = acquisition.time.ct |> as.numeric() |> diff() |> c(NA)) |> 
+  # Plot.
+  ggplot(aes(t.frame, acquisition.time.diff)) +
   geom_line() + 
+  geom_point() + 
   facet_wrap(~pos)
 ```
 
@@ -720,7 +726,8 @@ Run the filter:
 new.data.dir <- run_fft_filter_on_bfs(
   data.dir = data.dir,
   cellid.args = cellid.args,
-  imagej.path="~/Software/ImageJ/Fiji.app/ImageJ-linux64") # Adjust to your system
+  # imagej.path="~/Software/ImageJ/Fiji.app/ImageJ-linux64") # Adjust to your system
+  imagej.path="~/Software/ImageJ-FIJI/Fiji.app/ImageJ-linux64") # Adjust to your system
 
 new.data.dir
 ```
