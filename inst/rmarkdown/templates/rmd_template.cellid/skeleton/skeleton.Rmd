@@ -669,6 +669,9 @@ Extract time information for the BF channel only:
 time_info <- get_time_info(image_list = image_list, channels = "BF")
 ```
 
+> Note that ImageJ's FFT filter will not add MetaMorph's metadata to the filtered BFs.
+> This means that `get_time_info` will only work on the original TIFF files.
+
 Distribution of time intervals:
 
 ```{r}
@@ -684,17 +687,24 @@ if acquisition intervals were perfectly even.
 ```{r}
 time_info |> 
   # Compute acq. time differences by position.
-  group_by(pos) |> 
-  mutate(acquisition.time.diff = acquisition.time.ct |> as.numeric() |> diff() |> c(NA)) |> 
+  group_by(pos) |> arrange(t.frame) |>
+  mutate(acq_delta=c(NA, diff(acquisition.time.ct)))  |> 
   # Plot.
-  ggplot(aes(t.frame, acquisition.time.diff)) +
+  ggplot(aes(t.frame, acq_delta, color=as.factor(pos), group=pos)) +
   geom_line() + 
-  geom_point() + 
-  facet_wrap(~pos)
+  ylim(c(0, NA)) + ylab("Minutes since last frame") + #guides(color=F) +
+  ggtitle("Elapsed time between frames")
 ```
 
-> Note that ImageJ's FFT filter will not add MetaMorph's metadata to the filtered BFs.
-> This means that `get_time_info` will only work on the original TIFF files.
+This plot will show the actual local time for each image frame, and should be diagonal:
+
+```{r}
+time_info |> 
+  ggplot(aes(acquisition.time.ct, t.frame)) +
+  geom_line() + 
+  facet_wrap(~pos) +
+  ggtitle("Acquisition time vs Image frame index")
+```
 
 ### Apply FFT filter on BF images
 
