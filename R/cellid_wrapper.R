@@ -40,6 +40,16 @@ cellid_parameter_descriptions <- function(list_format=T){
   return(descs.list)
 }
 
+#' Cell-ID parameter descriptions
+#' @export
+parameters_help <- cellid_parameter_descriptions(list_format = T)
+
+
+#' Cell-ID parameter descriptions
+#' @export
+parameters_help_df <- cellid_parameter_descriptions(list_format = F)
+
+
 # #' Correr Cell-ID desde R usando .C()
 # #'
 # #' @param args el comando de cellid entero, tal como se ejecutaria en bash "cell -p ..."

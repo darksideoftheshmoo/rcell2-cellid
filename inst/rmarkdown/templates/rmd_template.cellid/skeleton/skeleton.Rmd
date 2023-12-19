@@ -762,7 +762,13 @@ tracking, and some corrections.
 Show a data.frame with the description of each Cell-ID parameter:
 
 ```{r}
-rcell2.cellid::cellid_parameter_descriptions(list_format = F)
+parameters_help_df
+```
+
+Also available in list format:
+
+```{r}
+parameters_help$max_dist_over_waist
 ```
 
 #### Example parameter set
