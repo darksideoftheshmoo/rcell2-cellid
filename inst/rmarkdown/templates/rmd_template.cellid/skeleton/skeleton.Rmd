@@ -225,7 +225,7 @@ cdata %>% ggplot(aes(a.tot, fft.stat)) +
 Output variables are described by this documentation function:
 
 ```{r}
-rcell2.cellid::cellid_output_descriptions(list.output = F)
+rcell2.cellid::output_help_df
 ```
 
 Plot cell boundaries:
@@ -1348,12 +1348,12 @@ cell.boundaries <-
 #### Variable descriptions
 
 To help understand CellID's output, we documented the descriptions of variables
-in `cell.data$data`.
+available in the `cell.data$data` data frame.
 
-They are available through a function:
+They are available in `output_help` and `output_help_df`:
 
 ```{r}
-rcell2.cellid::cellid_output_descriptions(list.output = F)
+rcell2.cellid::output_help_df
 ```
 
 ## Export results to RDS files

@@ -18,6 +18,15 @@ cellid_output_descriptions <- function(list.output=T){
   }
 }
 
+#' Cell-ID output description
+#' @export
+output_help <- cellid_output_descriptions(list.output = T) |> suppressWarnings()
+
+
+#' Cell-ID output description
+#' @export
+output_help_df <- cellid_output_descriptions(list.output = F) |> suppressWarnings()
+
 #' Cell-ID parameter descriptions
 #' 
 #' @param list_format If TRUE then format the dataframe into a named list
@@ -25,7 +34,7 @@ cellid_output_descriptions <- function(list.output=T){
 #' 
 cellid_parameter_descriptions <- function(list_format=T){
   
-  warning("Warning: not all CellID input parameters are [well] documented.")
+  warning("Warning: not all Cell-ID input parameters are fully documented. Refer to the original publication for further detail.")
   
   descs <- read.csv(sep = "\t", 
                     file = system.file("parameters_description.tsv", package = "rcell2.cellid"))
@@ -42,12 +51,12 @@ cellid_parameter_descriptions <- function(list_format=T){
 
 #' Cell-ID parameter descriptions
 #' @export
-parameters_help <- cellid_parameter_descriptions(list_format = T)
+parameters_help <- cellid_parameter_descriptions(list_format = T) |> suppressWarnings()
 
 
 #' Cell-ID parameter descriptions
 #' @export
-parameters_help_df <- cellid_parameter_descriptions(list_format = F)
+parameters_help_df <- cellid_parameter_descriptions(list_format = F) |> suppressWarnings()
 
 
 # #' Correr Cell-ID desde R usando .C()
