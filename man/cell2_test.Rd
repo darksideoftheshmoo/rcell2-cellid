@@ -4,7 +4,7 @@
 \alias{cell2_test}
 \title{Test the installed cell binary}
 \usage{
-cell2_test()
+cell2_test(...)
 }
 \description{
 Test the installed cell binary

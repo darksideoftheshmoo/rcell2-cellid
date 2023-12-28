@@ -90,9 +90,9 @@ cell2_command <- function(){
 }
 
 #' Test the installed cell binary
-#' 
-cell2_test <- function(){
-  system(paste(cell2_command(), "-h"))
+#' @inheritDotParams system
+cell2_test <- function(...){
+  system(command = paste(cell2_command(), "-h"), ...)
 }
 
 #' Function to run Cell-ID
@@ -140,7 +140,7 @@ cell2 <- function(arguments,
                   fill_interior_pixels = F,    # -i flag
                   interior_offset = F,         # -w flag
                   write_initial_time = F,      # -z flag
-                  save.logs = T, verbose=T,
+                  save.logs = T, verbose=F,
                   progress=T,
                   check_fail=F){
   
@@ -159,24 +159,26 @@ cell2 <- function(arguments,
   # Check for existing output files
   arguments_check(arguments, check_fail)
   
-  # CellID path setup ####
+  # Cell-ID path setup ####
   if(is.null(cell.command)){
     tryCatch(
       expr = {
-        if(verbose) cat("\nUsing built-in CellID binary. Printing CellID's help message:\n")
+        cat("\nUsing built-in Cell-ID binary.")
+        if(verbose) cat(" Printing Cell-ID's help message:\n") else cat("\n")
         cell.command <- cell2_command()
-        system(paste(cell.command, "-h"), ignore.stdout = !verbose)
+        system(paste(cell.command, "-h"), ignore.stdout = verbose)
         if(verbose) cat("\n\n")
       },
       error = function(e) {
         print("cell2 error:")
         print(e)
-        stop("Couldn't use the builtin CellID, please specify a path to an external executable.")
+        stop("Couldn't use the builtin Cell-ID, please specify a path to an external executable.")
       })
   } else {
-    if(verbose) cat("\nUsing custom CellID binary. Printing CellID's help message:\n")
-    warning("Custom CellID binary selected. Keep in mind that rcell2.cellid::cell2 is meant to wrap our updated version.")
-    system(paste(cell.command, "-h"), ignore.stdout = !verbose)
+    cat("\nUsing custom Cell-ID binary.")
+    if(verbose) cat(" Printing Cell-ID's help message:\n") else cat("\n")
+    warning("Custom Cell-ID binary selected. Keep in mind that rcell2.cellid::cell2 is meant to wrap the updated version. Double check the outputs.")
+    system(paste(cell.command, "-h"), ignore.stdout = verbose)
     if(verbose) cat("\n\n")
   }
   # Check the path
