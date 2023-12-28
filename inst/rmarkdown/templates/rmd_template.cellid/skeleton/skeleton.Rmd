@@ -911,6 +911,14 @@ Choose which image sets in `cellid.args` you wish to use for the parameter scan.
 For example, choose some *positions* (image sets) and *t.frame*s (time frames)
 to restrict the image test set to only some of them.
 
+Some guidelines:
+
+1. Choose at least one image and frame from a "control" situation.
+2. Choose at least one image and frame from a "treated" situation, where cells might vary in morphology.
+  - A much later time, with larger cells.
+  - Treated cells, which might show shmoos.
+3. Choose more than one consecutive frame to asses the stability of your segmentation parameters over adjacent frames.
+
 ```{r}
 # Choose test positions, frames and channels.
 test.pos = unique(cellid.args$pos)[1]        # e.g.: One position.
@@ -929,8 +937,19 @@ scan.arguments
 #### Parameter combinations
 
 For each parameter variation, we need a new parameters file.
+The simplest way to generate parameter combinations is with rcell2's `parameters_default` and R's `expand.grid`.
 
-In this example, only `background_reject_factor` is scanned, across 4 values:
+Because scanning over all parameters space would take ages, you can follow a simplified procedure of 3 small scans, on a small subset of images. Here is a procedure to reduce the scan's complexity:
+
+1. First scan over `background_reject_factor` *only*.
+2. Fix `background_reject_factor` to its optimal value, which minimizes segmentation artifacts.
+3. Scan over `max_dist_over_waist` **and** set `max_split_over_minor` to a high value (e.g. `max_split_over_minor=5`).
+  - This is because `max_dist_over_waist` splits "figure-8" cells into two, and `max_split_over_minor` will re-join shmoo-like cells, thus confounding the interpretation of the parameter scan.
+4. Fix `max_dist_over_waist` to its optimal value, which adyacent cells and daughters cells from their mothers.
+  - At this point you must tolerate projected growth (i.e. shmoos) being split from the rest of the cell body.
+5. Scan over `max_split_over_minor` *only*, which should minimize the amount of growth projections split from their bodies.
+
+In the following example, only `background_reject_factor` is scanned, across values produced with R's `seq` function:
 
 ```{r}
 parameters.list <- rcell2.cellid::parameters_default(
