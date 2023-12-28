@@ -17,7 +17,7 @@ cell2(
   interior_offset = F,
   write_initial_time = F,
   save.logs = T,
-  verbose = T,
+  verbose = F,
   progress = T,
   check_fail = F
 )
