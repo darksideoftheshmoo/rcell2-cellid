@@ -27,7 +27,6 @@ LazyData: true
 RoxygenNote: 7.2.3
 Depends:
     R (>= 3.6)
-biocViews:
 Imports:
     data.table (>= 1.14.2),
     doParallel (>= 1.0.17),

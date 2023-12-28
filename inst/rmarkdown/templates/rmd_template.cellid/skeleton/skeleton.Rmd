@@ -30,6 +30,8 @@ knit: (function(inputFile, encoding) {
 
 <!-- Download a copy of this file with rcell2.cellid::get_workflow_template_cellid() -->
 
+# Setup
+
 ```{r setup, include=FALSE}
 # Set chunk options
 knitr::opts_chunk$set(echo = T, message = F, out.width = "100%", eval = F,
@@ -158,7 +160,15 @@ cell2.out <-
                        # cell.command = "~/Software/cellID-linux/cell",  # You may use an external executable.
                        output_coords_to_tsv = T  # Optional! Only works with newer CellID (>= 1.5).
                        )
+```
 
+The returned dataframe contains the following information:
+
+- The return status of each Cell-ID process (zero if successful).
+- The shell command used to run each Cell-ID process (can be used outside R).
+- Paths to log files with information about the execution.
+
+```{r eval=F}
 # Check the output messages:
 cell2.out
 ```
@@ -215,7 +225,7 @@ cdata %>% ggplot(aes(a.tot, fft.stat)) +
 Output variables are described by this documentation function:
 
 ```{r}
-rcell2.cellid::cellid_output_descriptions(list.output = F)
+rcell2.cellid::output_help_df
 ```
 
 Plot cell boundaries:
@@ -642,6 +652,60 @@ segmentation results (which adds another dimension to the set: "original" vs "ou
 A fourth dimension would be needed, but Hyperstacks only provide 3. The default is to
 load "out" files as new channels.
 
+### Check acquisition times
+
+Acquisition times can be extracted from metadata in the TIFF files produced by MetaMorph.
+
+```{r}
+# Get images.
+image_list <- rcell2.cellid::arguments(path = data.dir,
+                                       file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
+  suppressWarnings()
+```
+
+Extract time information for the BF channel only:
+
+```{r}
+time_info <- get_time_info(image_list = image_list, channels = "BF")
+```
+
+> Note that ImageJ's FFT filter will not add MetaMorph's metadata to the filtered BFs.
+> This means that `get_time_info` will only work on the original TIFF files.
+
+Distribution of time intervals:
+
+```{r}
+time_info |> filter(pos == first(pos)) |> 
+  with(acquisition.time.ct) |>as.numeric() |> diff() |> 
+  hist(main="Distribution of time interval between frames", 
+       xlab="Interval time (seconds)")
+```
+
+`t.frame` plotted against the acquisition time difference should be completely flat,
+if acquisition intervals were perfectly even.
+
+```{r}
+time_info |> 
+  # Compute acq. time differences by position.
+  group_by(pos) |> arrange(t.frame) |>
+  mutate(acq_delta=c(NA, diff(acquisition.time.ct)))  |> 
+  # Plot.
+  ggplot(aes(t.frame, acq_delta, color=as.factor(pos), group=pos)) +
+  geom_line() + 
+  ylim(c(0, NA)) + ylab("Minutes since last frame") + #guides(color=F) +
+  ggtitle("Elapsed time between frames")
+```
+
+This plot will show the actual local time for each image frame, and should be diagonal:
+
+```{r}
+time_info |> 
+  ggplot(aes(acquisition.time.ct, t.frame)) +
+  geom_line() + 
+  facet_wrap(~pos) +
+  ggtitle("Acquisition time vs Image frame index")
+```
+
 ### Apply FFT filter on BF images
 
 Optionally, use ImageJ's band-pass FFT filter on the defocused bright field images.
@@ -672,7 +736,8 @@ Run the filter:
 new.data.dir <- run_fft_filter_on_bfs(
   data.dir = data.dir,
   cellid.args = cellid.args,
-  imagej.path="~/Software/ImageJ/Fiji.app/ImageJ-linux64") # Adjust to your system
+  # imagej.path="~/Software/ImageJ/Fiji.app/ImageJ-linux64") # Adjust to your system
+  imagej.path="~/Software/ImageJ-FIJI/Fiji.app/ImageJ-linux64") # Adjust to your system
 
 new.data.dir
 ```
@@ -697,7 +762,13 @@ tracking, and some corrections.
 Show a data.frame with the description of each Cell-ID parameter:
 
 ```{r}
-rcell2.cellid::cellid_parameter_descriptions(list_format = F)
+parameters_help_df
+```
+
+Also available in list format:
+
+```{r}
+parameters_help$max_dist_over_waist
 ```
 
 #### Example parameter set
@@ -1296,13 +1367,39 @@ cell.boundaries <-
 #### Variable descriptions
 
 To help understand CellID's output, we documented the descriptions of variables
-in `cell.data$data`.
+available in the `cell.data$data` data frame.
 
-They are available through a function:
+They are available in `output_help` and `output_help_df`:
 
 ```{r}
-rcell2.cellid::cellid_output_descriptions(list.output = F)
+rcell2.cellid::output_help_df
 ```
+
+## Export results to RDS files
+
+The two main objects in `cell.data` are the `data` and `images` data frames, containing
+measurements of individual cells and metadata about the image set of the experiment.
+
+These data frames are used in downstream analyses with `rcell2` and `rcell2.magick`, 
+and are often referred to as `cdata` and `paths` respectively.
+
+You may optionally export these to individual RDS files.
+
+```{r}
+# Save the full cell.data object to an RDS file.
+cell.data |> 
+  saveRDS("data/cell.data.RDS")
+
+# Save cdata to an RDS file.
+cell.data |> with(data) |> 
+  saveRDS("data/cdata.RDS")
+
+# Save images to an RDS file.
+cell.data |> with(images) |> 
+  saveRDS("data/images.RDS")
+```
+
+If you export the results to RDS files, you can load them later on using `readRDS`.
 
 ## Data analysis
 

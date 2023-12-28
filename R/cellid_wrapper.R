@@ -18,6 +18,15 @@ cellid_output_descriptions <- function(list.output=T){
   }
 }
 
+#' Cell-ID output description
+#' @export
+output_help <- cellid_output_descriptions(list.output = T) |> suppressWarnings()
+
+
+#' Cell-ID output description
+#' @export
+output_help_df <- cellid_output_descriptions(list.output = F) |> suppressWarnings()
+
 #' Cell-ID parameter descriptions
 #' 
 #' @param list_format If TRUE then format the dataframe into a named list
@@ -25,7 +34,7 @@ cellid_output_descriptions <- function(list.output=T){
 #' 
 cellid_parameter_descriptions <- function(list_format=T){
   
-  warning("Warning: not all CellID input parameters are [well] documented.")
+  warning("Warning: not all Cell-ID input parameters are fully documented. Refer to the original publication for further detail.")
   
   descs <- read.csv(sep = "\t", 
                     file = system.file("parameters_description.tsv", package = "rcell2.cellid"))
@@ -39,6 +48,16 @@ cellid_parameter_descriptions <- function(list_format=T){
   
   return(descs.list)
 }
+
+#' Cell-ID parameter descriptions
+#' @export
+parameters_help <- cellid_parameter_descriptions(list_format = T) |> suppressWarnings()
+
+
+#' Cell-ID parameter descriptions
+#' @export
+parameters_help_df <- cellid_parameter_descriptions(list_format = F) |> suppressWarnings()
+
 
 # #' Correr Cell-ID desde R usando .C()
 # #'
@@ -122,7 +141,7 @@ cell2 <- function(arguments,
                   interior_offset = F,         # -w flag
                   write_initial_time = F,      # -z flag
                   save.logs = T, verbose=T,
-                  progress=F,
+                  progress=T,
                   check_fail=F){
   
   if(F){
@@ -192,6 +211,12 @@ cell2 <- function(arguments,
     
     # Export arguments dataframe to cluster
     parallel::clusterExport(cl, "arguments", envir = environment())
+    
+    # Check progressbar config.
+    if(progress & !requireNamespace("doSNOW", quietly = T)){
+      warning("cell2: a progressbar was requrested but the 'doSNOW' is not installed. Disabling progress bar.")
+      progress <- FALSE
+    }
     
     # Register cluster
     if(!progress){
@@ -897,9 +922,9 @@ parameters_write <- function(parameters.list = rcell2.cellid::parameters_default
 }
 
 
-#' Cargar el output de cell-id
+#' Load Cell-ID's output files into R
 #'
-#' @param path Path to CellID's output directory, tipically also the images directory.
+#' @param path Path to Cell-ID's output directory, tipically also the images directory.
 #' @param pdata Path to metadata CSV file.
 #' @param position.pattern Regex describing what the position string looks like (default ".*Position(\\d+).*") including a capturing group for the position ID number (coerced to integer).
 #' @param fluorescence.pattern Regex describing what the fluorescence/channel ID string looks like (default "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"). There must be only one capturing group, ant it must be for the channel identifier.
@@ -1645,7 +1670,7 @@ rename_mda <- function(images.path = NULL,
     
     # Add file name and path
     images.info$path <- images.path
-    images.info$file <- image.files
+    images.info$file <- image.files |> basename()
     
     # Figure out the path where renamed images will be written.
     if(is.null(rename.path)){ 
@@ -1656,11 +1681,7 @@ rename_mda <- function(images.path = NULL,
       } else{
         # If "rename.path" was not specified, use "renamed" as a sub-directory of "images.path".
         rename.path <- paste0(images.path, "/renamed")
-        dir.create(rename.path)
       }
-    } else {
-      # Just create the path if it was specified.
-      dir.create(rename.path)
     }
     
     # Make new names and paths
@@ -1673,8 +1694,15 @@ rename_mda <- function(images.path = NULL,
     
     # Update rename path if specified.
     images.info <- rename.dataframe
-    if(!is.null(rename.path)) images.info$rename.path <- rename.path
+    if(!is.null(rename.path)){
+      images.info$rename.path <- rename.path
+    } else {
+      rename.path <- images.info$rename.path |> unique()
+    }
   }
+  
+  # Create the directory for renamed images.
+  if(!is.null(rename.path)) dir.create(rename.path, showWarnings = F)
   
   # Delete images in "rename.path" if requested (unless it is empty).
   if(cleanup.first){
@@ -1718,8 +1746,10 @@ rename_mda <- function(images.path = NULL,
   
   # Rename the files.
   if(!is.null(rename.function)){
-    status <- rename.function(from = normalizePath(images.info$file), 
-                              to = file.path(images.info$rename.path, images.info$rename.file),
+    status <- rename.function(from = normalizePath(file.path(images.info$path, 
+                                                             basename(images.info$file))), 
+                              to = file.path(images.info$rename.path, 
+                                             images.info$rename.file),
                               ...)
     # Add status column to image into
     images.info$status <- status
