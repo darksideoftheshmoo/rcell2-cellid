@@ -23,6 +23,9 @@ run_fft_filter_on_bfs <- function(data.dir,
                                   imagej.path="~/Software/ImageJ/Fiji.app/ImageJ-linux64",
                                   n_cores=NULL){
   
+  # Check that the executable is found.
+  if(!file.exists(imagej.path)) stop("Error! No file found at:" |> paste(imagej.path))
+  
   # Default value for n_cores.
   if(is.null(n_cores)) n_cores <- max(1, parallel::detectCores() - 1)
   
@@ -34,21 +37,21 @@ run_fft_filter_on_bfs <- function(data.dir,
   # cellid.args.split <- split(cellid.args, ~pos)
   
   # Split the BF files by thread chunk, and symlink them to different subdirectories:
-  cellid.args.split <- split(
-    x = cellid.args, 
-    f = rep(x = 1:n_cores, length.out = nrow(cellid.args))
+  bf.images <- cellid.args |> dplyr::select(bf, path) |> unique()
+  bf.images.split <- split(  # cellid.args.split
+    x = bf.images, 
+    f = rep(x = 1:n_cores, length.out = nrow(bf.images))
   )
   
-  if(!file.exists(imagej.path)) stop("Error! ImageJ executable not found at:" |> paste(imagej.path))
   
   # Prefix or full path to where filtered images will be stored.
   # fft.subdirs.prefix <- "bf_subset"
   
   fft.bfs.subdirs <- list()
-  for(i in seq_along(cellid.args.split)) {
+  for(i in seq_along(bf.images.split)) {
     # Save BF files
-    bf.files <- cellid.args.split[[i]] %>%
-      select(bf, path) %>% with(file.path(path, bf)) %>% unique()
+    bf.files <- bf.images.split[[i]] %>%
+      dplyr::select(bf, path) %>% with(file.path(path, bf)) %>% unique()
     
     # Make a directory to put them in
     fft.bfs.subdirectory <- paste0(fft.subdirs.prefix, "_", i)
@@ -94,10 +97,10 @@ run_fft_filter_on_bfs <- function(data.dir,
     })
   parallel::stopCluster(cl)
   
-  #### Symlink filtered BFs
+  #### Move filtered BFs
+  # Move filtered BFs in each subdirectory to a single "filtered" images directory.
   
-  # Symlink filtered BFs in each subdirectory to a single "filtered" images directory:
-  
+  # List all files.
   filtered.bfs <- dir(file.path(fft.bfs.subdirs, "filtered"), full.names = T)
   
   # Set a name and make a path for the final location of the FFT-filtered images.
