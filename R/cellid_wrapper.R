@@ -338,19 +338,19 @@ cell2 <- function(arguments,
     
     # Otherwise, write command and outputs to log files
     if(save.logs){
-      # Save parameters
+      # Save parameters.
       cellid.pars <- arguments_pos$parameters[1]
       file.copy(from = cellid.pars, to = paste0(arguments_pos$output[1], .Platform$file.sep),
                 overwrite = T)
-      # Save cellid standard output
+      # Save cellid standard output.
       cellid.log <- tempfile(tmpdir = arguments_pos$output[1],
                              fileext = ".txt",
                              pattern = "cellid_log-")
-      # Save cellid standard error
+      # Save cellid standard error.
       cellid.err <- tempfile(tmpdir = arguments_pos$output[1],
                              fileext = ".txt",
                              pattern = "cellid_error-")
-      # Save cellid system command
+      # Save cellid system command.
       cellid.cmd <- tempfile(tmpdir = arguments_pos$output[1],
                              fileext = ".txt",
                              pattern = "cellid_cmd-")
@@ -386,6 +386,16 @@ cell2 <- function(arguments,
   # Close cluster ####
   if(n_cores > 1){
     parallel::stopCluster(cl)
+  }
+  
+  # Save arguments data frame ####
+  if(save.logs){
+    args.path <- arguments_pos$path[1]
+    cellid.args <- tempfile(tmpdir = args.path,
+                            fileext = ".RDS",
+                            pattern = "cell2_args-")
+    cat(paste("\nSaving cell2 arguments to:", cellid.args))
+    saveRDS(object = arguments, file = cellid.args)
   }
   
   # Prepare output ####
