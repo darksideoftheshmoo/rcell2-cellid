@@ -166,7 +166,7 @@ cell2 <- function(arguments,
         cat("\nUsing built-in Cell-ID binary.")
         if(verbose) cat(" Printing Cell-ID's help message:\n") else cat("\n")
         cell.command <- cell2_command()
-        system(paste(cell.command, "-h"), ignore.stdout = verbose)
+        system(paste(cell.command, "-h"), ignore.stdout = !verbose)
         if(verbose) cat("\n\n")
       },
       error = function(e) {
@@ -178,7 +178,7 @@ cell2 <- function(arguments,
     cat("\nUsing custom Cell-ID binary.")
     if(verbose) cat(" Printing Cell-ID's help message:\n") else cat("\n")
     warning("Custom Cell-ID binary selected. Keep in mind that rcell2.cellid::cell2 is meant to wrap the updated version. Double check the outputs.")
-    system(paste(cell.command, "-h"), ignore.stdout = verbose)
+    system(paste(cell.command, "-h"), ignore.stdout = !verbose)
     if(verbose) cat("\n\n")
   }
   # Check the path
