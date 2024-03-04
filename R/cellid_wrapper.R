@@ -390,7 +390,7 @@ cell2 <- function(arguments,
   
   # Save arguments data frame ####
   if(save.logs){
-    args.path <- arguments_pos$path[1]
+    args.path <- arguments$path[1]
     cellid.args <- tempfile(tmpdir = args.path,
                             fileext = ".RDS",
                             pattern = "cell2_args-")
