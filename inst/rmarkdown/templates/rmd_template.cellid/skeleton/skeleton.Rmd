@@ -617,11 +617,13 @@ to catch severe issues early on.
 ### Check that your images are there
 
 The `arguments` function will run several tests (using `arguments_check` internally)
-before returning the list of images for Cell-ID.
-
-Warnings (or errors if desired) will be generated if the checks fail.
+before returning the list of images for Cell-ID. Warnings (or errors if desired) will 
+be raised if the checks fail.
 
 You can also set `check_fail = FALSE` to inspect all warnings without raising an error.
+
+> **Note**: the usage of the "file.pattern" argument is explained at the
+> [Arguments] section of this notebook.
 
 ```{r}
 # Get images and their metadata.
@@ -629,9 +631,6 @@ image_list <- rcell2.cellid::arguments(data.dir,
                                        check_fail = TRUE,
                                        file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
 ```
-
-> Note: the usage of the "file.pattern" argument is explained at the
-> [Arguments] section of this notebook.
 
 Inspect the image list:
 
