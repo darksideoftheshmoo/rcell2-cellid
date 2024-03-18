@@ -1132,80 +1132,6 @@ scan.results <-
 
 > Have a look at the function's source code if you like, its hopefully well commented.
 
-#### Plot summary
-
-A few "summary" quantities are calculated for each run:
-
-* `fft`
-* `el.p`
-* `ucids`
-* `persistence`
-* `roughness`
-* `roughness2`
-
-The average of these quantities may be useful for selecting optimal parameters.
-
-A few of combinations these are plotted below.
-
-First get the output dataframe:
-
-```{r}
-results.bound <- scan.results$results.bound
-```
-
-A few plots:
-
-```{r}
-results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
-  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
-  ggplot() +
-  geom_label(aes(persistence, el.p/fft, label = id,
-                 color = as.ordered(background_reject_factor))) +
-  ggtitle("Avg. frames per cell (persistence) VS 'el.p/fft' per parameter variation") +
-  theme_minimal() + scale_color_discrete()
-
-results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
-  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
-  ggplot() +
-  geom_label(aes(persistence, el.p/fft, label = id,
-                 color = as.ordered(max_split_over_minor)),
-             alpha = .7, fill = "NA") +
-  ggtitle("Avg. frames per cell (persistence) VS 'el.p/fft' per parameter variation") +
-  theme_minimal() + scale_color_discrete()
-```
-
-<!-- Internal note: TO-DO: add explanations of these quantitites. -->
-
-More plots:
-
-```{r}
-results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
-  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
-  ggplot() +
-  geom_label(aes(el.p, fft, label = id,
-                 color = as.ordered(background_reject_factor))) +
-  ggtitle("Avg. el.p VS Avg. fft.stat per parameter variation") +
-  theme_minimal() + scale_color_discrete()
-
-results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
-  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
-  ggplot() +
-  geom_label(aes(roughness, persistence, label = paste0(id, "=", background_reject_factor),
-                 color = as.ordered(background_reject_factor))) +
-  ggtitle("Avg. roughness per cell VS Avg. frames per cell (persistence) per parameter variation") +
-  theme_minimal() + scale_color_discrete()
-
-results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
-  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
-  ggplot() +
-  geom_label(aes(roughness2, persistence, label = paste0(id, "=", background_reject_factor),
-                 color = as.ordered(background_reject_factor))) +
-  ggtitle("Avg. roughness2 per cell VS Avg. frames per cell (persistence) per parameter variation") +
-  theme_minimal() + scale_color_discrete()
-```
-
-<!-- Internal note: TO-DO: add explanations of these quantitites. -->
-
 #### Review result in ImageJ
 
 Prepare virtual TIFF stacks for a one or more imaging channels, with the `make_scan_stacks` function.
@@ -1223,6 +1149,15 @@ to easily load the stacks as virtual Hyperstacks in ImageJ.
 
 ##### Option A: annotate_scan_output
 
+This function will annotate individual images, save them, and compose an ImageJ
+macro, to inspect them in a single _virtual_ stack.
+
+The macros are printed to the console, and are also available in the output 
+of `annotate_scan_output`.
+
+> **Tip**: copy-paste the macro to a new macro window in ImageJ, and hit run!
+> The stack should be loaded auto-magically.
+
 ```{r}
 imagej_macros <- annotate_scan_output(scan.results = scan.results, 
                                       in.place = FALSE,
@@ -1231,12 +1166,9 @@ imagej_macros <- annotate_scan_output(scan.results = scan.results,
                                       annotation.font = "Hack")
 ```
 
-> Copy paste the macro to a new macro window in ImageJ, and hit run!
-> The stack should be loaded auto-magically.
-
-Macros are saved to the output.
-
 ##### Option B: make_scan_stacks
+
+This function will make TIFF stacks, which can take a long time if the set is large.
 
 ```{r eval=F}
 stack.paths <- 
@@ -1244,9 +1176,7 @@ stack.paths <-
                    stack.channels = "BF.out")
 ```
 
-> Have a look at the function's source code if you like, its hopefully well commented.
-
-Paths and macros are saved in the output:
+Paths and macros are available in the output of `make_scan_stacks`:
 
 ```{r}
 names(stack.paths)
@@ -1258,6 +1188,87 @@ stack.paths$stack.paths
 
 ```{r}
 stack.paths$imagej.macros
+```
+
+#### Plotting useful quantities
+
+A few quantities are calculated for each run of the scan, which can be 
+indicative of segmentation quality, and may be useful when filtering 
+programatically (i.e. without visual inspection).
+
+* Cell-ID variables:
+  * `fft`
+  * `el.p`
+  * and so on...
+* Derived measures:
+  * `ucids`
+  * `persistence`: average number of frames per cell.
+  * `roughness`
+  * `roughness2`
+
+<!-- Internal note: TO-DO: add explanations of these quantitites. -->
+
+The average of these quantities may be useful for selecting optimal parameters.
+A few of combinations these are plotted below.
+
+First get the output data frame from the scan results:
+
+```{r}
+results.bound <- scan.results$results.bound
+```
+
+You can then start making a few plots.
+
+```{r}
+# Avg. frames per cell (persistence) VS 'el.p/fft' per parameter variation
+results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
+  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
+  ggplot() +
+  geom_label(aes(persistence, el.p/fft, label = id,
+                 color = as.ordered(background_reject_factor))) +
+  ggtitle("Avg. frames per cell (persistence) VS 'el.p/fft' per parameter variation") +
+  theme_minimal() + scale_color_discrete()
+
+# Avg. frames per cell (persistence) VS 'el.p/fft' per parameter variation
+results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
+  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
+  ggplot() +
+  geom_label(aes(persistence, el.p/fft, label = id,
+                 color = as.ordered(max_split_over_minor)),
+             alpha = .7, fill = "NA") +
+  ggtitle("Avg. frames per cell (persistence) VS 'el.p/fft' per parameter variation") +
+  theme_minimal() + scale_color_discrete()
+```
+
+And more plots:
+
+```{r}
+# Avg. el.p VS Avg. fft.stat per parameter variation
+results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
+  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
+  ggplot() +
+  geom_label(aes(el.p, fft, label = id,
+                 color = as.ordered(background_reject_factor))) +
+  ggtitle("Avg. el.p VS Avg. fft.stat per parameter variation") +
+  theme_minimal() + scale_color_discrete()
+
+# Avg. roughness per cell VS Avg. frames per cell (persistence) per parameter variation
+results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
+  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
+  ggplot() +
+  geom_label(aes(roughness, persistence, label = paste0(id, "=", background_reject_factor),
+                 color = as.ordered(background_reject_factor))) +
+  ggtitle("Avg. roughness per cell VS Avg. frames per cell (persistence) per parameter variation") +
+  theme_minimal() + scale_color_discrete()
+
+# Avg. roughness2 per cell VS Avg. frames per cell (persistence) per parameter variation
+results.bound %>% filter(channel == "BF.out", t.frame == 0) %>% 
+  left_join(parameters.df %>% mutate(id = 1:n()), by = "id") %>% 
+  ggplot() +
+  geom_label(aes(roughness2, persistence, label = paste0(id, "=", background_reject_factor),
+                 color = as.ordered(background_reject_factor))) +
+  ggtitle("Avg. roughness2 per cell VS Avg. frames per cell (persistence) per parameter variation") +
+  theme_minimal() + scale_color_discrete()
 ```
 
 #### Final parameter set
@@ -1276,8 +1287,6 @@ parameters.list <- rcell2.cellid::parameters_default(
   treat_brightfield_as_fluorescence_also = T
 )
 ```
-
-<!-- TODO: nombrar los stacks por parameter modificado -->
 
 #### Recreate arguments
 
