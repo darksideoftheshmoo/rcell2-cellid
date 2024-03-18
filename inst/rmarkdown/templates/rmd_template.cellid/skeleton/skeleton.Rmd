@@ -1201,10 +1201,9 @@ programatically (i.e. without visual inspection).
   * `el.p`
   * and so on...
 * Derived measures:
-  * `ucids`
-  * `persistence`: average number of frames per cell.
-  * `roughness`
-  * `roughness2`
+  * `ucids`: Total amount of distinct `ucid`s. Increases with segmentation artifacts and unstable tracking.
+  * `persistence`: Average number of time frames per cell. Correlates with stable segmentation and tracking.
+  * `roughness` & `roughness2`: Inidicative of the average "roughness" in the evolution of `a.tot` across time frames.
 
 <!-- Internal note: TO-DO: add explanations of these quantitites. -->
 
