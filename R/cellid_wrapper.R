@@ -1818,7 +1818,7 @@ join_mdas <- function(
     print_plot = T){
   
   # Make a list that contains all images, which differ only by a prefix in their file names.
-  result <- rename_mda(...)
+  result <- rename_mda(..., rename.function = NULL)
   
   # The script below extracts an integer identifier from that prefix into a new `exp.group` column.
   # The images are then grouped by `exp.group` and stage position index, and a new `t.frame` column is created (overriding the old one). Finally a new 
@@ -1863,25 +1863,27 @@ join_mdas <- function(
 
 #' Convenience function combining join_mdas and rename_mda
 #' 
-# @inheritParams join_mdas
-# @inheritDotParams rename_mda
+#' @inheritParams join_mdas
+#' @inheritParams rename_mda
 #' @export
 rename_mdas <- function(
     images.path,
     index_pattern = "^MDA(\\d+)_.*",
+    print_plot = T,
     identifier.pattern = ".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
     identifier.info = c("ch", Position="pos", time="t.frame"),
     channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")),
+    rename.function = file.symlink,
     ...
     ){
   
-  rename.df <- rename_mda(
-    images.path = images.path,
+  rename.df <- join_mdas(
     index_pattern = index_pattern,
+    print_plot = print_plot,
+    images.path = images.path,
     identifier.pattern = identifier.pattern,
     identifier.info = identifier.info,
     channel.maping.df = channel.maping.df,
-    ch.name = ch.name,
     ...)
   
   # You can now use this new `rename.df` data frame and `rename_mda` to rename the 
@@ -1889,7 +1891,10 @@ rename_mdas <- function(
   result <- rename_mda(
     images.path = images.path,
     rename.dataframe = rename.df,
+    identifier.pattern = identifier.pattern,
+    identifier.info = identifier.info,
     channel.maping.df = channel.maping.df,
+    rename.function=rename.function,
     ...)
   
   return(result)
