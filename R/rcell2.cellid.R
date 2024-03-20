@@ -24,7 +24,6 @@
 #' The executable is then wrapped seamlessly by the \code{\link[rcell2.cellid]{cell2}} function, such that CellID can now be used programatically within R.
 #' If you already have CellID in your system, you are welcome to use it instead of the bundled executable.
 #' 
-#' @docType package
 #' @name rcell2.cellid
 #' 
-NULL
+"_PACKAGE"

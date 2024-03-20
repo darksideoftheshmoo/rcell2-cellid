@@ -18,6 +18,8 @@
 #' 
 #' roughness2: This variation takes the sqrt of roughness and divides by total length. To correct for extra accumulated roughness in cells detected across more t.frames.
 #'
+#' Have a look at the examples in the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.
+#' 
 #' @param parameters.df Dataframe with one combination of parameters per row.
 #' @param scan.arguments Output from \code{arguments}, filtered to your scanning needs.
 #' @param test.dir Working directory for the parameter scan. Creates a sub-directory of \code{tempdir()} if NULL (the default).
@@ -28,8 +30,6 @@
 #' @rawNamespace import(foreach, except = c("when", "accumulate"))
 #' @return Data frame with the results. To use it, have a look at the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.
 #' @export
-#'
-#' @examples Have a look at the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.
 parameter_scan <- function(parameters.df, 
                            scan.arguments,
                            test.dir = NULL, 
@@ -369,7 +369,7 @@ make_info_box <- function(images){
 #'
 #' @param scan.results The full result from \code{parameter_scan}.
 #' @param annotate.channels Vector of channels which should be annotated.
-#' @param preserve.source.imgs If TRUE, an error will be raised when non-output (segmented) images are found in the input.
+#' @param preserve_source_imgs If TRUE, an error will be raised when non-output (segmented) images are found in the input.
 #' @param in.place If TRUE, the provided images will be annotated and overwritten. Else, the annotated images will be saved to a subdirectory of \code{test.dir} named by \code{annotated.imgs.dir}.
 #' @param annotated.imgs.dir If \code{in.place} is FALSE, the annotated images will be saved to a sub-directory of \code{test.dir} named by \code{annotated.imgs.dir}, and suffixed by the channel names.
 #' @param annotation.font Font for the annotations. A mono-spaced font is recommended.
@@ -381,7 +381,7 @@ make_info_box <- function(images){
 #'
 annotate_scan_output <- function(scan.results, 
                                  annotate.channels = "BF.out", 
-                                 preserve.source.imgs = TRUE,
+                                 preserve_source_imgs = TRUE,
                                  in.place = FALSE,
                                  annotated.imgs.dir = "annotated",
                                  annotation.font = "Hack") {
@@ -398,7 +398,7 @@ annotate_scan_output <- function(scan.results,
   test.frames <- scan.results$test.frames
   
   # Check for source images in the input list.
-  if(any(results.bound$is.out) & in.place & preserve.source.imgs) 
+  if(any(results.bound$is.out) & in.place & preserve_source_imgs) 
     stop("annotate_scan_output: non-output images detected for in place annotation. This would modify source data. To allow this, set 'preserve_non_out=FALSE'.")
   
   # Make stacks

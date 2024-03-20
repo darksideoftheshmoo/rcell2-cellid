@@ -83,6 +83,11 @@ tiff_plane_info <- function(path, frames = 1, ...) {
 
 #' Plot positions and field of view overlaps
 #' 
+#' Example:
+#' plot <- rcell2.cellid::arguments(metamorph_pics_dir, file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
+#'   filter(t.frame == min(t.frame)) |> 
+#'   plot_pos_overlaps()
+#'   
 #' @param image_list The output from the \code{arguments} function. Consider filtering to include only the first position.
 #' @param images The images dataframe as loaded from Cell-ID's output by \code{get_cell_data}.
 #' @param channels Vector of channel IDs (e.g. "BF").
@@ -95,11 +100,6 @@ tiff_plane_info <- function(path, frames = 1, ...) {
 #' @param print_plot Print the plot.
 #' @import dplyr ggplot2 tidyr
 #' @export
-#' @examples 
-#' plot <- rcell2.cellid::arguments(metamorph_pics_dir, file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
-#'   filter(t.frame == min(t.frame)) |> 
-#'   plot_pos_overlaps()
-#' 
 plot_pos_overlaps <- function(
     image_list=NULL,
     images=NULL,

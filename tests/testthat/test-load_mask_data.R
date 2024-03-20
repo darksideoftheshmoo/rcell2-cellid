@@ -29,7 +29,7 @@ test_that("cell.load.boundaries works on examples", {
   X.ref <- readRDS(X.ref)
   
   # Load Y
-  Y <- cell.load.boundaries(data.source = "masks.tsv", positions = X.ref$positions)
+  Y <- cell.load.boundaries(data_source = "masks.tsv", positions = X.ref$positions)
   # saveRDS(Y, "inst/extdata/test_data/cell.load.boundaries.RDS")  # Save Y ref
   
   # Load Y ref

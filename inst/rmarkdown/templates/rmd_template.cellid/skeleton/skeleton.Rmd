@@ -199,7 +199,7 @@ To load the boundary pixels, use the `cell.load.boundaries`:
 ```{r eval=F}
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
-  cell.load.boundaries(data.source = "masks.tsv",
+  cell.load.boundaries(data_source = "masks.tsv",
                        positions = cell.data$positions,
                        pixel.type = "b")
 ```
@@ -1119,7 +1119,7 @@ parameters.df
 
 The `parameter_scan` function uses temporary directories to work on images, 
 and avoids messing up the main data directory, 
-while running CellID in parallel for each parameter variation.
+while running Cell-ID in parallel for each parameter variation.
 
 Just run:
 
@@ -1161,7 +1161,7 @@ of `annotate_scan_output`.
 ```{r}
 imagej_macros <- annotate_scan_output(scan.results = scan.results, 
                                       in.place = FALSE,
-                                      preserve.source.imgs = TRUE,
+                                      preserve_source_imgs = TRUE,
                                       annotated.imgs.dir = "annotated",
                                       annotation.font = "Hack")
 ```
@@ -1439,7 +1439,7 @@ information from two kinds of sources:
 cell.boundaries <- 
   rcell2.cellid::cell.load.boundaries(
     data = cellid.args,
-    data.source = "masks.tsv",
+    data_source = "masks.tsv",
     pixel.type = "b"
   )
 ```

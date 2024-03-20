@@ -456,6 +456,8 @@ cluster_test <- function(){
 #' More importantly, CellID distinguishes and groups image channels using the first 3 letters in the file name,
 #' which limits planes to 100 per channel letter (R00 to R99).
 #'
+#' Example: cell.args <- cellArgs(path = path)
+#' 
 #' @param path Directory where images are stored, full path.
 #' @param parameters Path to the parameters file or a data.frame with "pos" (position number) and "parameter" (path) columns. Defaults to \code{parameters_write()}.
 #' @param BF.pattern Regex pattern to detect BF images only. Defaults to: \code{"^BF"}
@@ -470,8 +472,6 @@ cluster_test <- function(){
 #' @inheritParams arguments_check
 #' @return A data.frame with all the information needed to run CellID
 #' @import dplyr tidyr
-# @examples
-# cell.args <- cellArgs(path = path)
 #' @export
 arguments <- function(path,
                       parameters=rcell2.cellid::parameters_write(),
@@ -1547,9 +1547,8 @@ arguments_to_images <- function(arguments){
 #' @name %>%
 #' @rdname pipe
 #' @param lhs,rhs specify what lhs and rhs are
-# @examples
 #' @keywords internal
-#' # some examples if you want to highlight the usage in the package
+#' 
 NULL
 
 #' Pad numbers to the same length with leading zeros
@@ -1558,9 +1557,9 @@ cero_a_la_izquierda <- function(x, pad_char="0"){
   stringr::str_pad(string = x, width = set_pad, pad = pad_char)
 }
 
-#' Image file renamer for Metamorph MDA
+#' Image file renamer for Multi-dimensional acquisition image sets
 #' 
-#' MDA: "Multi dimensional acquisition" app in Metamorph.
+#' MDA: "Multi dimensional acquisition" app in Metamorph/MicroManager.
 #' 
 #' Uses regex groups to extract channel, position and time information from file names, and uses it to stitch new and friendlyer names.
 #' These are used to copy or link image files to a target directory.
@@ -1585,8 +1584,8 @@ cero_a_la_izquierda <- function(x, pad_char="0"){
 #' 
 #' **Limitations**: In the original file names, the identifiers for each field can only be integers.
 #'
-#' examples 
-#' images.path <- "~/Projects/PhD/data/uscope/multidimensional_exp-20211126-Far1NG-wt_y_dKar4/"
+#' Example:
+#' images.path <- "~/path/to/dataset/"
 #' rename_mda(images.path, rename.function = file.copy)
 #' 
 #' @import dplyr
@@ -1783,4 +1782,108 @@ rename_mda <- function(images.path = NULL,
     rename.path=unique(images.info$rename.path),
     status=images.info
   ))
+}
+
+#' Generate metadata for renaming multiple MDA runs into one set
+#' 
+#' The output of this function is meant to be passed on to \code{rename_mda}.
+#' 
+#' Find details in the help page of \code{rename_mda}.
+#' 
+#' Example:
+#' data.dir <- "/path/to/images/"
+#' rename.df <- rename_mdas(
+#'   images.path = data.dir,
+#'   index_pattern = "^MDA(\\d+)_.*",
+#'   # Example pattenrs:
+#'   identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
+#'   identifier.info = c("ch", Position="pos", time="t.frame"),
+#'   channel.maping.df = data.frame(ch = 1:4, 
+#'   ch.name = c("TFP", "BF", "RFP", "YFP")))
+#' result <- rename_mda(
+#'   images.path = data.dir, 
+#'   rename.dataframe = rename.df,
+#'   channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")))
+#' 
+#' @import dplyr ggplot2
+#' @param index_pattern Regular expression with a single capturing group for the MDA group index. It must be an integer.
+#' @param print_plot Prints a plot that can help check visually if the final image set will be complete.
+#' @inheritDotParams rename_mda
+#' @export
+#' @return A data frame to be passed to the \code{rename.dataframe} argument of \code{rename_mda}.
+#' @import stringr dplyr ggplot2
+join_mdas <- function(...,
+                      index_pattern = "^MDA(\\d+)_.*",
+                      print_plot = T){
+  
+  result <- rename_mda(...)
+  
+  rename.df <-
+    result$status |> 
+    mutate(ch=as.integer(ch)) |> 
+    mutate(pos=as.integer(pos)) |> 
+    mutate(t.frame=as.integer(t.frame)) |> 
+    mutate(exp.group = basename(file) |> sub(pattern=index_pattern, replacement="\\1") |> as.integer()) |> 
+    # Recreate time frame column.
+    arrange(ch, pos, exp.group, t.frame) |> 
+    group_by(ch, pos) |> 
+    mutate(t.frame = 1:n()) |> 
+    # Recreate the new file name for each image.
+    mutate(rename.file = paste0(ch.name, 
+                                "_Position", str_pad(pos, width=2, side = "left", pad = "0"),
+                                "_time", str_pad(t.frame, width=2, side = "left", pad = "0"),
+                                ".tif")) |> 
+    # Clean up.
+    select(-exp.group)
+  
+  if(print_plot){
+    plt <- rename.df |> unique() |> 
+      group_by(ch, pos) |> 
+      summarise(n_frames=n()) |> 
+      ggplot() +
+      geom_tile(aes(ch, pos, fill=n_frames)) +
+      theme_minimal()
+    
+    print(plt)
+  }
+  
+  return(rename.df)
+  
+  # NOT RUN.
+  # The output is meant to be passed on to "rename_mda", for example:
+  result <- rename_mda(images.path = data.dir, 
+                       rename.dataframe = rename.df,
+                       channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")))
+}
+
+#' Convenience function combining join_mdas and rename_mda
+#' 
+# @inheritParams join_mdas
+# @inheritDotParams rename_mda
+#' @export
+rename_mdas <- function(
+    images.path,
+    index_pattern = "^MDA(\\d+)_.*",
+    identifier.pattern = ".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
+    identifier.info = c("ch", Position="pos", time="t.frame"),
+    channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")),
+    ...
+    ){
+  
+  rename.df <- rename_mdas(
+    images.path = images.path,
+    index_pattern = index_pattern,
+    identifier.pattern = identifier.pattern,
+    identifier.info = identifier.info,
+    channel.maping.df = channel.maping.df,
+    ch.name = ch.name,
+    ...)
+  
+  result <- rename_mda(
+    images.path = images.path,
+    rename.dataframe = rename.df,
+    channel.maping.df = channel.maping.df,
+    ...)
+  
+  return(result)
 }
