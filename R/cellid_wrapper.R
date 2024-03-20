@@ -90,7 +90,7 @@ cell2_command <- function(){
 }
 
 #' Test the installed cell binary
-#' @inheritDotParams system
+#' @inheritDotParams base::system
 cell2_test <- function(...){
   system(command = paste(cell2_command(), "-h"), ...)
 }
