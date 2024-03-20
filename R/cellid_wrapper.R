@@ -1875,7 +1875,7 @@ rename_mdas <- function(
     ...
     ){
   
-  rename.df <- rename_mdas(
+  rename.df <- rename_mda(
     images.path = images.path,
     index_pattern = index_pattern,
     identifier.pattern = identifier.pattern,
