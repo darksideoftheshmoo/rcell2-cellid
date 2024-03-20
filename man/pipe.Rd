@@ -9,16 +9,4 @@
 \description{
 purrr's pipe operator
 }
-\keyword{#}
-\keyword{examples}
-\keyword{highlight}
-\keyword{if}
-\keyword{in}
 \keyword{internal}
-\keyword{package}
-\keyword{some}
-\keyword{the}
-\keyword{to}
-\keyword{usage}
-\keyword{want}
-\keyword{you}

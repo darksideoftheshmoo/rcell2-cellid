@@ -65,7 +65,6 @@ persistence: Average frames per cell
 roughness: function copied from the seewave package: "Roughness or total curvature is the integrated squared second derivative" (see: https://cran.r-project.org/web/packages/seewave/index.html).
 
 roughness2: This variation takes the sqrt of roughness and divides by total length. To correct for extra accumulated roughness in cells detected across more t.frames.
-}
-\examples{
-Have a look at the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.
+
+Have a look at the examples in the rmarkdown template bundled in the package, or get it with \code{get_workflow_template_cellid()}.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/cellid_wrapper.R
 \name{rename_mda}
 \alias{rename_mda}
-\title{Image file renamer for Metamorph MDA}
+\title{Image file renamer for Multi-dimensional acquisition image sets}
 \usage{
 rename_mda(
   images.path = NULL,
@@ -48,7 +48,7 @@ rename_mda(
 Invisibly returns a list with the unique rename.paths (output directories), and a \code{data.frame} with the mappings for name conversions and the output value from the renaming function (see the \code{rename.function} parameter's description).
 }
 \description{
-MDA: "Multi dimensional acquisition" app in Metamorph.
+MDA: "Multi dimensional acquisition" app in Metamorph/MicroManager.
 }
 \details{
 Uses regex groups to extract channel, position and time information from file names, and uses it to stitch new and friendlyer names.
@@ -74,7 +74,7 @@ Then, the value in \code{ch.name} is used to build the final file name.
 
 **Limitations**: In the original file names, the identifiers for each field can only be integers.
 
-examples 
-images.path <- "~/Projects/PhD/data/uscope/multidimensional_exp-20211126-Far1NG-wt_y_dKar4/"
+Example:
+images.path <- "~/path/to/dataset/"
 rename_mda(images.path, rename.function = file.copy)
 }

@@ -39,11 +39,8 @@ plot_pos_overlaps(
 \item{print_plot}{Print the plot.}
 }
 \description{
-Plot positions and field of view overlaps
-}
-\examples{
-plot <- rcell2.cellid::arguments(metamorph_pics_dir, file.pattern = "^(BF|[A-Z]FP)_Position(\\\\d+)_time(\\\\d+).tif$") |> 
+Example:
+plot <- rcell2.cellid::arguments(metamorph_pics_dir, file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
   filter(t.frame == min(t.frame)) |> 
   plot_pos_overlaps()
-
 }

@@ -6,6 +6,33 @@
 \usage{
 cell2_test(...)
 }
+\arguments{
+\item{...}{
+  Arguments passed on to \code{\link[base:system]{base::system}}
+  \describe{
+    \item{\code{command}}{the system command to be invoked, as a character string.}
+    \item{\code{intern}}{a logical (not \code{NA}) which indicates whether to
+    capture the output of the command as an \R character vector.}
+    \item{\code{ignore.stdout,ignore.stderr}}{a logical (not \code{NA})
+    indicating whether messages written to \file{stdout} or
+    \file{stderr} should be ignored.}
+    \item{\code{wait}}{a logical (not \code{NA}) indicating whether the \R
+    interpreter should wait for the command to finish, or run it
+    asynchronously.  This will be ignored (and the interpreter will
+    always wait) if \code{intern = TRUE}. When running the command
+    asynchronously, no output will be displayed on the \code{Rgui}
+    console in Windows (it will be dropped, instead).}
+    \item{\code{input}}{if a character vector is supplied, this is copied one
+    string per line to a temporary file, and the standard input of
+    \code{command} is redirected to the file.}
+    \item{\code{timeout}}{timeout in seconds, ignored if 0.  This is a limit for the
+    elapsed time running \code{command} in a separate process.  Fractions
+    of seconds are ignored.}
+    \item{\code{show.output.on.console,minimized,invisible}}{arguments
+    that are accepted on Windows but ignored on this platform, with a
+    warning.}
+  }}
+}
 \description{
 Test the installed cell binary
 }

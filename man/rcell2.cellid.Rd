@@ -2,6 +2,7 @@
 % Please edit documentation in R/rcell2.cellid.R
 \docType{package}
 \name{rcell2.cellid}
+\alias{rcell2.cellid-package}
 \alias{rcell2.cellid}
 \title{Yeast Cell Cytometry Suite for CellID in R.}
 \description{
@@ -36,3 +37,14 @@ The executable is then wrapped seamlessly by the \code{\link[rcell2.cellid]{cell
 If you already have CellID in your system, you are welcome to use it instead of the bundled executable.
 }
 
+\author{
+\strong{Maintainer}: Nicolás Agustín Méndez \email{nmendez.ar@gmail.com}
+
+Authors:
+\itemize{
+  \item German Beldorati Stark \email{gerbeldo@gmail.com}
+  \item Andreas Constantinou \email{indie_heights@hotmail.com}
+  \item Alan Bush \email{email@example.com}
+}
+
+}

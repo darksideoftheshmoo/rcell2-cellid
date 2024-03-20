@@ -68,4 +68,6 @@ Here are some example \code{file.pattern} regular expressions, when \code{file.p
 Note that "Z planes" will be processed by CellID the same way as other channels.
 More importantly, CellID distinguishes and groups image channels using the first 3 letters in the file name,
 which limits planes to 100 per channel letter (R00 to R99).
+
+Example: cell.args <- cellArgs(path = path)
 }

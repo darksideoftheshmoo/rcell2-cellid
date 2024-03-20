@@ -7,7 +7,7 @@
 annotate_scan_output(
   scan.results,
   annotate.channels = "BF.out",
-  preserve.source.imgs = TRUE,
+  preserve_source_imgs = TRUE,
   in.place = FALSE,
   annotated.imgs.dir = "annotated",
   annotation.font = "Hack"
@@ -18,7 +18,7 @@ annotate_scan_output(
 
 \item{annotate.channels}{Vector of channels which should be annotated.}
 
-\item{preserve.source.imgs}{If TRUE, an error will be raised when non-output (segmented) images are found in the input.}
+\item{preserve_source_imgs}{If TRUE, an error will be raised when non-output (segmented) images are found in the input.}
 
 \item{in.place}{If TRUE, the provided images will be annotated and overwritten. Else, the annotated images will be saved to a subdirectory of \code{test.dir} named by \code{annotated.imgs.dir}.}
 

@@ -544,66 +544,19 @@ In some setups, you might end up with several image sets, from consecutive MDAs.
 
 The full list of images can recovered and renamed to form a single image set for Cell-ID.
 
+The `rename_mdas` is meant for this use case.
+
 ```{r}
-result <- rename_mda(images.path = data.dir,
-                     # Set the rename function to NULL to disable renaming.
-                     rename.function = NULL,
-                     # Example pattenrs:
-                     identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
-                     identifier.info = c("ch", Position="pos", time="t.frame"),
-                     channel.maping.df = data.frame(ch = 1:4, 
-                                                    ch.name = c("TFP", "BF", "RFP", "YFP")))
+result <- rename_mdas(images.path = data.dir,
+                      # Example pattenrs:
+                      identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
+                      identifier.info = c("ch", Position="pos", time="t.frame"),
+                      channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")))
 
 result
 ```
 
-The above list contains all images, which differ only by a prefix in their file names.
-
-The script below extracts an integer identifier from that prefix into a new `exp.group` column.
-
-The images are then grouped by `exp.group` and stage position index, and a new `t.frame` column is created (overriding the old one). Finally a new 
-
-```{r}
-rename.df <-
-  result$status |> 
-  mutate(ch=as.integer(ch)) |> 
-  mutate(pos=as.integer(pos)) |> 
-  mutate(t.frame=as.integer(t.frame)) |> 
-  mutate(exp.group = basename(file) |> sub(pattern="^focus(\\d+)_.*", replacement="\\1") |> as.integer()) |> 
-  # Recreate time frame column.
-  arrange(ch, pos, exp.group, t.frame) |> 
-  group_by(ch, pos) |> 
-  mutate(t.frame = 1:n()) |> 
-  # Recreate the new file name for each image.
-  mutate(rename.file = paste0(ch.name, 
-                              "_Position", str_pad(pos, width=2, side = "left", pad = "0"),
-                              "_time", str_pad(t.frame, width=2, side = "left", pad = "0"),
-                              ".tif")) |> 
-  # Clean up.
-  select(-exp.group)
-```
-
-Quick review: in this plot, the total number of images in each channel and position is shown.
-
-```{r}
-rename.df |> unique() |> 
-  group_by(ch, pos) |> 
-  summarise(n_frames=n()) |> 
-  ggplot() +
-  geom_tile(aes(ch, pos, fill=n_frames)) +
-  theme_minimal()
-```
-
-You can now use this new `rename.df` data frame and `rename_mda` to rename the 
-multiple MDA series into a single series for Cell-ID.
-
-```{r}
-result <- rename_mda(images.path = data.dir, 
-                     rename.dataframe = rename.df,
-                     channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")))
-```
-
-The renamed images are here:
+The renamed images arecan be found in the following path:
 
 ```{r}
 result[["rename.path"]]

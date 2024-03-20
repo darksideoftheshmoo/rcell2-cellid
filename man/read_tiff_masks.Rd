@@ -48,7 +48,7 @@ and do not contain the necessary information. This might be relevant if the
 fluorescent images were aligned to the BF by CellID, such that the pixel
 coordinates differ between brightfield and fluorescence output images.
 If this is a problem for you, then use \code{cell.load.boundaries} with
-\code{data.source = 'masks.tsv'} to read CellID's TSV output files (for 
+\code{data_source = 'masks.tsv'} to read CellID's TSV output files (for 
 that see \code{cell2}).
 
 See CellID's mask_mod branch for more details: https://github.com/darksideoftheshmoo/cellID-linux/blob/mask_mod/README.md#branch-notes

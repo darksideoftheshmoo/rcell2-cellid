@@ -1806,18 +1806,22 @@ rename_mda <- function(images.path = NULL,
 #'   channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")))
 #' 
 #' @import dplyr ggplot2
-#' @param index_pattern Regular expression with a single capturing group for the MDA group index. It must be an integer.
+#' @param index_pattern Regular expression with a single capturing group for the MDA group index. The index matched by the pattern must be an integer, and mus uniquely identify each MDA run.
 #' @param print_plot Prints a plot that can help check visually if the final image set will be complete.
 #' @inheritDotParams rename_mda
 #' @export
 #' @return A data frame to be passed to the \code{rename.dataframe} argument of \code{rename_mda}.
 #' @import stringr dplyr ggplot2
-join_mdas <- function(...,
-                      index_pattern = "^MDA(\\d+)_.*",
-                      print_plot = T){
+join_mdas <- function(
+    index_pattern = "^MDA(\\d+)_.*",
+    ...,
+    print_plot = T){
   
+  # Make a list that contains all images, which differ only by a prefix in their file names.
   result <- rename_mda(...)
   
+  # The script below extracts an integer identifier from that prefix into a new `exp.group` column.
+  # The images are then grouped by `exp.group` and stage position index, and a new `t.frame` column is created (overriding the old one). Finally a new 
   rename.df <-
     result$status |> 
     mutate(ch=as.integer(ch)) |> 
@@ -1850,6 +1854,7 @@ join_mdas <- function(...,
   return(rename.df)
   
   # NOT RUN.
+  # Quick review: in this plot, the total number of images in each channel and position is shown.
   # The output is meant to be passed on to "rename_mda", for example:
   result <- rename_mda(images.path = data.dir, 
                        rename.dataframe = rename.df,
@@ -1879,6 +1884,8 @@ rename_mdas <- function(
     ch.name = ch.name,
     ...)
   
+  # You can now use this new `rename.df` data frame and `rename_mda` to rename the 
+  # multiple MDA series into a single series for Cell-ID.
   result <- rename_mda(
     images.path = images.path,
     rename.dataframe = rename.df,
