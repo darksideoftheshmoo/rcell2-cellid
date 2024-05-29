@@ -28,6 +28,11 @@ cell2_test(...)
     \item{\code{timeout}}{timeout in seconds, ignored if 0.  This is a limit for the
     elapsed time running \code{command} in a separate process.  Fractions
     of seconds are ignored.}
+    \item{\code{receive.console.signals}}{a logical (not \code{NA}) indicating
+    whether the command should receive events from the terminal/console that
+    \R runs from, particularly whether it should be interrupted by
+    \kbd{Ctrl-C}. This will be ignored and events will always be received when
+    \code{intern = TRUE} or \code{wait = TRUE}.}
     \item{\code{show.output.on.console,minimized,invisible}}{arguments
     that are accepted on Windows but ignored on this platform, with a
     warning.}

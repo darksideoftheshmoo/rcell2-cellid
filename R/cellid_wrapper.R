@@ -492,9 +492,9 @@ arguments <- function(path,
   # Check capturing groups order argument
   if(!identical(sort(file.pattern.groups.order),
                 sort(c("ch", "pos", "t.frame")))) 
-    stop('arguments error: file.pattern.groups.order must contain "ch", "pos", and "t.frame" (in an appropriate order).')
+    stop('arguments error: `file.pattern.groups.order` must contain "ch", "pos", and "t.frame" (in an appropriate order).')
   if (file.pattern.groups.order[1] != "ch") {
-    stop('arguments error: the first item in file.pattern.groups.order must be "ch". Cell-ID uses the first three letters to group imaging channels.')
+    stop('arguments error: the first item in `file.pattern.groups.order` must be "ch". Cell-ID uses the first three letters of the file name to group imaging channels.')
   }
   
   # Normalize the images path
@@ -540,8 +540,10 @@ arguments <- function(path,
   }
   
   # Checks
-  if(nrow(brihtfield_pics) == 0) stop("arguments error: Brightfield images missing, Check your directories and file.pattern.")
-  if(nrow(fluor_pics) == 0) stop("arguments error: Fluorescence images missing, but BFs were found. Check your directories, file.pattern, and consider setting bf_as_fl.")
+  if(nrow(brihtfield_pics) == 0) 
+    stop("arguments error: All brightfield images are missing, Check your directories and file.pattern.")
+  else if(nrow(fluor_pics) == 0) 
+    stop("arguments error: All fluorescence images are missing, but BFs were found. Check your directories, file.pattern, and consider setting bf_as_fl.")
   
   # Bind df's
   arguments.df <- dplyr::left_join(
@@ -553,7 +555,10 @@ arguments <- function(path,
   # Check for missing BFs
   if(any(is.na(arguments.df$bf))){
     filter(arguments.df, is.na(bf)) %>% print()
-    stop("arguments error: there are missing brightfield images")
+    if(check_fail)
+      stop("arguments error: there are missing brightfield images")
+    else
+      warning("arguments error: there are missing brightfield images (continuing because `check_fail` is set to false).")
   }
   
   # Add output column ####
@@ -565,7 +570,7 @@ arguments <- function(path,
     arrange(pos, t.frame)
   
   # Add parameters column ####
-  # Recycle parameters if lenght is 1
+  # Recycle parameters if length is 1.
   if(length(parameters) == 1 & is.atomic(parameters)){
     arguments.df.out$parameters <- parameters
   } else {
@@ -593,7 +598,7 @@ arguments <- function(path,
                     "This may cause unexpected behaviour!\n",
                     collapse = " "))
     }
-    # Add columnt to arguments
+    # Add column to arguments.
     arguments.df.out <- 
       dplyr::left_join(arguments.df.out,
                        dark_channels,
@@ -613,7 +618,7 @@ arguments <- function(path,
                     "This may cause unexpected behaviour!\n",
                     collapse = " "))
     }
-    # Add columnt to arguments
+    # Add column to arguments.
     arguments.df.out <- 
       dplyr::left_join(arguments.df.out,
                        flat_channels,
@@ -622,13 +627,16 @@ arguments <- function(path,
   
   # Final checks ####
   if(all(is.na(arguments.df.out$t.frame))){
-    warning("arguments warning: No t.frame data extracted, replacing all NAs with '0'. Check your directories and file.pattern if this is unexpected.")
+    warning("arguments warning: No t.frame data extracted, replacing all NAs with '0'. Check your directories and `file.pattern` if this is unexpected.")
     arguments.df.out$t.frame <- 0
   }
   
   if(any(is.na(arguments.df.out)) | any(arguments.df.out == "")){
     print(arguments.df.out)
-    stop("arguments error: at least one of the values in the arguments.df dataframe is missing or blank, check your directories and file.pattern")
+    if(check_fail)
+      stop("arguments error: at least one of the values in the arguments.df dataframe is missing or blank, check your directories and `file.pattern`.")
+    else
+      warning("arguments error: at least one of the values in the arguments.df dataframe is missing or blank, check your directories and `file.pattern`.")
   }
   
   # Add Cell-ID's t.frame (annoying) indexing
