@@ -598,7 +598,37 @@ image_list <- rcell2.cellid::arguments(data.dir,
                                        file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
 ```
 
-Inspect the image list:
+If images are missing, the command above will fail.
+
+Missing images in the set can be located visually by plotting with `geom_tile`.
+
+In this case, it is important to set `bf_as_fl = T` and `check_fail = F` in order
+to get the complete image list (i.e. including `BF` as a channel), and skip errors
+if images are missing (and thus the image list may be malformed).
+
+An example follows:
+
+```{r}
+i <- rcell2.cellid::arguments(path = data.dir, 
+                              bf_as_fl = T,
+                              check_fail = F,
+                              file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
+
+d <- i |> 
+  group_by(pos, ch, t.frame) |> 
+  summarise(n=n()) |> 
+  ungroup() |> 
+  complete(pos, ch, t.frame)
+
+p <- d |> ggplot() +
+  geom_tile(aes(t.frame, pos, fill=!is.na(n))) +
+  facet_wrap(~ch) + 
+  theme_minimal()
+
+p  # plotly::ggplotly(p)
+```
+
+You can also inspect the table manually:
 
 ```{r}
 View(image_list)
