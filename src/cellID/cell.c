@@ -414,9 +414,10 @@ int main(int argc, char *argv[]){
   //https://azrael.digipen.edu/~mmead/www/Courses/CS180/getopt.html
   if (optind < argc) {
     printf(" - Non-option args: ");
-    while (optind < argc)
+    while (optind < argc){
       printf("%s ", argv[optind++]);
-      printf("\n");
+    }
+    printf("\n");
   }
 
   //Checking for parameters file option in command line manually

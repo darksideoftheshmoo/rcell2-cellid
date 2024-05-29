@@ -89,9 +89,9 @@ float *get_data_from_tif_file(char *file,
   TIFF *tif;
 
   tdata_t buf;
-  uint32 image_width,image_length,row,rowsperstrip;
-  uint16 planarconfig,bitspersample;
-  uint16 photometric; //whether black or white is high
+  uint32_t image_width,image_length,row,rowsperstrip;
+  uint16_t planarconfig,bitspersample;
+  uint16_t photometric; //whether black or white is high
 
   int scanline_size;
 
@@ -251,10 +251,10 @@ int output_data_to_tif_file(char *file,
   //(xmax_data,ymax_data)=size of input array (ie, "output_data")
 
   //uint32 rowsperstrip=8;
-  uint32 planarconfig=1;
-  uint16 bitspersample=8;
-  uint32 image_width=xmax_data;
-  uint16 photometric=1;
+  uint32_t planarconfig=1;
+  uint16_t bitspersample=8;
+  uint32_t image_width=xmax_data;
+  uint16_t photometric=1;
 
   float tmp;
   float onetmp;
@@ -323,7 +323,7 @@ int output_data_to_tif_file(char *file,
     scale=0.0;
   }
 
-  bitspersample=(uint16)bit_size;
+  bitspersample=(uint16_t)bit_size;
 
   //Value of one degree of grayness:
   if (bitspersample==8){

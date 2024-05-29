@@ -81,6 +81,8 @@ End-copyright-notice-for-Libtiff
 #include "parameters.h"
 #include "flatten.h"
 
+#include <inttypes.h>  // Include this header for PRIiPTR
+
 #define pi 3.1415926535
 #define twopi 2.0*3.1415926535
 #define nbins_for_cut_calculation 1000
@@ -1985,14 +1987,14 @@ int recombination_check(int i_t0,
 }
 
 /*************************************************************/
-int combine_cells_in_cs_array(i0,i1,i_t0){
+int combine_cells_in_cs_array(int i0, int i1, int i_t0){
   //Take cell cs[i0] and attach it to cs[i1]. Do it all the way back
   //to i_t0. After attaching for each time, delete that cell. If the
   //cell is totally deleted return 0 otherwise return 1;
 
-  //This will screw-up the n_found arrays found in find_cells. Ie, after
-  //calling this, you can't rely on the information from find_cell() and
-  //have to run it again.
+  //This will screw-up the n_found arrays found in find_cells. That is, 
+  //after calling this, you can't rely on the information from find_cell()
+  //and have to run it again.
 
   struct blob *b0;
   struct blob *b1;
@@ -4300,8 +4302,8 @@ struct point *point_malloc(void){
     pmem_start=(struct point_mem *)malloc(sizeof(struct point_mem));
     pmem_start->next=NULL;
     pmem_cur=pmem_start;
-    i=(int)pmem_start;
-    j=(int)(&(pmem_start->p)); //Make sure these are the same, otherwise
+    i=(intptr_t)pmem_start;
+    j=(intptr_t)(&(pmem_start->p)); //Make sure these are the same, otherwise
     //need to calculate an offset for point_free().
     if(i!=j){
       printf("Need to introduce an offset into point_free() to since\n");
@@ -4824,7 +4826,7 @@ void free_pixels_from_earlier_time_points(){
   return;
 }
 /**********************************************************/
-int total_overlap_of_all_cells(offset_i,offset_j){
+int total_overlap_of_all_cells(int offset_i, int offset_j){
 
   int total;
   int i;
@@ -5964,7 +5966,7 @@ return 1;
 void debug_test(int flag){
 
   printf("Here_debug: %i\n",flag);fflush(stdout);
-  printf("--->%i",(int)interior_m1[0]);
+  printf("--->%" PRIiPTR "\n", (intptr_t)interior_m1[0]);
   if (interior_m1[0]!=NULL){
     printf("----------------: (%i,%i)\n",interior_m1[0]->i,
 	   interior_m1[0]->j);

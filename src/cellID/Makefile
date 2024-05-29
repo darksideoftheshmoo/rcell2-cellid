@@ -1,5 +1,5 @@
 # gcc -Wall enables all compiler's warning messages.
-CFLAGS = -Wall
+CFLAGS = -Wall -Wno-unused-variable -Wno-unused-but-set-variable
 
 # Guia para incluir cosas:
 ## -I <include directory>
