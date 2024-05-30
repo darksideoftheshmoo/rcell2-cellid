@@ -570,15 +570,38 @@ arguments <- function(path,
     arrange(pos, t.frame)
   
   # Add parameters column ####
-  # Recycle parameters if length is 1.
-  if(length(parameters) == 1 & is.atomic(parameters)){
-    arguments.df.out$parameters <- parameters
-  } else {
-  # Else bind to the passed parameters data.frame
+  if(typeof(parameters) == "character" && is.atomic(parameters)){
+    # If the provided "parameters" is a character vector.
+    cat("Using parameters from path.\n")
+    if(length(parameters) == 1){
+      # Recycle "parameters" if length is 1.
+      cat("Recycling parameters for all positions.\n")
+      arguments.df.out$parameters <- parameters
+    } else if (length(parameters) == nrow(arguments.df.out)){
+      # Without recycling.
+      cat("Using position-specific parameters.\n")
+      arguments.df.out$parameters <- parameters
+    } else {
+      # Stop on un-matched condition.
+      stop("The number of paths to parameter files did not match the length of the arguments dataframe.")
+    }
+  } else if(is.data.frame(parameters)) {
+    # If "parameters" is a data.frame, bind it to "arguments.df.out".
+    cat("Binding parameters from a data.frame.\n")
     arguments.df.out <- left_join(arguments.df.out,
                                   dplyr::select(parameters, pos, parameters),
                                   by = "pos")
+  } else if(is.list(parameters)){
+    # If "parameters" is not a data.frame (captured above) but is a list,
+    # write it to a file and add it to the arguments.
+    cat("Writing parameters from a list, and recycling them for all positions.\n")
+    parameters.txt <- parameters_write(parameters.list = parameters)
+    arguments.df.out$parameters <- parameters.txt
+  } else {
+    # Stop on un-matched condition.
+    stop("The parameters argument must be a character vector, a list, or a data.frame object.")
   }
+  
   # Normalize parameters' paths
   arguments.df.out <- arguments.df.out %>% 
     mutate(parameters = normalizePath(parameters))
