@@ -459,7 +459,7 @@ cluster_test <- function(){
 #' Example: cell.args <- cellArgs(path = path)
 #' 
 #' @param path Directory where images are stored, full path.
-#' @param parameters Path to the parameters file or a data.frame with "pos" (position number) and "parameter" (path) columns. Defaults to \code{parameters_write()}.
+#' @param parameters Parameters for Cell-ID. Either a path to the parameters file, a list of parameters (e.g. from \code{parameters_default()}), or a \code{data.frame} with "pos" (position number) and "parameter" (path) columns. Defaults to \code{parameters_write()}.
 #' @param BF.pattern Regex pattern to detect BF images only. Defaults to: \code{"^BF"}
 #' @param file.pattern Regex pattern for all tif files, with one group for each of \code{c("ch", "pos", "t.frame")} in \code{file.pattern.groups.order}. Uses \code{"^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"} by default. To omit time, use an empty group for the t.frame in the regex, for example: \code{"^(BF|[A-Z]FP)_Position(\\d+)().tif$"}.
 #' To consider Z-stacks, use something like "^(BF|[A-Z]\\d+)_Position(\\d+)_time(\\d+).tif$"
@@ -822,7 +822,8 @@ arguments_check <- function(arguments_df, check_fail=F){
 #' Default parameters list for Cell-ID
 #' 
 #' Returns a list of key-value pairs, for the default Cell-ID parameters.
-#' It's output will tipically be used by \code{parameters_write}.
+#' It's output will tipically be used by \code{parameters_write} or the 
+#' \code{arguments}.functions.
 #' 
 #' @details 
 #' 

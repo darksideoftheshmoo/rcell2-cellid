@@ -841,7 +841,7 @@ parameters_help$max_dist_over_waist
 
 #### Values
 
-Here is a valid, hand-made parameter list, with the defaults I like:
+Here is a valid, _hand-made_ parameter list, with the defaults I like:
 
 ```{r eval=F}
 parameters.list <- list(
@@ -858,8 +858,9 @@ parameters.list <- list(
   )
 ```
 
-`parameters_default` is a helper function to prepare the parameters list more
-easily, and also documents them (run `?parameters_default` for help).
+Fortunately you don't have to do this by hand. `parameters_default` is a helper 
+function to prepare the parameters list more easily, and also documents them 
+(run `?parameters_default` to learn more).
 
 Lets use the `parameters_default` function to generate all the required 
 parameters, overriding only the value of the `background_reject_factor` parameter:
@@ -875,6 +876,10 @@ parameters.list$max_split_over_minor
 ```
 
 #### The file
+
+> *Note*: This section is no longer critical. The `arguments` function also 
+> accepts a list of parameters, or a > `data.frame` with position numbers and 
+> paths to parameter files. See `?arguments` for details
 
 This parameter list must be written to a `parameters.txt` plain text file with 
 the proper syntax, which Cell-ID will read later on.

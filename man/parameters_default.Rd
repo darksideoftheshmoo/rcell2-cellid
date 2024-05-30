@@ -52,7 +52,8 @@ A nice list of named parameters, input for \code{parameters_write}.
 }
 \description{
 Returns a list of key-value pairs, for the default Cell-ID parameters.
-It's output will tipically be used by \code{parameters_write}.
+It's output will tipically be used by \code{parameters_write} or the 
+\code{arguments}.functions.
 }
 \details{
 Documentation for each parameter can be found at: https://github.com/darksideoftheshmoo/cellID-linux#parameters

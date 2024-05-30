@@ -21,7 +21,7 @@ arguments(
 \arguments{
 \item{path}{Directory where images are stored, full path.}
 
-\item{parameters}{Path to the parameters file or a data.frame with "pos" (position number) and "parameter" (path) columns. Defaults to \code{parameters_write()}.}
+\item{parameters}{Parameters for Cell-ID. Either a path to the parameters file, a list of parameters (e.g. from \code{parameters_default()}), or a \code{data.frame} with "pos" (position number) and "parameter" (path) columns. Defaults to \code{parameters_write()}.}
 
 \item{BF.pattern}{Regex pattern to detect BF images only. Defaults to: \code{"^BF"}}
 
