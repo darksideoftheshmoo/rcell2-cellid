@@ -72,7 +72,7 @@ library(tidyverse)  # import numpy as np (?)
 # Introduction
 
 This notebook contains a minimal [Example workflow], with a broad overview of the pipeline,
-and a [Full usage guide] with in-depth explanations and advanced usage examples.
+and a [Usage guide] with in-depth explanations and advanced usage examples.
 
 ## Friendly reminder
 
@@ -84,7 +84,7 @@ and a [Full usage guide] with in-depth explanations and advanced usage examples.
 
 This is only meant as a quick example.
 
-For full usage details, skip to the [Full usage guide] section of this notebook, 
+For full usage details, skip to the [Usage guide] section of this notebook, 
 and read it carefully.
 
 Always read the `?help` before using a function ;) specially when they do file operations,
@@ -345,7 +345,7 @@ rcell2.magick::cellSpreadPlot(cdata, images)
 rcell2.magick::shinyCell(cdata, paths = images)
 ```
 
-# Full usage guide
+# Usage guide
 
 This section has detailed explanations and usage examples of the tools in `rcell2.cellid`.
 
@@ -382,7 +382,7 @@ if(!requireNamespace("remotes")){
   install.packages("remotes")
 }
 
-if(!requireNamespace("rcell2.examples")){
+if(!requireNamespace("rcell2.examples", quietly = T)){
   # Install the "rcell2.examples" package if not found:
   remotes::install_github("darksideoftheshmoo/rcell2.examples")
 }
@@ -818,7 +818,7 @@ data.dir <- normalizePath(new.data.dir)
 
 ## Segmentation
 
-In this section we will prepare and run Cell-ID.
+In this section we will prepare arguments for Cell-ID and segment cells in images.
 
 ### Parameters
 
@@ -839,40 +839,9 @@ Also available in list format:
 parameters_help$max_dist_over_waist
 ```
 
-#### Example parameter set
+#### Values
 
-`parameters_default` is a helper function to prepare parameters more easily:
-
-```{r}
-parameters.list <- 
-  rcell2.cellid::parameters_default(background_reject_factor = 0.8)
-
-parameters.list$max_split_over_minor
-```
-
-Parameters must be written to a `parameters.txt` plain text file with the proper syntax,
-which Cell-ID will read later on.
-
-For this purpose, you may use the `parameters_write()` function. It writes the parameters,
-and returns the path where it was saved.
-
-<!-- Internal note: consider moving this step into cell2() -->
-```{r}
-parameters.txt <- rcell2.cellid::parameters_write(parameters.list)
-
-parameters.txt
-```
-
-Este path es el que hay que pasarle a `arguments()` en la siguiente sección.
-
-Revisemos el contenido del `parameters.txt` que generamos recién:
-
-```{r}
-# Mostrar el contenido del archivo
-writeLines(readLines(parameters.txt))
-```
-
-For clarity, here is a valid, hand-made parameter list, with the same defaults:
+Here is a valid, hand-made parameter list, with the defaults I like:
 
 ```{r eval=F}
 parameters.list <- list(
@@ -889,20 +858,66 @@ parameters.list <- list(
   )
 ```
 
+`parameters_default` is a helper function to prepare the parameters list more
+easily, and also documents them (run `?parameters_default` for help).
+
+Lets use the `parameters_default` function to generate all the required 
+parameters, overriding only the value of the `background_reject_factor` parameter:
+
+```{r}
+parameters.list <- 
+  rcell2.cellid::parameters_default(
+    background_reject_factor = 0.4
+  )
+
+parameters.list$background_reject_factor
+parameters.list$max_split_over_minor
+```
+
+#### The file
+
+This parameter list must be written to a `parameters.txt` plain text file with 
+the proper syntax, which Cell-ID will read later on.
+
+For this purpose, you may use the `parameters_write` function. As its name 
+implies, it writes the parameters, and returns the path where it was saved.
+
+<!-- Internal note: consider moving this step into cell2() -->
+
+```{r}
+parameters.txt <- rcell2.cellid::parameters_write(parameters.list)
+
+parameters.txt
+```
+
+This path can be passed to the `arguments()` function in the next section.
+
+Lets read the contents of the `parameters.txt` file we just saved.
+
+```{r}
+# Mostrar el contenido del archivo
+writeLines(readLines(parameters.txt))
+```
+
 ### Arguments
 
-The `arguments` function outputs a data.frame with information from images, 
-which is needed to run Cell-ID.
+The `arguments` function outputs a `data.frame` with information from images and
+segmentation parameters, which is needed to run Cell-ID.
 
 The key parameter is `file.pattern`, a regular expression used to find image
-files in the `data.dir` path.
+files in the `data.dir` folder.
 
-By default, `arguments` uses:
+The path to the images of your experiment must be already defined,
+as explained in the [Path to the dataset] section of this notebook.
+
+#### Image file pattern
+
+By default, `arguments` uses the following pattern:
 
     "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
 
-Enclosed in parentheses are the "capture groups" of the regular expression.
-These delimit the parts of the file name which contain identifiers for 
+Note that enclosed in parentheses are the "capture groups" of the regular expression.
+These delimit the parts of the file name which contain identifiers for:
 
 1. Imaging channel (`ch`).
 2. Stage position index (`pos`).
@@ -910,7 +925,7 @@ These delimit the parts of the file name which contain identifiers for
 
 If your experiment has a single time frame, and it is not part of the file names,
 the content of the corresponding capturing group can be deleted (leaving the
-empty parentesis in place):
+empty parenthesis in place):
 
     "^(BF|[A-Z]FP)_Position(\\d+)().tif$"
 
@@ -927,21 +942,13 @@ If the identifiers on your file names appear in a different order, either rename
 shown in the [Renaming images] section, or reorder the default `file.pattern.groups.order`
 in the call to `arguments`.
 
-Note, however, that the channel identifier _must_ be first. Cell-ID will use the **first
-three letters** to distinguish and group imaging channels.
-
-#### Input file pattern
-
-Adjust file patterns in `rcell2.cellid::arguments`. Go through the function's
-help page to learn about its parameters.
-
-The path to the images of your experiment must be alredy defined,
-as explained in the [Path to the dataset] section of this notebook.
+Note, however, that the channel identifier _must_ be first. Cell-ID will use the
+**first three letters** to distinguish and group imaging channels.
 
 > **Important**: the patterns used in `arguments` must match the ones used in
 > `get_cell_data` when loading Cell-ID's output (later on).
 
-Original images file pattern examples; choose one and comment the others:
+Images file pattern examples; choose one and comment the others:
 
 ```{r}
 # Default value: all channels, no z-stack.
@@ -954,14 +961,22 @@ arguments.file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
 # arguments.file.pattern <- "^(BF|TFP)_Position(\\d+)().tif$"
 ```
 
-#### Usage example
+Learn more by opening the help page of the `rcell2.cellid::arguments` function.
 
-Check that image file names are properly recognized:
+#### Usage
+
+Now, load image file names from a `data.dir` directory, with names matching the
+`arguments.file.pattern` regular expression, and set segmentation `parameters`:
 
 ```{r}
-cellid.args <- rcell2.cellid::arguments(data.dir,
-                                        file.pattern = arguments.file.pattern,
-                                        parameters = parameters.txt)  # Parameters are specified here.
+cellid.args <- rcell2.cellid::arguments(
+  # Path to the images.
+  path = data.dir,
+  # File pattern to recognize the images.
+  file.pattern = arguments.file.pattern,
+  # Parameters are specified here.
+  parameters = parameters.list
+)
 
 cellid.args
 ```
@@ -1015,9 +1030,9 @@ if(!requireNamespace("magick")){
 }
 ```
 
-#### Example setup
+#### Setup
 
-Define working paths for parameter testing:
+Define working paths for parameter scanning:
 
 * `data.dir`: directory with the original images (they will not be modified).
 * `test.dir`: directory for temporary files of the tuning process.
@@ -1039,13 +1054,13 @@ Setup arguments and patterns as usual (if not done already):
 arguments.file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
 
 # Get full image list
-cellid.args <- rcell2.cellid::arguments(data.dir,
+cellid.args <- rcell2.cellid::arguments(path = data.dir,
                                         file.pattern = arguments.file.pattern)
 ```
 
 #### Image set
 
-Choose which image sets in `cellid.args` you wish to use for the parameter scan.
+Choose which of the image sets in `cellid.args` you wish to use for the parameter scan.
 
 For example, choose some *positions* (image sets) and *t.frame*s (time frames)
 to restrict the image test set to only some of them.
