@@ -773,22 +773,7 @@ if(!requireNamespace("magick")){
 
 #### Setup
 
-Define working paths for parameter scanning:
-
-* `data.dir`: directory with the original images (they will not be modified).
-* `test.dir`: directory for temporary files of the tuning process.
-
-```{r}
-# Set your own path, or uncomment the following to use example images.
-# data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
-#                         package = "rcell2.examples")
-
-# The output of the parameter scan will be saved here:
-test.dir <- file.path(tempdir(), "images_directory", "test.dir")
-test.dir
-```
-
-Setup arguments and patterns as usual (if not done already):
+Prepare the patterns and arguments as usual (if not done already):
 
 ```{r}
 # Default value: all channels, no z-stack.
@@ -799,7 +784,7 @@ cellid.args <- rcell2.cellid::arguments(path = data.dir,
                                         file.pattern = arguments.file.pattern)
 ```
 
-#### Image set
+##### Image set
 
 Choose which of the image sets in `cellid.args` you wish to use for the parameter scan.
 
@@ -829,22 +814,39 @@ scan.arguments <-
 scan.arguments
 ```
 
-#### Parameter combinations
+##### Parameter sets
 
-For each parameter variation, we need a new parameters file.
-The simplest way to generate parameter combinations is with rcell2's `parameters_default` and R's `expand.grid`.
+For each parameter variation, we need a new parameters file. The simplest way to
+generate parameter combinations is with rcell2's `parameters_default` and R's `expand.grid`.
 
-Because scanning over all parameters space would take ages, you can follow a simplified procedure of 3 small scans, on a small subset of images. Here is a procedure to reduce the scan's complexity:
+Because scanning over all parameters space would take ages, you can follow a 
+simplified procedure of 3 small scans, on a small subset of images. 
 
-1. First scan over `background_reject_factor` *only*.
-2. Fix `background_reject_factor` to its optimal value, which minimizes segmentation artifacts.
-3. Scan over `max_dist_over_waist` **and** set `max_split_over_minor` to a high value (e.g. `max_split_over_minor=5`).
-  - This is because `max_dist_over_waist` splits "figure-8" cells into two, and `max_split_over_minor` will re-join shmoo-like cells, thus confounding the interpretation of the parameter scan.
-4. Fix `max_dist_over_waist` to its optimal value, which adjacent cells and daughters cells from their mothers.
-  - At this point you must tolerate projected growth (i.e. shmoos) being split from the rest of the cell body.
-5. Scan over `max_split_over_minor` *only*, which should minimize the amount of growth projections split from their bodies.
+Here is a procedure to reduce the scan's complexity:
 
-In the following example, only `background_reject_factor` is scanned, across values produced with R's `seq` function:
+0. Relax segmentation parameters:
+  - Set `max_split_over_minor` and `max_pixels_per_cell` to high values (e.g. `5` and `5000`).
+  - Set `min_pixels_per_cell` to a low value (e.g. `30`).
+1. First scan over `background_reject_factor` *only* (e.g. between `0` and `2`).
+  - Set `background_reject_factor` to its optimal value, which maximizes 
+    detection of cells, and minimizes segmentation artifacts.
+3. Scan over `max_dist_over_waist`.
+4. Fix `max_dist_over_waist` to its optimal value, which adjacent cells and 
+   daughters cells from their mothers.
+  - At this point you must tolerate projected growth (i.e. shmoos) being split 
+    from the rest of the cell body.
+5. Scan over `max_split_over_minor` *only*, which should minimize the amount of 
+   growth projections split from their bodies.
+
+> Do not skip the first step, is will make the interpretation of parameters simpler.
+> For example, `max_dist_over_waist` can split "figure-8" cells into two,
+> and `max_split_over_minor` will re-join shmoo-like cells that were split,
+> possibly masking the effect of the first.
+> Furthermore, "split" small cells and "joined" large cells can be removedby the
+> pixel limits. 
+
+In the following example, only `background_reject_factor` is scanned, across 
+values produced with R's `seq` function:
 
 ```{r}
 parameters.list <- rcell2.cellid::parameters_default(
@@ -865,7 +867,24 @@ parameters.df
 
 > Note: You might want to select some rows from that table. In that case, simply filter it.
 
-#### Automatic scan
+##### Test directory
+
+Define working paths for parameter scanning:
+
+* `data.dir`: directory with the original images (they will not be modified).
+* `test.dir`: directory for temporary files of the tuning process.
+
+```{r}
+# Set your own path, or uncomment the following to use example images.
+# data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
+#                         package = "rcell2.examples")
+
+# The output of the parameter scan will be saved here:
+test.dir <- file.path(tempdir(), "images_directory", "test.dir")
+test.dir
+```
+
+#### Run the Scan
 
 > Now comes the magic part.
 
@@ -943,11 +962,11 @@ stack.paths$stack.paths
 stack.paths$imagej.macros
 ```
 
-#### Plotting the result
+#### Useful Plots
 
 A few quantities are calculated for each run of the scan, which can be 
-indicative of segmentation quality, and may be useful when filtering 
-programatically (i.e. without visual inspection).
+indicative of segmentation quality, and may be useful for selecting parameters 
+programatically (i.e. without visual inspection with ImageJ/FIJI).
 
 * Cell-ID variables:
   * `fft`
