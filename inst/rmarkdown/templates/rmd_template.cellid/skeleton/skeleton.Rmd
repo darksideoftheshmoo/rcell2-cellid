@@ -1,5 +1,5 @@
 ---
-title: "rcell2.cellid: CellID Workflow Template"
+title: "rcell2.cellid: Cell-ID Workflow Template"
 author: "Nicolás Méndez"
 output:
   html_document:
@@ -1061,7 +1061,7 @@ parameters.list <- rcell2.cellid::parameters_default(
 
 #### Recreate arguments
 
-Arguments for cellid must be recreated to use the updated parameters instead.
+Arguments for Cell-ID must be recreated to use the updated parameters instead.
 
 ```{r}
 parameters.txt <- rcell2.cellid::parameters_write(parameters.list)
@@ -1220,7 +1220,7 @@ cell.boundaries <-
 
 #### Variable descriptions
 
-To help understand CellID's output, we documented the descriptions of variables
+To help understand Cell-ID's output, we documented the descriptions of variables
 available in the `cell.data$data` data frame.
 
 They are available in `output_help` and `output_help_df`:
