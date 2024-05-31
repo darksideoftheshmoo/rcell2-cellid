@@ -840,7 +840,7 @@ Because scanning over all parameters space would take ages, you can follow a sim
 2. Fix `background_reject_factor` to its optimal value, which minimizes segmentation artifacts.
 3. Scan over `max_dist_over_waist` **and** set `max_split_over_minor` to a high value (e.g. `max_split_over_minor=5`).
   - This is because `max_dist_over_waist` splits "figure-8" cells into two, and `max_split_over_minor` will re-join shmoo-like cells, thus confounding the interpretation of the parameter scan.
-4. Fix `max_dist_over_waist` to its optimal value, which adyacent cells and daughters cells from their mothers.
+4. Fix `max_dist_over_waist` to its optimal value, which adjacent cells and daughters cells from their mothers.
   - At this point you must tolerate projected growth (i.e. shmoos) being split from the rest of the cell body.
 5. Scan over `max_split_over_minor` *only*, which should minimize the amount of growth projections split from their bodies.
 
@@ -899,7 +899,7 @@ moderately large. We recommend using `annotate_scan_output`.
 A copy-paste-ready ImageJ Macro will be printed out by either function, 
 to easily load the stacks as virtual Hyperstacks in ImageJ.
 
-##### Option A: annotate_scan_output
+**Option A**: `annotate_scan_output`
 
 This function will annotate individual images, save them, and compose an ImageJ
 macro, to inspect them in a single _virtual_ stack.
@@ -918,9 +918,10 @@ imagej_macros <- annotate_scan_output(scan.results = scan.results,
                                       annotation.font = "Hack")
 ```
 
-##### Option B: make_scan_stacks
+**Option B**: `make_scan_stacks`
 
-This function will make TIFF stacks, which can take a long time if the set is large.
+This function will make TIFF stacks, which can take a long time if the image
+set is large, but are easier to open (i.e. without a macro).
 
 ```{r eval=F}
 stack.paths <- 
@@ -942,7 +943,7 @@ stack.paths$stack.paths
 stack.paths$imagej.macros
 ```
 
-#### Plotting useful quantities
+#### Plotting the result
 
 A few quantities are calculated for each run of the scan, which can be 
 indicative of segmentation quality, and may be useful when filtering 
@@ -955,7 +956,7 @@ programatically (i.e. without visual inspection).
 * Derived measures:
   * `ucids`: Total amount of distinct `ucid`s. Increases with segmentation artifacts and unstable tracking.
   * `persistence`: Average number of time frames per cell. Correlates with stable segmentation and tracking.
-  * `roughness` & `roughness2`: Inidicative of the average "roughness" in the evolution of `a.tot` across time frames.
+  * `roughness` & `roughness2`: Indicative of the average "roughness" in the evolution of `a.tot` across time frames.
 
 <!-- Internal note: TO-DO: add explanations of these quantitites. -->
 
@@ -1058,26 +1059,28 @@ cellid.args
 The `cell2` function generates system commands to run Cell-ID,
 and executes them in parallel by default.
 
-The `cell.command` argument must be the path to the Cell-ID binary executable.
-In this version of `rcell2`, it defaults to `NULL`, and the intenal executable 
-is used.
+> *Tip*:
+> `n_cores` can be set to the number of CPU cores you want to use to parallelize
+> the segmentation (relying on `foreach`). It defaults to use all but one of the
+> available cores.
 
-Warning: existing output files **will be overwritten** without warning. 
-To check if this will happen before running `cell2`, run "`arguments_check(cellid.args)`"
-on the output directory, and check for warnings.
+> **Warning**: existing output files **will be overwritten** without warning. 
+> To check if this will happen before running `cell2`, run `arguments_check(cellid.args)`.
+> It will check if any output files exist and print messages to the console.
 
 ```{r eval=F}
 cell2.result <- rcell2.cellid::cell2(arguments = cellid.args, 
                                      output_coords_to_tsv = T)
 ```
 
-> Run `?cell2` to learn about advanced segmentation parameters, and to generate additional
-output files with segmentation masks or identified cell-boundary pixel coordinates.
+The `cell.command` argument must be the path to the Cell-ID binary executable.
+In this version of `rcell2`, it defaults to `NULL`, and the bundled executable 
+is used.
 
-> `n_cores` can be set to the number of CPU cores you want to use to parallelize
-> the segmentation (relying on `foreach`). It defaults to use all but one of the
-> available cores.
-
+> *Tip*:
+> Run `?cell2` to read about advanced segmentation parameters, You can, for example,
+> set flags to generate additional output files with segmentation masks or 
+> identified cell-boundary pixel coordinates.
 
 #### Review segmentation in ImageJ
 
@@ -1085,7 +1088,7 @@ This section helps you open your images with FIJI-ImageJ to review the resulting
 
 A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment.
 
-> Note: this macro uses a "file" pattern that only matches output images (i.e. "tif.out.tif")
+> *Note*: this macro uses a "file" pattern that only matches output images (i.e. "tif.out.tif")
 > in a tipically-named set of images.
 
 Steps:
@@ -1099,7 +1102,7 @@ Steps:
 ijm_open_segmentation(cellid.args)
 ```
 
-> Note: the dimensions names may be mismatched between R and the macro. This is because 
+> *Note*: the dimensions names may be mismatched between R and the macro. This is because 
 virtual stacks must be in `xyczt` order (time is likely to end up as the "channels" dimension), 
 but the order in which the "Image Sequence..." is loaded depends on how their files are named.
 
@@ -1235,7 +1238,7 @@ If you export the results to RDS files, you can load them later on using `readRD
 
 ## Data analysis
 
-Helping with data analysis is `rcell2`'s purpose.
+Helping with data analysis is the purpose of the `rcell2` and `rcell2.magick` packages.
 
 Installation instructions for `rcell2` and `rcell2.magick` packages can be found [here](https://github.com/darksideoftheshmoo/rcell2#installing-the-package) and [here](https://github.com/darksideoftheshmoo/rcell2-magick#installing-the-package),
 respectively.
