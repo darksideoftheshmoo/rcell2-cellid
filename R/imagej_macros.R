@@ -98,12 +98,13 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
 #' 
 #' @param cellid.args The "arguments" data frame, as produced by \code{rcell2.cellid::arguments}.
 #' @inheritDotParams ijm_open_hyperstack
+#' @inheritParams ijm_open_hyperstack
 #' @export
-ijm_open_segmentation <- function(cellid.args, ...){
+ijm_open_segmentation <- function(cellid.args, add_tools=F, use_out=1, ...){
   
   result <- cellid.args |> 
     arguments_to_images() |>
-    ijm_open_hyperstack(...)
+    ijm_open_hyperstack(add_tools=add_tools, use_out=use_out, ...)
   
   return(result)
 }
