@@ -34,13 +34,14 @@ knit: (function(inputFile, encoding) {
 
 The `rcell2-cellid` package can be installed directly from [its git repository](https://github.com/darksideoftheshmoo/rcell2-cellid) by running the following:
 
-```{r}
+```{r, eval=F}
 # The remotes package is required to install R packages from git.
 if (!requireNamespace("remotes", quietly = TRUE))
   install.packages("remotes")
 
 # Our lab's GitHub organizacion lives at https://github.com/darksideoftheshmoo/
-remotes::install_github("darksideoftheshmoo/rcell2-cellid")
+if (!requireNamespace("rcell2.cellid", quietly = TRUE))
+  remotes::install_github("darksideoftheshmoo/rcell2-cellid")
 ```
 
 # Notebook Setup
@@ -98,7 +99,7 @@ If you already have an appropriate dataset, specify the path to the images like 
 > Note: the aprropriate pattern for file names is described at the [Image file names]
 > section of this notebook.
 
-```{r}
+```{r, eval=F}
 # Location of your image set
 data.dir <- "/path/to/your/data"
 
@@ -146,7 +147,7 @@ Finally, check if the files are there:
 
 ```{r}
 # List image files in the set:
-dir(data.dir)
+dir(data.dir) |> head()
 ```
 
 ## Image file names
