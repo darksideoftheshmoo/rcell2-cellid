@@ -1196,6 +1196,8 @@ if(!requireNamespace("rcell2")){
 cell_data <- rcell2::load_cell_data(path = data.dir)
 ```
 
+#### Load cell boundaries
+
 Both `rcell2.cellid` and `rcell2` provide the `cell.load.boundaries` function, which can 
 load the cell boundaries and interior pixels coordinates.
 

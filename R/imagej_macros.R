@@ -102,8 +102,32 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, macro_file=TRUE, fix_orde
 #' @export
 ijm_open_segmentation <- function(cellid.args, add_tools=F, use_out=1, ...){
   
-  result <- cellid.args |> 
-    arguments_to_images() |>
+  # Generate the regular images data frame.
+  images <- cellid.args |> arguments_to_images()
+  
+  add_out <- any(as.logical(1))
+  if(add_out){
+    # Generate images Df for outputs.
+    out_images <- images |> 
+      mutate(image = paste0(file, ".out.tif"),
+             file = paste0(file, ".out.tif")) |> 
+      mutate(is_out = TRUE)
+    # Check that all files exist, or emit a warning.
+    all_out_exist <- all(file.exists(out_images$file))
+    if(!all_out_exist){
+      warning(paste(
+        sum(!file.exists(out_images$file))), "out of the expected", 
+        nrow(out_images), "output images do not exist.")
+    }
+    # Bind the images DF to the output DF.
+    images <- bind_rows(
+      images,
+      out_images
+    )
+  }
+  
+  # Generate the hyperstack macro.
+  result <- images |>
     ijm_open_hyperstack(add_tools=add_tools, use_out=use_out, ...)
   
   return(result)
