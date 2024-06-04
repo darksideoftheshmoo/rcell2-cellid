@@ -39,7 +39,8 @@ Imports:
     stringr (>= 1.4.0),
     tibble (>= 3.1.6),
     tidyr (>= 1.2.0),
-    here
+    here,
+    ggplot2
 Suggests:
     skimr (>= 2.1.3),
     tidyverse (>= 1.3.1),
