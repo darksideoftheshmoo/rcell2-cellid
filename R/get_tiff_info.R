@@ -118,7 +118,7 @@ plot_pos_overlaps <- function(
   if (!is.null(image_list)) {
     # Convert Cell-ID arguments to images.
     available_channels <- image_list |> 
-      with(channels) |> 
+      with(ch) |> 
       unique()
     images <- rcell2.cellid::arguments_to_images(arguments = image_list) |> 
       dplyr::filter(channel %in% channels)
@@ -127,7 +127,7 @@ plot_pos_overlaps <- function(
   } else {
     # Use images from Cell-ID's output.
     available_channels <- images |> 
-      with(ch) |> 
+      with(channels) |> 
       unique()
     images <- images |> 
       dplyr::filter(channel %in% channels)
