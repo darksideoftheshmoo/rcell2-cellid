@@ -103,6 +103,8 @@ which can finally be imported in to MetaMorph's MDA.
 
 ```{r}
 stage_coords <- make_stage_list('stage_positions.xlsx')
+
+stage_coords$positions_plot #|> plotly::ggplotly()
 ```
 
 # Usage guide

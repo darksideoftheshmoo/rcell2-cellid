@@ -99,6 +99,8 @@ make_stage_list <- function(
   if(origin_at_corner != "top-right") stop("Only top-right origins supported ATM.")
   if(origin_at_pos != 1) stop("The origin can only be in the well of the first position ATM.")
   
+  half_n_fov <- floor((well_width %/% fov_width)/2)
+  
   stage_coords <-  positions |> 
     select(pos,order,row,col,fov) |> 
     dplyr::rename(well=order) |> 
@@ -110,11 +112,17 @@ make_stage_list <- function(
       fov_i = fov - min(fov)
     ) |> 
     mutate(
-      x = (-well_width/2) + (col_i * well_sep) + (fov_i * fov_width),
-      y = (-well_width/2) + -(row_i * well_sep),
+      x = (-well_width/2) + (col_i * well_sep) + (fov_i %% half_n_fov) * fov_width,
+      y = (-well_width/2) - (row_i * well_sep) + (fov_i %/% half_n_fov) * fov_width,
       z = z_default,
       af_offset = af_offset_default
-    )
+    ) |> 
+    group_by(row, col) |> 
+    mutate(
+      x = x - max(fov_i %% half_n_fov)/2 * fov_width,
+      y = y - max(fov_i %/% half_n_fov)/2 * fov_width
+    ) |> 
+    ungroup()
   
   plt <- 
     stage_coords |> 
@@ -126,7 +134,7 @@ make_stage_list <- function(
     geom_point(aes(x,y),color="red", shape=23, size=5, data=data.frame(x=0,y=0)) +
     geom_point(aes(x,y),color="red", shape=19, size=2, data=data.frame(x=0,y=0)) +
     geom_path(aes(x,y)) +
-    geom_point(aes(x,y,color=well, shape=fov), size=5) +
+    geom_point(aes(x,y,color=well), size=5) +
     scale_color_discrete() +
     ggtitle("Generated stage coordinates for each imaging position",
             "The red diamond indicates the location of the origin (" |> 
