@@ -84,20 +84,26 @@ There is another "quick start" notebook bundled with the package.
 
 ## Prepare stage metadata
 
+For many-well experiments in a 384 microscopy plate, you may benefit from generating stage positions for MetaMorph's MDA automatically.
+
+First, open and fill out the template spreadsheet, which must contain sheets with these names:
+
+1. "pdata": with the position metadata.
+2. "well_order": with a representation of the plate indicating the order in which to take pictures.
+3. "well_images": with a representation of the plate indicating how many images to acquire in each well.
+
+The template can be copied to the current working directory with the `get_spos_template` function:
+
 ```{r}
 get_spos_template()
-
-stage_coords <- make_stage_list('stage_positions.xlsx')
-
-stage_coords$positions_plot
 ```
+
+After filling out the template, use `make_stage_list` to generate the `.STG` file,
+which can finally be imported in to MetaMorph's MDA.
 
 ```{r}
-
-
-
+stage_coords <- make_stage_list('stage_positions.xlsx')
 ```
-
 
 # Usage guide
 
