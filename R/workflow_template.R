@@ -1,8 +1,8 @@
-#' A function to donwload the latest worflow tempalte in Rmarkdown
+#' A function to download the latest workflow template in Rmarkdown
 #' 
-#' Will donwload the .Rmd file to the current working directory.
+#' Will download the .Rmd file to the current working directory.
 #' 
-#' @param file_name File name for the downloaded wokflow template.
+#' @param file_name File name for the downloaded workflow template.
 #' @param open.template Try using file.edit to open the file in RStudio after getting it.
 #' 
 #' @export

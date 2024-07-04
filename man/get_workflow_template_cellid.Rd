@@ -2,7 +2,7 @@
 % Please edit documentation in R/workflow_template.R
 \name{get_workflow_template_cellid}
 \alias{get_workflow_template_cellid}
-\title{A function to donwload the latest worflow tempalte in Rmarkdown}
+\title{A function to download the latest workflow template in Rmarkdown}
 \usage{
 get_workflow_template_cellid(
   file_name = "rcell2.cellid_workflow_template.Rmd",
@@ -10,10 +10,10 @@ get_workflow_template_cellid(
 )
 }
 \arguments{
-\item{file_name}{File name for the downloaded wokflow template.}
+\item{file_name}{File name for the downloaded workflow template.}
 
 \item{open.template}{Try using file.edit to open the file in RStudio after getting it.}
 }
 \description{
-Will donwload the .Rmd file to the current working directory.
+Will download the .Rmd file to the current working directory.
 }

@@ -82,6 +82,16 @@ There is another "quick start" notebook bundled with the package.
 - Use the **help page** of functions before using them. Open help pages with R's `?` (e.g. `?arguments`).
 - Read the README.md at rcell2's [GitHub repo](https://github.com/darksideoftheshmoo/rcell2/).
 
+## Prepare stage metadata
+
+```{r}
+get_spos_template()
+
+stage_coords <- make_stage_list('stage_positions.xlsx')
+
+stage_coords$positions_plot
+```
+
 # Usage guide
 
 This section has detailed explanations and usage examples of the tools in `rcell2.cellid`.
