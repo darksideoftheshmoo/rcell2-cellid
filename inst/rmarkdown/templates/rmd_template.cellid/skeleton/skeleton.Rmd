@@ -92,6 +92,13 @@ stage_coords <- make_stage_list('stage_positions.xlsx')
 stage_coords$positions_plot
 ```
 
+```{r}
+
+
+
+```
+
+
 # Usage guide
 
 This section has detailed explanations and usage examples of the tools in `rcell2.cellid`.

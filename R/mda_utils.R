@@ -38,7 +38,8 @@
 #' 
 #' A template XLSX file can be obtained with \code{get_spos_template}.
 #' 
-#' @param sdata_path Path to the an XLSX spreadsheet (e.g. "stage_positions.xlsx") with the following sheets: "pdata", "well_order", "well_images." A template file can be obtained with \code{get_spos_template}.
+#' @param spreadsheet_path Path to the an XLSX spreadsheet (e.g. "stage_positions.xlsx") with the following sheets: "pdata", "well_order", "well_images." A template file can be obtained with \code{get_spos_template}.
+#' @param spreadsheet_path Path where the STG file will be saved. This file is meant to be imported with MetaMorph's MDA.
 #' @param well_sep Center-to-center distance between wells in the plate (in microns).
 #' @param well_width Width of the bottom of the wells (in microns).
 #' @param fov_width Width of the field of view of the final image (in microns).
@@ -50,7 +51,8 @@
 #' @export
 #' @import readxl ggplot2 dplyr tidyr
 make_stage_list <- function(
-  sdata_path,
+  spreadsheet_path,
+  stg_output_path="stage_list.STG",
   well_sep = 4500,
   well_width = 3300,
   fov_width=500,
@@ -59,9 +61,9 @@ make_stage_list <- function(
   af_offset_default = 0,
   z_default = 0){
   
-  pdata <- readxl::read_xlsx(sdata_path, "pdata")
+  pdata <- readxl::read_xlsx(spreadsheet_path, "pdata")
   
-  well_order <- readxl::read_xlsx(sdata_path, "well_order")
+  well_order <- readxl::read_xlsx(spreadsheet_path, "well_order")
   names(well_order)[1] <- "row"
   well_order <- well_order |> 
     pivot_longer(-row, names_to = "col", values_to = "order") |> 
@@ -70,7 +72,7 @@ make_stage_list <- function(
   
   if(!all(diff(well_order$order) == 1)) stop("Ordering is not consecutive.")
   
-  well_images <- readxl::read_xlsx(sdata_path, "well_images")
+  well_images <- readxl::read_xlsx(spreadsheet_path, "well_images")
   names(well_images)[1] <- "row"
   well_images <- well_images |> 
     pivot_longer(-row, names_to = "col", values_to = "images") |> 
@@ -131,7 +133,35 @@ make_stage_list <- function(
               paste0(origin_at_corner, " corner, at position ", origin_at_pos, ").")) +
     theme_minimal()
   
+  stg_file_header <- paste(
+    '"Stage Memory List", Version 6.0',
+    '0, 0, 0, 0, 0, 0, 0, "um", "um"',
+    '0',
+    nrow(positions),
+    sep = "\n"
+  )
+  stg_file_data <- stage_coords |> 
+    arrange(pos) |> 
+    select(pos, x, y, z, af_offset) |> 
+    mutate(pos = paste0("Position", pos)) |> 
+    mutate(z2 = z) |> 
+    mutate(
+      v1 = FALSE,
+      v2 = -9999,
+      v3 = TRUE,
+      v4 = TRUE,
+      v5 = 0,
+      v5 = -1,
+      v6 = ""
+    )
+  write(x = stg_file_header, file = stg_output_path, append = F)
+  write.table(stg_file_data, sep = ", ", file=stg_output_path, col.names = F, append = T, row.names = F)
+  
+  cat(paste0("Wrote the following content to: ", stg_output_path, "\n"))
+  readLines(stg_output_path) |> paste(collapse = "\n") |> cat()
+
   return(list(
+    stg_output_path=stg_output_path,
     positions_plot=plt, 
     stage_coords=stage_coords
   ))
