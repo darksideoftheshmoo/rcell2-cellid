@@ -117,15 +117,26 @@ plot_pos_overlaps <- function(
   # Prepare the "images" dataframe.
   if (!is.null(image_list)) {
     # Convert Cell-ID arguments to images.
+    available_channels <- image_list |> 
+      with(channels) |> 
+      unique()
     images <- rcell2.cellid::arguments_to_images(arguments = image_list) |> 
       dplyr::filter(channel %in% channels)
   } else if(is.null(images)){
     stop("Either 'image_list' or 'images' must be supplied.")
   } else {
     # Use images from Cell-ID's output.
+    available_channels <- images |> 
+      with(ch) |> 
+      unique()
     images <- images |> 
       dplyr::filter(channel %in% channels)
   }
+  
+  if(!channels %in% available_channels) stop(paste(
+    "Channels", setdiff(channels, available_channels), "are not available.",
+    "Use any of the available channels instead:", available_channels
+  ))
   
   # Path to images.
   metamorph_pics <- images |> with(file) |> unique()
