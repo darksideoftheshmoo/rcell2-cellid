@@ -111,7 +111,7 @@ ijm_open_segmentation <- function(cellid.args, add_tools=F, use_out=1, ...){
     out_images <- images |> 
       mutate(image = paste0(file, ".out.tif"),
              file = paste0(file, ".out.tif")) |> 
-      mutate(is_out = TRUE)
+      mutate(is.out = TRUE)
     # Check that all files exist, or emit a warning.
     all_out_exist <- all(file.exists(out_images$file))
     if(!all_out_exist){
