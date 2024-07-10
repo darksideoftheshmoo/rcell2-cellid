@@ -342,16 +342,15 @@ result[["rename.path"]]
 The following sections may help improve the result of the segmentation,
 to catch severe issues early on.
 
-### Check that your images are there
+### Image set checks
 
 The `arguments` function will run several tests (using `arguments_check` internally)
 before returning the list of images for Cell-ID. Warnings (or errors if desired) will 
 be raised if the checks fail.
 
-You can also set `check_fail = FALSE` to inspect all warnings without raising an error.
-
-> **Note**: the usage of the "file.pattern" argument is explained at the
-> [Arguments] section of this notebook.
+> **Note**: the usage of the "`file.pattern`" argument is explained in the
+> [Arguments] section of this notebook. The following will work with the example
+> time-series images.
 
 ```{r}
 # Get images and their metadata.
@@ -361,6 +360,38 @@ image_list <- rcell2.cellid::arguments(data.dir,
 ```
 
 If images are missing, the command above will fail.
+
+You can also set `check_fail = FALSE` to inspect all warnings without raising an error.
+
+#### Inspect sample images
+
+Images can be opened with `magick`:
+
+```{r}
+# Install image magick.
+if (!requireNamespace("magick", quietly = TRUE))
+  install.packages("magick")
+
+# Sample a few images to show, one per channel.
+sample_images <- image_list |>
+  arguments_to_images() |>
+  group_by(channel) |> 
+  filter(t.frame == min(t.frame)) |> 
+  sample_n(1)
+
+# Read and process sample images.
+sample_images |> 
+  with(file) |> 
+  magick::image_read() |> 
+  magick::image_modulate(brightness = 400) |>
+  magick::image_border() |> 
+  magick::image_append() |> 
+  magick::image_resize("700x0") |> 
+  magick::image_write(path = tempfile(fileext = ".png"), format = "png") |> 
+  knitr::include_graphics()
+```
+
+#### Identify missing frames
 
 Missing images in the set can be located visually by plotting with `geom_tile`.
 
@@ -388,12 +419,6 @@ p <- d |> ggplot() +
   theme_minimal()
 
 p  # plotly::ggplotly(p)
-```
-
-You can also inspect the table manually:
-
-```{r}
-View(image_list)
 ```
 
 ### Check XY stage coordinates
