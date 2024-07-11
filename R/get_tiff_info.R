@@ -81,39 +81,44 @@ tiff_plane_info <- function(path, frames = 1, ...) {
   return(result)
 }
 
-#' Plot positions and field of view overlaps
+#' Get stage plane information from MetaMorph images
 #' 
-#' Example:
-#' plot <- rcell2.cellid::arguments(metamorph_pics_dir, file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
-#'   filter(t.frame == min(t.frame)) |> 
-#'   plot_pos_overlaps()
-#'   
+#' @param images The images dataframe as loaded from Cell-ID's output by \code{get_cell_data}.
+#' 
+#' @export
+get_plane_info <- function(images){
+  # Path to images.
+  image_paths <- images |> with(file) |> unique()
+  
+  # Get the metadata of all images:
+  plane_info_df <- setNames(image_paths, basename(image_paths)) %>% 
+    # Get metadata
+    lapply(rcell2.cellid::tiff_plane_info) %>% 
+    dplyr::bind_rows(.id="image") %>% 
+    # Fix variable names and types
+    dplyr::mutate(variable = make.names(id)) %>% 
+    # Get the stage positions.
+    dplyr::filter(grepl("stage.position", variable)) %>% 
+    dplyr::mutate(value = as.numeric(value)) %>% 
+    # Make it wider
+    tidyr::pivot_wider(id_cols = "image", names_from = "variable", values_from = "value")
+  
+  return(plane_info_df)
+}
+
+#' Parse images
+#' 
+#' Generate an "images" data frame, and filter it by channels. Also performs some checks.
+#' 
 #' @param image_list The output from the \code{arguments} function. Consider filtering to include only the first position.
 #' @param images The images dataframe as loaded from Cell-ID's output by \code{get_cell_data}.
 #' @param channels Vector of channel IDs (e.g. "BF").
-#' @param magnification Total image magnification.
-#' @param ccd_pixel_size_microns Physical size of the camera's pixel.
-#' @param well_size_microns_x Physical size of the well in the plate (used to draw breaks in the plot).
-#' @param well_size_microns_y Physical size of the well in the plate (used to draw breaks in the plot).
-#' @param image_width_x Size of the images in pixels.
-#' @param image_height_y Size of the images in pixels.
-#' @param print_plot Print the plot.
-#' @import dplyr ggplot2 tidyr
-#' @export
-plot_pos_overlaps <- function(
+#' 
+parse_images_ch <- function(
     image_list=NULL,
     images=NULL,
-    channels = "BF",
-    # file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$",
-    magnification = 40,            # 40x
-    ccd_pixel_size_microns = 6.45, # 6.45 um
-    well_size_microns_x = 4500,    # 4500 um
-    well_size_microns_y = 4500,    # 4500 um
-    image_width_x = 1376,
-    image_height_y = 1040,
-    print_plot=T
-    ){
-  
+    channels = "BF"
+){
   # Prepare the "images" dataframe.
   if (!is.null(image_list)) {
     # Convert Cell-ID arguments to images.
@@ -133,26 +138,45 @@ plot_pos_overlaps <- function(
       dplyr::filter(channel %in% channels)
   }
   
-  if(!channels %in% available_channels) stop(paste(
-    "Channels", setdiff(channels, available_channels), "are not available.",
-    "Use any of the available channels instead:", available_channels
-  ))
+  return(images)
+}
+
+#' Plot positions and field of view overlaps
+#' 
+#' Example:
+#' plot <- rcell2.cellid::arguments(metamorph_pics_dir, file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
+#'   filter(t.frame == min(t.frame)) |> 
+#'   plot_pos_overlaps()
+#'   
+#' @param magnification Total image magnification.
+#' @param ccd_pixel_size_microns Physical size of the camera's pixel.
+#' @param well_size_microns_x Physical size of the well in the plate (used to draw breaks in the plot).
+#' @param well_size_microns_y Physical size of the well in the plate (used to draw breaks in the plot).
+#' @param image_width_x Size of the images in pixels.
+#' @param image_height_y Size of the images in pixels.
+#' @param print_plot Print the plot.
+#' @import dplyr ggplot2 tidyr
+#' @export
+#' @inheritParams parse_images_ch
+plot_pos_overlaps <- function(
+    image_list=NULL,
+    images=NULL,
+    channels = "BF",
+    # file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$",
+    magnification = 40,            # 40x
+    ccd_pixel_size_microns = 6.45, # 6.45 um
+    well_size_microns_x = 4500,    # 4500 um
+    well_size_microns_y = 4500,    # 4500 um
+    image_width_x = 1376,
+    image_height_y = 1040,
+    print_plot=T
+    ){
   
-  # Path to images.
-  metamorph_pics <- images |> with(file) |> unique()
+  images <- parse_images_ch(image_list=image_list,
+                            images=images,
+                            channels=channels)
   
-  # Get the metadata of all images:
-  plane_info_df <- setNames(metamorph_pics, basename(metamorph_pics)) %>% 
-    # Get metadata
-    lapply(rcell2.cellid::tiff_plane_info) %>% 
-    dplyr::bind_rows(.id="image") %>% 
-    # Fix variable names and types
-    dplyr::mutate(variable = make.names(id)) %>% 
-    # Get the stage positions.
-    dplyr::filter(grepl("stage.position", variable)) %>% 
-    dplyr::mutate(value = as.numeric(value)) %>% 
-    # Make it wider
-    tidyr::pivot_wider(id_cols = "image", names_from = "variable", values_from = "value")
+  plane_info_df <- get_plane_info(images)
   
   # Calculate "Field Of View" size.
   fov_size_microns_x <- image_width_x * ccd_pixel_size_microns / magnification  # um in the "X/width" direction
@@ -205,7 +229,7 @@ plot_pos_overlaps <- function(
 #' 
 #' Time is loaded as POSIXlt and POSIXct into different columns (the 'ct' suffix indicates POSIXct). See \code{DateTimeClasses} for details.
 #' 
-#' @inheritParams plot_pos_overlaps
+#' @inheritParams parse_images_ch
 #' @param join_to_images If TRUE, the position/frame metadata form the images datafram will be joined to the extracted acquisition times.
 #' @import dplyr tidyr
 #' @export
