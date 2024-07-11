@@ -5,10 +5,10 @@
 \title{Default parameters list for Cell-ID}
 \usage{
 parameters_default(
-  max_split_over_minor = 0.5,
-  max_dist_over_waist = 8,
   max_pixels_per_cell = 2000,
   min_pixels_per_cell = 75,
+  max_dist_over_waist = 8,
+  max_split_over_minor = 0.5,
   background_reject_factor = 0.75,
   tracking_comparison = 0.2,
   align_individual_cells = F,
@@ -21,13 +21,13 @@ parameters_default(
 )
 }
 \arguments{
-\item{max_split_over_minor}{Default: \code{0.50} Each split induced by \code{max_dist_over_waist} can be reversed. Split cells are re-grouped as a single cell if the length of the cutting line divided by the length of the minor axis of either of the split cells is greater than a user-defined value (which defaults to \code{max_split_over_minor=0.5}). Thus, to perform the split we require that the two new cells have a generally circular shape and are not too elongated, as would be the case if the previous split was not over two cells, but over a cell and its mating projection.}
-
-\item{max_dist_over_waist}{Default: \code{8.00} For every combination of two pixels on the boundary, Cell-ID calculates the distance along the boundary path divided by the Euclidean distance between them. The maximum value of this ratio is larger for cells with a “figure-eight” shape that were pinched in some part than for circular cells. If the maximum value is above a user-defined threshold (which defaults to \code{max_dist_over_waist=6}), then the cell is split into two cells, by cutting across at the location of the pinch. Note that these cells can be re-grouped, depending on \code{max_split_over_minor}.}
-
 \item{max_pixels_per_cell}{Default: \code{2000} Area limits per cell (upper bound, in pixels).}
 
 \item{min_pixels_per_cell}{Default: \code{75} Area limits per cell (lower bound, in pixels).}
+
+\item{max_dist_over_waist}{Default: \code{8.00} For every combination of two pixels on the boundary, Cell-ID calculates the distance along the boundary path divided by the Euclidean distance between them. The maximum value of this ratio is larger for cells with a “figure-eight” shape that were pinched in some part than for circular cells. If the maximum value is above a user-defined threshold (which defaults to \code{max_dist_over_waist=8.0}), then the cell is split into two cells, by cutting across at the location of the pinch. Note that these cells can be re-grouped, depending on \code{max_split_over_minor}.}
+
+\item{max_split_over_minor}{Default: \code{0.50} Each split induced by \code{max_dist_over_waist} can be reversed. Split cells are re-grouped as a single cell if the length of the cutting line divided by the length of the minor axis of either of the split cells is greater than a user-defined value (which defaults to \code{max_split_over_minor=0.5}). Thus, to perform the split we require that the two new cells have a generally circular shape and are not too elongated, as would be the case if the previous split was not over two cells, but over a cell and its mating projection.}
 
 \item{background_reject_factor}{Default: \code{0.75} Cell-ID's code makes an initial decision about the gray-levels of the boundary pixels. To do this it takes the mean position of all the gray-levels in the images and subtracts Z standard deviations. It then starts by considering all gray levels below this value as being parts of the cell borders. This value Z is the parameter background_reject_factor. Bright-field images taken slightly out of focus may do better with with higher values (ie, higher values will better avoid spurious cells), but if the cell boundaries in the image are too narrow, a smaller value may be necessary--which might increase the level of background.}
 
