@@ -2,12 +2,13 @@
 #' 
 #' The template file is included in \code{cell2.cellid}.
 #' 
-#' @param file_name File name for the downloaded workflow template.
+#' @param save_to File name for the downloaded workflow template.
+#' @param overwrite Flag to overwrite the existing file if found.
 #' 
 #' @export
- get_spos_template <- function(file_name = "stage_positions.xlsx"){
+ get_spos_template <- function(save_to = "stage_positions.xlsx", overwrite = FALSE){
   
-  if(file.exists(file_name)) stop("file '", file_name, "' exists.")
+  if(file.exists(save_to) & !overwrite) stop("file '", save_to, "' already exists.")
   
   workflow.file <- system.file(
     "stage_positions.xlsx",
@@ -15,11 +16,13 @@
   )
   
   if(file.exists(workflow.file)){
-    file.copy(from = workflow.file, to = file_name)
-    cat(paste0("Spreadsheet template copied to the current working directory at: '", getwd(), file_name, "'"))
+    file.copy(from = workflow.file, to = save_to, overwrite = overwrite)
+    cat(paste0("Spreadsheet template copied to the current working directory at: '", getwd(), save_to, "'"))
   } else {
-    stop("file", file_name, "not found in package. Please report.")
+    stop("file", save_to, "not found in package. Please report.")
   }
+  
+  return(save_to)
 }
 
 

@@ -4,10 +4,12 @@
 \alias{get_spos_template}
 \title{A function to copy the spos XLSX spreadsheet template to the current working directory.}
 \usage{
-get_spos_template(file_name = "stage_positions.xlsx")
+get_spos_template(save_to = "stage_positions.xlsx", overwrite = FALSE)
 }
 \arguments{
-\item{file_name}{File name for the downloaded workflow template.}
+\item{save_to}{File name for the downloaded workflow template.}
+
+\item{overwrite}{Flag to overwrite the existing file if found.}
 }
 \description{
 The template file is included in \code{cell2.cellid}.
