@@ -88,21 +88,22 @@ For many-well experiments in a 384 microscopy plate, you may benefit from genera
 
 First, open and fill out the template spreadsheet, which must contain sheets with these names:
 
-1. "pdata": with the position metadata.
-2. "well_order": with a representation of the plate indicating the order in which to take pictures.
-3. "well_images": with a representation of the plate indicating how many images to acquire in each well.
+1. "`pdata`": with the position metadata. This table will be useful in the future too (e.g. for analyzing results).
+2. "`well_order`": with a representation of the plate indicating the order in which to take pictures.
+3. "`well_images`": with a representation of the plate indicating how many images to acquire in each well.
 
 The template can be copied to the current working directory with the `get_spos_template` function:
 
 ```{r}
-get_spos_template()
+template_path <- get_spos_template()
 ```
 
 After filling out the template, use `make_stage_list` to generate the `.STG` file,
 which can finally be imported in to MetaMorph's MDA.
 
 ```{r}
-stage_coords <- make_stage_list('stage_positions.xlsx')
+stage_coords <- template_path |> 
+  make_stage_list()
 
 stage_coords$positions_plot #|> plotly::ggplotly()
 ```
@@ -173,6 +174,17 @@ Finally, check if the files are there:
 ```{r}
 # List image files in the set:
 dir(data.dir) |> head()
+```
+
+A position metadata (a.k.a. `pdata`) file is also included:
+
+```{r}
+# Example: Choose one set of example images:
+pdata <- system.file("extdata/sample_datasets/sample_time_series/pdata.csv",
+                        package = "rcell2.examples") |> 
+  read.csv()
+
+pdata
 ```
 
 ## Image file names
@@ -468,6 +480,39 @@ We do not yet offer a way to remove them automatically. You may do this yourself
 by finding the XY coordinates of the first cells not shared between images, and using
 their coordinates to remove the overlapping set from one position.
 
+#### Plot MDA's stage list
+
+Metamorph's MDA can export a ".STG" plain-text file, containing the list of microscope positions.
+
+It is easy to import this file and display its contents.
+
+```{r}
+stg_list_file <- "path/to/your/positions_list_file.STG"
+
+stg_list <- stg_list_file |> 
+  read.csv(skip = 4, header = F)
+
+names(stg_list)[1:5] <- c(
+    "position_name",
+    "x", "y", "z",
+    "af_offset"
+  )
+```
+
+```{r}
+stg_list |> 
+  ggplot() +
+  geom_path(aes(x,y)) +
+  geom_point(aes(x,y,color=z), size=10, alpha =.5) +
+  scale_color_viridis_c() + theme_minimal()
+
+stg_list |> 
+  ggplot() +
+  geom_path(aes(x,y)) +
+  geom_point(aes(x,y,color=af_offset), size=10, alpha =.5) +
+  scale_color_viridis_c() + theme_minimal()
+```
+
 ### Preview images using ImageJ
 
 No analysis package exists (yet) that can replace a researcher's general visual assessment.
@@ -506,6 +551,73 @@ browsing: `frame`, `plane`, and `channel`. This is relevant if you wish to brows
 segmentation results (which adds another dimension to the set: "original" vs "out").
 A fourth dimension would be needed, but Hyperstacks only provide 3. The default is to
 load "out" files as new channels.
+
+#### Reordering images
+
+Images can be reordered images in the hyperstack by replacing the "position" column, which
+normally reflects the order in which images were acquired (i.e. first, second, etc.).
+
+For this purpose you'll need a `pdata` file with the experiment's original stage _position_ metadata,
+and then override its `pos` index.
+
+> An example `pdata` can be obtained from the examples package (see the [Use the examples] section of this notebook).
+
+In this example, the `pdata` is sorted by strain and stimulus concentration, and
+this new order is used to override the `pos` indexes.
+
+```{r}
+new_pdata <- pdata |> 
+  arrange(desc(yeast_strain), pheromone_concentration) |> 
+  mutate(
+    # Backup the original order.
+    old_pos=pos, 
+    # Make a new order.
+    pos = 1:n()) |> 
+  arrange(pos)
+
+new_pdata
+```
+
+Now you can generate a new ImageJ macro to open and browse the images with the new order:
+
+```{r}
+image_list_sorted <-  image_list |> 
+  arguments_to_images() |> 
+  dplyr::rename(old_pos = pos) |> 
+  left_join(new_pdata |> select(old_pos, pos), by = join_by(old_pos)) |> 
+  select(-old_pos)
+
+image_list_sorted |>
+  ijm_open_hyperstack(use_out = F)
+```
+
+The new order can be checked against the physical stage coordinates in the images metadata:
+
+```{r}
+tfp_images <- image_list |> 
+  arguments_to_images() |> 
+  filter(channel == "TFP")
+
+new_pos_coords <- tfp_images |> 
+  get_plane_info() |> 
+  left_join(tfp_images) |> 
+  select(pos, stage.position.x, stage.position.y) |> 
+  dplyr::rename(old_pos = pos) |> 
+  left_join(new_pdata) |> 
+  arrange(pos)  # arrange(old_pos)
+
+plt <- new_pos_coords |> 
+  ggplot(aes(stage.position.x, stage.position.y)) + 
+  geom_path() +
+  geom_point(aes(color=as.factor(pos), 
+                 shape=as.factor(yeast_strain), 
+                 text=paste("Old pos:", old_pos),
+                 size=pheromone_concentration)) +
+  scale_x_reverse()
+
+# plt |> plotly::ggplotly()
+plt
+```
 
 ### Check acquisition times
 
