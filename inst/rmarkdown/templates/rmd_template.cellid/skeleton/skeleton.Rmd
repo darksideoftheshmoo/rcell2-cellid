@@ -1300,9 +1300,9 @@ open another virtual hyperstack for the output images, and browse them in-sync.
 Cell-ID's output consists mainly of:
 
 * Segmented images (named with the `.out.tif` suffix).
-  * *Optional:* "BF.out" with identified binary masks.
+  * *Optional:* "BF.out" images with identified binary masks.
 * Tables with single-cell quantitative information (from their morphology and fluorescence).
-  * *Optional:* Tables with the boundary and interior pixels of identified cell.
+  * *Optional:* Compressed tables with the boundary and interior pixels of identified cell.
 
 #### Output file pattern
 
@@ -1317,14 +1317,16 @@ are defined below.
 
 Choose one pattern and comment the others:
 
+> Note: your `fluorescence.pattern` regex may vary.
+
 ```{r}
 # Default value: all fluorescent tags, including Z-stack fluorescence channels.
 fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+_time\\d+.tif$"
 
-# Default: add "BF" as a possible channel (when CellID was run with bf_as_fl=TRUE)
+# Default: add "BF" as a possible channel (when Cell-ID was run with bf_as_fl=TRUE)
 # fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+|BF)_Position\\d+_time\\d+.tif$"
 
-# Same as defualt, but without t.frame information.
+# Same as default, but without t.frame information.
 # fluorescence.pattern <- "^([GCYRT]FP|[GCYRT]\\d+)_Position\\d+.tif$"
 ```
 
@@ -1332,7 +1334,9 @@ List files that match the pattern, to check that it works as expected:
 
 ```{r}
 data.dir %>% 
-  dir(pattern = fluorescence.pattern)
+  dir(pattern = fluorescence.pattern) |> 
+  sample() |> 
+  head()
 ```
 
 #### Load the output
@@ -1345,7 +1349,6 @@ cell.data <- rcell2.cellid::get_cell_data(path = data.dir,
                                           fluorescence.pattern=fluorescence.pattern)
 ```
 
-> Note: your `fluorescence.pattern` regex may vary (read the [Output file pattern] section above).
 
 Alternatively, function `load_cell_data` from `rcell2` can load those tables as well.
 
