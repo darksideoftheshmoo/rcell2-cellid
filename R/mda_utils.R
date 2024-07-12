@@ -139,6 +139,7 @@ make_stage_list <- function(
     geom_path(aes(x,y)) +
     geom_point(aes(x,y,color=well), size=5) +
     scale_color_discrete() +
+    guides(colour="none") +
     ggtitle("Generated stage coordinates for each imaging position",
             "The red diamond indicates the location of the origin (" |> 
               paste0(origin_at_corner, " corner, at position ", origin_at_pos, ").")) +
