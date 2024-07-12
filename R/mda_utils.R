@@ -115,7 +115,8 @@ make_stage_list <- function(
       fov_i = fov - min(fov)
     ) |> 
     mutate(
-      x = (-well_width/2) + (col_i * well_sep) + (fov_i %% half_n_fov) * fov_width,
+      # The stage coordinates use more negative numbers to move towards the right of a well-plate.
+      x = (well_width/2) - (col_i * well_sep) - (fov_i %% half_n_fov) * fov_width,
       y = (-well_width/2) - (row_i * well_sep) + (fov_i %/% half_n_fov) * fov_width,
       z = z_default,
       af_offset = af_offset_default
@@ -138,6 +139,9 @@ make_stage_list <- function(
     geom_point(aes(x,y),color="red", shape=19, size=2, data=data.frame(x=0,y=0)) +
     geom_path(aes(x,y)) +
     geom_point(aes(x,y,color=well), size=5) +
+    # For the plot to render as a well-plate seen from above (as usual),
+    # the X coordinates of the stage must be flipped.
+    scale_x_reverse() +
     scale_color_discrete() +
     guides(colour="none") +
     ggtitle("Generated stage coordinates for each imaging position",
