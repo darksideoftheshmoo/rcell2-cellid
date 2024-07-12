@@ -7,6 +7,8 @@
 make_stage_list(
   spreadsheet_path,
   stg_output_path = "stage_list.STG",
+  print_output = FALSE,
+  calib_stg_list = NULL,
   well_sep = 4500,
   well_width = 3300,
   fov_width = 500,
@@ -17,7 +19,11 @@ make_stage_list(
 )
 }
 \arguments{
-\item{spreadsheet_path}{Path where the STG file will be saved. This file is meant to be imported with MetaMorph's MDA.}
+\item{spreadsheet_path}{Path to the an XLSX spreadsheet (e.g. "stage_positions.xlsx") with the following sheets: "pdata", "well_order", "well_images." A template file can be obtained with \code{get_spos_template}.}
+
+\item{stg_output_path}{Path where the STG file will be saved. This file is meant to be imported with MetaMorph's MDA.}
+
+\item{calib_stg_list}{Path where the calibration STG can be found saved. NULL by default (disabled).}
 
 \item{well_sep}{Center-to-center distance between wells in the plate (in microns).}
 

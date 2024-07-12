@@ -103,9 +103,18 @@ which can finally be imported in to MetaMorph's MDA.
 
 ```{r}
 stage_coords <- template_path |> 
-  make_stage_list()
+  make_stage_list(af_offset_default = 3.5,
+                  calib_stg_list = TRUE)
 
 stage_coords$positions_plot #|> plotly::ggplotly()
+```
+
+If the calibration was already applied, the following plot should show 0 error:
+
+```{r}
+stage_coords_adj <- stage_coords |> 
+  with(stage_coords) |> 
+  adjust_stg_z(plot_error = TRUE)
 ```
 
 # Usage guide
@@ -487,31 +496,26 @@ Metamorph's MDA can export a ".STG" plain-text file, containing the list of micr
 It is easy to import this file and display its contents.
 
 ```{r}
-stg_list_file <- "path/to/your/positions_list_file.STG"
+stg_list_file <- system.file("stage_positions-calib_tilt_B2_top_left.STG",
+                             package = "rcell2.cellid")
 
-stg_list <- stg_list_file |> 
-  read.csv(skip = 4, header = F)
-
-names(stg_list)[1:5] <- c(
-    "position_name",
-    "x", "y", "z",
-    "af_offset"
-  )
+stg_list <- read_stg(stg_list_file)
 ```
 
 ```{r}
 stg_list |> 
   ggplot() +
   geom_path(aes(x,y)) +
-  geom_point(aes(x,y,color=z), size=10, alpha =.5) +
-  scale_color_viridis_c() + theme_minimal()
-
-stg_list |> 
-  ggplot() +
-  geom_path(aes(x,y)) +
   geom_point(aes(x,y,color=af_offset), size=10, alpha =.5) +
   scale_color_viridis_c() + theme_minimal()
 ```
+
+##### Fit to a plane
+
+```{r}
+stg_list_adj <- adjust_stg_z(stg_list, plot_error = T)
+```
+
 
 ### Preview images using ImageJ
 
