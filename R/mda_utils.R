@@ -97,7 +97,7 @@ make_stage_list <- function(
     arrange(order, fov) |> 
     mutate(pos = 1:n())
   
-  if(!all(positions$pos == pdata$pos)) stop("Position indexes in pdata do not match the well images and ordering.")
+  if(!all(sort(positions$pos) == sort(pdata$pos))) stop("Position indexes in pdata do not match the well images and ordering.")
   
   if(origin_at_corner != "top-right") stop("Only top-right origins supported ATM.")
   if(origin_at_pos != 1) stop("The origin can only be in the well of the first position ATM.")
