@@ -1,6 +1,6 @@
 Package: rcell2.cellid
 Title: CellID bundled in R for the rcell2 package: CellID Data Analysis Inside the Tidyverse.
-Version: 0.0.3
+Version: 1.0.1
 Authors@R: 
     c(person(given = "German",
            family = "Beldorati Stark",
