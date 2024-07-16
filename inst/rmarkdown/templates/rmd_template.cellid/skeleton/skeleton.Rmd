@@ -523,6 +523,30 @@ segmentation results (which adds another dimension to the set: "original" vs "ou
 A fourth dimension would be needed, but Hyperstacks only provide 3. The default is to
 load "out" files as new channels.
 
+#### Tagging cells
+
+The "multi-point" tool in ImageJ can be used to mark cells with different "counters",
+by simply clicking on them in the image.
+
+These marks can be exported and mapped back to `ucid`s in R, and then
+used for filtering and analysis.
+
+Steps:
+
+1. Open the images in a Hyperstack, as described in the [Preview images using ImageJ] section.
+2. Use the multi-point tool to mark individual cells with one or more "counters", as required by your experiment.
+3. After tagging the cells, generate the measurements (press `Ctrl+M`) and save
+   them to a `.csv` file (press `Ctrl+S`, or `File -> Save`).
+  - It is critical that you check that the values of the "Ch" (channel), 
+    "Slice", and "Frame" ImageJ measurements map correctly to `t.frame`s,
+    `pos`, and `ch` in Cell-IDs output.
+  - Note that ImageJ's time indexes begin at 1, but Cell-ID's 
+    begin at 0. This may need to be adjusted later.
+
+Detailed instructions on how to import these points and map them to cells 
+identified by Cell-ID, can be found in the [Cell-tagging using ImageJ] section
+of this notebook.
+
 #### Reordering images
 
 Images can be reordered images in the hyperstack by replacing the "position" column, which
@@ -1393,6 +1417,413 @@ cell.data |> with(images) |>
 ```
 
 If you export the results to RDS files, you can load them later on using `readRDS`.
+
+## Cell-tagging using ImageJ
+
+The `tagCell` function from the `rcell2.magick`` can provide a randomized experimental context 
+for tagging (i.e. a _pseudo_ double-blind experiment).
+
+If bias during tagging is not a concern, the "multi-point" tool in ImageJ can
+be used to mark cells with different "counters", by simply clicking on them.
+
+These marks can be imported to R, and then used for analysis.
+
+### ImageJ Hyperstack
+
+This section helps you open your images with FIJI-ImageJ before you begin.
+
+A simple Macro can be run in ImageJ to load virtual hyperstacks of any experiment.
+
+_Note_: You can skip this part and proceed to the [Import Multipoints] section 
+if you have already tagged your cells, as described in the [Tagging cells] section.
+
+Follow these steps to open images in ImageJ.
+
+1. Run the following code, and copy its output to the clipboard.
+2. Open ImageJ/FIJI, and open a new "Macro" window, by clicking on "Plugins -> New -> Macro".
+3. Paste the macro into the macro editor, and click on "Run" below. A new hyperstack window will open.
+4. Browse the images using the sliders.
+
+Follow these steps to tag cells in ImageJ.
+
+5. Use the multi-point tool to mark individual cells with one or more "counters".
+6. After tagging the positions make measurements (press Ctrl+M) and save
+   the output to a `.csv` file.
+  - It is critical that you check that the values of the "Ch" (channel), 
+    "Slice", and "Frame" ImageJ measurements map correctly to `t.frame`s,
+    `pos`, and `ch` in Cell-IDs output.
+  - Note that ImageJ's indexes begin at 1, but Cell-ID's begin at 0. This is
+    specially relevant for `t.frame`s.
+
+```{r}
+rcell2.cellid::ijm_open_hyperstack(images)
+```
+
+> Note: the files are symlinked with new names to a temporary directory, to save
+> space, and will only survive during this R session. Next time you want to open 
+> the images, run the `ijm_open_hyperstack` function again.
+
+The only restriction of this approach is that only "3" dimensions are available for
+browsing: `frame`, `plane` (Slice), and `channel`. This is relevant if you wish to browse
+segmentation results (which adds another dimension to the set: original vs "out").
+A fourth dimension would be needed, but Hyperstacks only provide 3. Alternatively, 
+open another virtual hyperstack for the output images, and browse them in-sync.
+
+### Import Multipoints
+
+If you tagged cells and exported the multi-points to CSV files, this section
+explains how to load them into R, and map them to Cell-ID's positions and time 
+frames.
+
+7. Import the Multi-point tags using the code below.
+
+Specify the directory where the measurements were saved, and a regular-expression
+pattern to select only the relevant files.
+
+```{r}
+results.dir <- ".../somewhere/over/the/measurements/"
+
+results.pattern <- "Results.*.csv"
+```
+
+You can now list the CSV files:
+
+```{r}
+mp.filters.files <- dir(path = results.dir, 
+                        pattern = results.pattern, 
+                        full.names = T)
+
+mp.filters.files
+```
+
+Check that these are the files you need, and then load them into R:
+
+```{r}
+mp.filters <- 
+  # Load CSV files
+  mp.filters.files |> lapply(read_csv) |> 
+  # Bind rows
+  bind_rows() |> 
+  # Get position info from the "Slice" index..
+  mutate(pos = Slice) |> 
+  # Cleanup
+  select(pos, X, Y, Ch, Slice, Frame) |> 
+  # Add an ID to each tag
+  mutate(mpid = 1:n())
+```
+
+8. Re-index the time frame column to match Cell-ID's.
+
+```{r}
+mp.filters <- mp.filters |> 
+  # Re-index t.frame by subtracting 1.
+  mutate(t.frame = Frame - 1)
+```
+
+9. _Optional_: Prepare a `data.frame` with tag names mapped to _Counter_ indices, and join it to the points data frame.
+  - Note that ImageJ's Multi-point counters begin at 0.
+  - Each "Counter" has an associated "tag", corresponding to the event or class marked in the images.
+  
+```{r}
+# For example:
+counter.desc.df <- data.frame(
+  Counter = 0:3,
+  tag_description = c("Ok", "Budding", "Dead", "Spurious")
+)
+
+# Uncomment for effect:
+# mp.filters <- mp.filters |> 
+#   left_join(counter.desc.df)
+```
+
+10. Examine the result.
+
+```{r}
+mp.filters
+```
+
+#### Sample dataset
+
+Here is an example `mp.filters` `data.frame`. In this case the position 
+is encoded in the _Slice_ variable.
+
+```{r}
+mp.filters.file <- system.file("extdata/sample_datasets/sample_time_series/imagej_mp_tags/results_pos4_12.csv",
+                               package = "rcell2.examples", mustWork = T)
+
+mp.filters <- 
+  # Load CSV files
+  mp.filters.file |> read_csv() |> 
+  # Cleanup
+  select(X, Y, Ch, Slice, Frame, Counter) |> 
+  # Add an ID to each tag
+  mutate(mpid = 1:n()) |> 
+  # Re-index t.frame by subtracting 1.
+  mutate(t.frame = Frame - 1)
+
+mp.filters
+```
+
+### Map points to cells
+
+Keep the relevant set of counters (a.k.a. markers) from the `mp.filters` data frame.
+
+```{r}
+mp.filters <- 
+  # Load CSV files
+  mp.filters.files |> lapply(read_csv) |> 
+  # Bind rows
+  bind_rows() |> 
+  # Get position info from the "Slice" index..
+  mutate(pos = Slice) |> 
+  # Cleanup
+  select(pos, X, Y, Ch, Slice, Frame) |> 
+  # Add an ID to each tag
+  mutate(mpid = 1:n())
+
+mp.filters
+```
+
+Calculate distance from each cell to its closest multipoint, and save it's ID:
+
+```{r}
+# Make a copy of cdata
+cdata.mp <- cdata |>
+  # filter(t.frame == min(t.frame)) |> 
+  select(ucid, pos, t.frame, xpos, ypos)
+
+# Make a copy of the points
+mp.mapped <- mp.filter
+
+# Add the columns
+mp.mapped[, c("ucid", "closest.dist")] <-
+  apply(mp.filter, 1, function(x){
+    cells <- filter(cdata.mp, pos == x["pos"] & t.frame == x["t.frame"])
+    
+    if(nrow(cells) == 0) return(c(NA, NA))
+    
+    dists <- sqrt(( (x["X"]-cells$xpos)^2) + ((x["Y"]-cells$ypos)^2) )
+    
+    if(length(dists) == 0) return(c(NA, NA))
+    
+    min.id <- cells$ucid[which.min(dists)]
+    
+    c( min.id, min(dists))
+  }) |> t()
+
+mp.mapped
+```
+
+Fix mis-assgnments manually here:
+
+> If you spot any mis-assignments later, you can fix them here mannualy and then re-inspect.
+
+```{r}
+# mp.mapped[mp.mapped$ucid==110047,"ucid"] <- 110754
+# 
+# mp.mapped
+```
+
+Join the closest points to `cdata.mp`:
+
+```{r}
+mp.mapped.minimal <- mp.mapped |> 
+  select(mpid, ucid, t.frame, closest.dist, Counter)
+
+cdata.mp <- cdata.mp |> 
+  inner_join(mp.mapped.minimal) |> 
+  dplyr::rename(closest.mp.id=mpid)
+```
+
+Examine images of the tagged cells: 
+
+```{r}
+cdata.mp |>
+  rcell2.magick::magickCell(images) |> 
+  rcell2.magick::magickForKnitr()
+```
+
+Plot the point's distribution, this will help you choose an appropriate threshold.
+
+```{r}
+mp.mapped.minimal |> 
+  ggplot(aes(closest.dist)) + 
+  geom_histogram() +
+  facet_wrap(~Counter)
+```
+
+### Filtering cells
+
+You can set a threshold distance, and create a filter column:
+
+> This value will depend on you optical setup, and the morphology of your cells.
+
+```{r}
+threshold <- 11
+
+cdata.mp$has.close.mp <- cdata.mp$closest.dist < threshold
+```
+
+Plot the result:
+
+> You may find `plotly::ggplotly` useful to render this plot in interactive form.
+
+```{r}
+p <- ggplot() + 
+  geom_point(aes(xpos, ypos, 
+                 color="CellID",
+             text=paste("ucid:", ucid, ", closest dist:", closest.dist)),
+             data=cdata.mp) +
+  
+  geom_point(aes(X, Y, color="ImageJ"), 
+             data = mp.filter, 
+             size = 3) +
+  
+  geom_point(aes(xpos, ypos, color="matched"),
+             data=cdata.mp |> filter(has.close.mp)) +
+  
+  facet_wrap(~pos) + coord_equal() +
+  ggtitle(paste0("Examine MP filter result", " (d<", threshold, ")"), 
+          "Black: ImageJ points; Gray: all Cell-ID cells; Red: Cell-ID cells matched to a point.") + 
+  
+  scale_color_manual(values=c(ImageJ="black", matched="red", CellID="grey")) +
+  scale_y_reverse() +
+  theme_minimal()
+
+# plotly::ggplotly(p)
+p
+```
+
+Examine images of the filtered cells: 
+
+```{r}
+cdata.mp |> filter(has.close.mp) |> 
+  rcell2.magick::magickCell(images) |> 
+  rcell2.magick::magickForKnitr()
+```
+
+Examine images of the un-matched points: 
+
+```{r}
+# Make a cdata-like data frame for magickCell.
+unmatched.points <- mp.filters |> 
+  dplyr::rename(xpos=X,ypos=Y) |> 
+  inner_join(
+    mp.mapped.minimal |> 
+      filter(closest.dist >= threshold) |> 
+      select(-t.frame),
+    by = "mpid"
+  )
+
+# Display some images.
+unmatched.points |> 
+  rcell2.magick::magickCell(images) |> 
+  rcell2.magick::magickForKnitr()
+```
+
+### Find duplicates
+
+Generate indicator column:
+
+```{r}
+cdata.mp$n_dupes <- apply(X = cdata.mp, MARGIN = 1, function(cell){
+  sum( (cell["closest.mp.id"] == cdata.mp$closest.mp.id) & cdata.mp$has.close.mp )
+})
+
+cdata.mp$dupes <- cdata.mp$n_dupes > 1
+
+any(cdata.mp$dupes) # Should be false
+unique(cdata.mp$n_dupes) # Should be only 1's and 0's.
+```
+
+> `n_dupes` is 1 if the `ucid` was assigned to 1 mpid. If greater than 1,
+> the `ucid` shares the mpid with at least anoher `ucid` (and this should
+> not happen).
+
+Check graphically:
+
+```{r}
+plt.dupes <- ggplot() + 
+  
+  geom_point(aes(X, Y, shape = Counter), color = "gray",
+             data = mp.filter |> mutate(Counter = as.factor(Counter)), 
+             size =3) +
+  
+  geom_point(aes(xpos, ypos), color = "black", data = cdata.mp) +
+
+  geom_point(aes(xpos, ypos, color=as.factor(n_dupes)),
+             data = cdata.mp |> filter(has.close.mp)) + 
+    
+  geom_line(aes(xpos, ypos, group=closest.mp.id), color = "black",
+            data = cdata.mp |> filter(has.close.mp)) + 
+  
+  ggtitle("Graphical check of unique matches",
+          "The points from cdata sharing a close multipoint are joined by lines") +
+  
+  facet_wrap(~pos)
+
+plotly::ggplotly(plt.dupes)
+```
+
+Tabular check. There should be only one row for each `closest.mp.drop.id`.
+
+```{r}
+checks.df <- cdata.mp |> 
+  group_by(closest.mp.id) |> 
+  filter(has.close.mp) |> 
+  summarise(row.count = n()) |> 
+  arrange(-row.count)
+
+all(checks.df$row.count == 1)  # Should be TRUE
+```
+
+Manual inspection:
+
+```{r}
+checks.df
+```
+
+### Filter data
+
+Use the ImageJ points to select cells in `cdata` which have a point "close enough"
+to their centroid.
+
+First, generate a mapping `data.frame`:
+
+```{r}
+mapping <- cdata.mp |> filter(has.close.mp) |> 
+  select(ucid, closest.mp.id)
+```
+
+Lastly, check for unicity:
+
+```{r}
+stopifnot(nrow(mapping) == nrow(unique(mapping)))
+```
+
+Examine:
+
+```{r}
+mapping
+```
+
+You can use this information to filter `cdata` by `ucid`:
+
+```{r}
+cdata.filtered <- cdata |> 
+  filter(ucid %in% mapping$ucid)
+```
+
+Done! `cdata.filtered` now contains only cells that were matched to a `0` _Counter_
+in ImageJ. Other uses for this include tagging events, or phenotypes of interest.
+
+Optionally use `rcell2.magick` to display some images:
+
+```{r}
+cdata.filtered |> 
+  rcell2.magick::magickCell(images) |> 
+  rcell2.magick::magickForKnitr()
+```
 
 ## Data analysis
 
