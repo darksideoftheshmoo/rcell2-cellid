@@ -145,20 +145,20 @@ data.dir <- dirname(file.choose())
 
 Otherwise, install and use the "examples" package, which provides example images and scripts.
 
-First, get the example data:
+First, download the example data:
 
 ```{r}
+# Install the "remotes" package if not found:
 if(!requireNamespace("remotes")){
-  # Install the "remotes" package if not found:
   install.packages("remotes")
 }
 
+# Install the "rcell2.examples" package if not found:
 if(!requireNamespace("rcell2.examples", quietly = T)){
-  # Install the "rcell2.examples" package if not found:
   remotes::install_github("darksideoftheshmoo/rcell2.examples")
 }
 
-# List available datasets:
+# List of the available datasets:
 dir(system.file("extdata/sample_datasets/", package = "rcell2.examples"))
 ```
 
@@ -177,19 +177,12 @@ data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
 > In the chunk above we set up `data.dir` to hold the path to samples images of a
 time-course experiment. This will replace any previous value!
 
-Finally, check if the files are there:
-
-```{r}
-# List image files in the set:
-dir(data.dir) |> head()
-```
-
 A position metadata (a.k.a. `pdata`) file is also included:
 
 ```{r}
 # Example: Choose one set of example images:
 pdata <- system.file("extdata/sample_datasets/sample_time_series/pdata.csv",
-                        package = "rcell2.examples") |> 
+                     package = "rcell2.examples") |> 
   read.csv()
 
 pdata
@@ -246,71 +239,6 @@ with `rcell2`'s defaults. See `?rename_mda` for extra options.
 The defaults are useful for a three channel experiment, 
 and file names looking like this: `far6_w2LED-BF--YFPcube--cam_s7_t2.TIF`.
 
-#### Rename a single file
-
-A preview of how files will be renamed can be generated:
-
-```{r}
-# Choose a sample file name (one or many)
-one.filename <- "far6_w2LED-BF--YFPcube--cam_s7_t2.TIF"
-
-# Pass it to rename_mda, setting rename.function to NULL (to avoid actually copying files).
-result <- rename_mda(rename.function = NULL, 
-                     file.names = one.filename)
-
-# Get the info we're interested in
-result$status %>% select(file, rename.file)
-```
-
-A "renaming data frame" (`images.info` below) can be extracted and examined before renaming all images:
-
-```{r}
-# Set rename.function to NULL (to avoid actually copying files).
-images.info <- 
-  rename_mda(rename.function = NULL, 
-             rename.dataframe = TRUE,
-             file.names = one.filename)
-
-images.info
-```
-
-The updated `images.info` data frame can also be adjusted and then used to rename images:
-
-```{r}
-# Example: adjust "t.frame".
-images.info <- images.info |> mutate(t.frame = 99)
-
-# Pass the updated data.frame to the "rename.dataframe" argument.
-# Set rename.function to NULL (to avoid actually copying files for now).
-images.info.final <- 
-  rename_mda(rename.function = NULL, 
-             rename.dataframe = images.info,
-             file.names = one.filename)
-
-images.info.final
-```
-
-A _dummy_ example follows:
-
-```{r}
-# Path to the images produced by MetaMorph's MDA.
-images.path <- file.path(tempdir(), "images")
-# Create a temporary directory
-dir.create(images.path)
-# Create a dummy file
-writeLines(text = "dummy content", 
-           con = paste0(images.path, "far6_w2LED-BF--YFPcube--cam_s7_t2.TIF"))
-
-# Rename files
-rename_mda(images.path)
-```
-
-List all files in the images directory to inspect the result:
-
-```{r}
-dir(images.path, recursive = T)
-```
-
 #### Rename all files
 
 To run the function on all images, provide the path to the images directory.
@@ -357,6 +285,36 @@ The renamed images arecan be found in the following path:
 result[["rename.path"]]
 ```
 
+#### Manipulating the rename mapping
+
+A "renaming data frame" (`images.info` below) can be extracted and examined before renaming all images:
+
+```{r}
+# Set rename.function to NULL (to avoid actually copying files).
+images.info <- 
+  rename_mda(images.path = data.dir,
+             rename.function = NULL, 
+             rename.dataframe = TRUE)
+
+images.info
+```
+
+The updated `images.info` data frame can also be adjusted and then used to rename images:
+
+```{r}
+# Example: adjust "t.frame".
+images.info <- images.info |> mutate(t.frame = 99)
+
+# Pass the updated data.frame to the "rename.dataframe" argument.
+# Set rename.function to NULL (to avoid actually copying files for now).
+images.info.final <- 
+  rename_mda(rename.function = NULL, 
+             rename.dataframe = images.info,
+             file.names = one.filename)
+
+images.info.final
+```
+
 ## Preprocessing
 
 The following sections may help improve the result of the segmentation,
@@ -373,15 +331,50 @@ be raised if the checks fail.
 > time-series images.
 
 ```{r}
+file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
+
 # Get images and their metadata.
 image_list <- rcell2.cellid::arguments(data.dir, 
                                        check_fail = TRUE,
-                                       file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
+                                       file.pattern = file.pattern)
 ```
 
-If images are missing, the command above will fail.
+If images are missing, the command above will fail. Set `check_fail = FALSE` to 
+inspect all warnings without raising an error, as exemplified below.
 
-You can also set `check_fail = FALSE` to inspect all warnings without raising an error.
+#### Identify missing frames
+
+Missing images in the set can be located visually by plotting with `geom_tile`.
+
+In this case, it is important to set `bf_as_fl = T` and `check_fail = F` in order
+to get the complete image list (i.e. including `BF` as a channel), and skip errors
+if images are missing (and thus the image list may be malformed).
+
+An example follows, note that `check_fail = FALSE` is set:
+
+```{r}
+image_list <- rcell2.cellid::arguments(
+  path = data.dir, 
+  bf_as_fl = T,
+  check_fail = FALSE,
+  file.pattern = file.pattern)
+
+d <- image_list |> 
+  group_by(pos, ch, t.frame) |> 
+  summarise(n=n()) |> 
+  ungroup() |> 
+  complete(pos, ch, t.frame)
+
+p <- d |> ggplot() +
+  geom_tile(aes(t.frame, pos, fill=!is.na(n))) +
+  facet_wrap(~ch) + 
+  theme_minimal()
+
+p  # plotly::ggplotly(p)
+```
+
+After fixing any issues, re-create the arguments data frame, and move on to the
+next sections.
 
 #### Inspect sample images
 
@@ -403,42 +396,13 @@ sample_images <- image_list |>
 sample_images |> 
   with(file) |> 
   magick::image_read() |> 
-  magick::image_modulate(brightness = 400) |>
+  # magick::image_modulate(brightness = 400) |>
+  magick::image_normalize() |> 
   magick::image_border() |> 
   magick::image_append() |> 
   magick::image_resize("700x0") |> 
   magick::image_write(path = tempfile(fileext = ".png"), format = "png") |> 
   knitr::include_graphics()
-```
-
-#### Identify missing frames
-
-Missing images in the set can be located visually by plotting with `geom_tile`.
-
-In this case, it is important to set `bf_as_fl = T` and `check_fail = F` in order
-to get the complete image list (i.e. including `BF` as a channel), and skip errors
-if images are missing (and thus the image list may be malformed).
-
-An example follows:
-
-```{r}
-i <- rcell2.cellid::arguments(path = data.dir, 
-                              bf_as_fl = T,
-                              check_fail = F,
-                              file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
-
-d <- i |> 
-  group_by(pos, ch, t.frame) |> 
-  summarise(n=n()) |> 
-  ungroup() |> 
-  complete(pos, ch, t.frame)
-
-p <- d |> ggplot() +
-  geom_tile(aes(t.frame, pos, fill=!is.na(n))) +
-  facet_wrap(~ch) + 
-  theme_minimal()
-
-p  # plotly::ggplotly(p)
 ```
 
 ### Check XY stage coordinates
