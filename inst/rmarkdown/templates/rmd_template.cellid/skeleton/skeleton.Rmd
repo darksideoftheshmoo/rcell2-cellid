@@ -440,10 +440,14 @@ image_list <- rcell2.cellid::arguments(path = data.dir,
                                        file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
 
 # Extract metadata and plot stage positions.
-result <- plot_pos_overlaps(image_list, channels = "TFP")
+result <- image_list |> 
+  # Use only the first frame
+  filter(t.frame == min(t.frame)) |> 
+  plot_pos_overlaps(channels = "TFP", 
+                    print_plot = F)
 
 # The plot can be found in the output list.
-# result$plt
+result$plt #|> plotly::ggplotly()
 ```
 
 > If any two shaded areas overlap, there will be duplicated cells in the dataset.

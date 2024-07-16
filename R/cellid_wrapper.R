@@ -752,7 +752,7 @@ arguments_check <- function(arguments_df, check_fail=F){
                    n_out, "/", n_row, 
                    " output directories already exist.\n\n"))
   } else {
-    message("\n\narguments_check: no output directories exist.\n\n")
+    cat("\narguments_check: no output directories exist.\n")
   }
   
   # Check BF exists ####
@@ -764,7 +764,7 @@ arguments_check <- function(arguments_df, check_fail=F){
                    " output BF.out.tif files already exist.\n\n"))
   } else {
     # Message OK
-    message("\n\narguments_check: no output BF.out.tif files exist.\n\n")
+    cat("\narguments_check: no output BF.out.tif files exist.\n")
   }
   
   # Check FL exists ####
@@ -776,7 +776,7 @@ arguments_check <- function(arguments_df, check_fail=F){
                    " output FL.out.tif files already exist.\n\n"))
   } else{
     # Message OK
-    message("\n\narguments_check:  no output FL.out.tif files exist.\n\n")
+    cat("\narguments_check:  no output FL.out.tif files exist.\n")
   }
   
   
