@@ -1507,7 +1507,7 @@ mp.filters <-
   # Get position info from the "Slice" index..
   mutate(pos = Slice) |> 
   # Cleanup
-  select(pos, X, Y, Ch, Slice, Frame) |> 
+  select(pos, X, Y, Ch, Slice, Frame, Counter) |> 
   # Add an ID to each tag
   mutate(mpid = 1:n())
 ```
