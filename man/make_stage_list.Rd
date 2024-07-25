@@ -8,7 +8,7 @@ make_stage_list(
   spreadsheet_path,
   stg_output_path = "stage_list.STG",
   print_output = FALSE,
-  calib_stg_list = NULL,
+  calib_stg_path = NULL,
   well_sep = 4500,
   well_width = 3300,
   fov_width = 500,
@@ -23,7 +23,7 @@ make_stage_list(
 
 \item{stg_output_path}{Path where the STG file will be saved. This file is meant to be imported with MetaMorph's MDA.}
 
-\item{calib_stg_list}{Path where the calibration STG can be found saved. NULL by default (disabled).}
+\item{calib_stg_path}{Path where the calibration STG can be found saved. NULL by default (disabled).}
 
 \item{well_sep}{Center-to-center distance between wells in the plate (in microns).}
 

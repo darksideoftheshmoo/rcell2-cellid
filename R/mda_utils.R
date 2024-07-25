@@ -43,7 +43,7 @@
 #' 
 #' @param spreadsheet_path Path to the an XLSX spreadsheet (e.g. "stage_positions.xlsx") with the following sheets: "pdata", "well_order", "well_images." A template file can be obtained with \code{get_spos_template}.
 #' @param stg_output_path Path where the STG file will be saved. This file is meant to be imported with MetaMorph's MDA.
-#' @param calib_stg_list Path where the calibration STG can be found saved. NULL by default (disabled).
+#' @param calib_stg_path Path where the calibration STG can be found saved. NULL by default (disabled).
 #' @param well_sep Center-to-center distance between wells in the plate (in microns).
 #' @param well_width Width of the bottom of the wells (in microns).
 #' @param fov_width Width of the field of view of the final image (in microns).
@@ -58,7 +58,7 @@ make_stage_list <- function(
   spreadsheet_path,
   stg_output_path="stage_list.STG",
   print_output=FALSE,
-  calib_stg_list=NULL,
+  calib_stg_path=NULL,
   well_sep = 4500,
   well_width = 3300,
   fov_width=500,
@@ -132,14 +132,14 @@ make_stage_list <- function(
     ungroup()
   
   # Adjust with calibration
-  if(!is.null(calib_stg_list)){
+  if(!is.null(calib_stg_path)){
     # Get the default calibration file.
-    if(isTRUE(calib_stg_list)){
-      calib_stg_list <- system.file("stage_positions-calib_tilt_B2_top_left.STG", package = "rcell2.cellid")
+    if(isTRUE(calib_stg_path)){
+      calib_stg_path <- system.file("stage_positions-calib_tilt_B2_top_left.STG", package = "rcell2.cellid")
     }
     # Adjust the Z coordinate.
-    warning(paste("Adjusting stage coords with calibration file:", calib_stg_list))
-    stage_coords <- adjust_stg_z(stage_coords, plot_error = F)
+    warning(paste("Adjusting stage coords with calibration file:", calib_stg_path))
+    stage_coords <- adjust_stg_z(stage_coords, calib_stg_path = calib_stg_path, plot_error = F)
   }
   
   plt <- plot_stg_coords(stage_coords, origin_at_corner, origin_at_pos)
@@ -270,6 +270,7 @@ read_stg <- function(stg_list_path, plot_stage=TRUE){
   return(stg_list)
 }
 
+#' Fit a linear model to the XY coordinates and predict Z
 model_stg_z <- function(calib_stg_list){
   m <- lm(z~x+y, data=calib_stg_list)
   return(m)
