@@ -143,6 +143,7 @@ make_stage_list <- function(
   }
   
   plt <- plot_stg_coords(stage_coords, origin_at_corner, origin_at_pos)
+  plt_z <- plot_stg_coords_z(stage_coords, origin_at_corner, origin_at_pos)
   
   stg_file_header <- paste(
     '"Stage Memory List", Version 6.0',
@@ -168,6 +169,7 @@ make_stage_list <- function(
   return(list(
     stg_output_path=stg_output_path,
     positions_plot=plt, 
+    xyz_plot=plt_z,
     stage_coords=stage_coords
   ))
 }
@@ -189,6 +191,31 @@ plot_stg_coords <- function(stage_coords, origin_at_corner, origin_at_pos){
     scale_x_reverse() +
     scale_color_discrete() +
     guides(colour="none") +
+    ggtitle("Generated stage coordinates for each imaging position",
+            "The red diamond indicates the location of the origin (" |> 
+              paste0(origin_at_corner, " corner, at position ", origin_at_pos, ").")) +
+    theme_minimal()
+  
+  return(plt)
+}
+
+plot_stg_coords_z <- function(stage_coords, origin_at_corner, origin_at_pos){
+  plt <- 
+    stage_coords |> 
+    mutate(
+      well = as.factor(well),
+      fov = as.factor(fov)
+    ) |> 
+    ggplot() +
+    geom_point(aes(x,y),color="red", shape=23, size=5, data=data.frame(x=0,y=0)) +
+    geom_point(aes(x,y),color="red", shape=19, size=2, data=data.frame(x=0,y=0)) +
+    geom_path(aes(x,y)) +
+    geom_point(aes(x,y,color=z), size=5) +
+    # For the plot to render as a well-plate seen from above (as usual),
+    # the X coordinates of the stage must be flipped.
+    scale_x_reverse() +
+    scale_color_viridis_c() +
+    # guides(colour="none") +
     ggtitle("Generated stage coordinates for each imaging position",
             "The red diamond indicates the location of the origin (" |> 
               paste0(origin_at_corner, " corner, at position ", origin_at_pos, ").")) +
