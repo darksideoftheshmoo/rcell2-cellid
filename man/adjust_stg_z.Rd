@@ -9,7 +9,6 @@ adjust_stg_z(
   calib_stg_path = system.file("stage_positions-calib_tilt_B2_top_left.STG", package =
     "rcell2.cellid"),
   origin_at_corner = "top-right",
-  origin_at_pos = 1,
   plot_error = FALSE
 )
 }
@@ -19,8 +18,6 @@ adjust_stg_z(
 \item{calib_stg_path}{Path to an STG file with calibration points. Their origin must be the same as the origin used in \code{stage_coords}.}
 
 \item{origin_at_corner}{Corner of the well at which the coordinate origin was set.}
-
-\item{origin_at_pos}{Stage position that contains the origin (at the corner selected by \code{origin_at_corner}).}
 }
 \description{
 Use a calibration STG file to adjust the Z coordinates of a "stage_coords" data frame

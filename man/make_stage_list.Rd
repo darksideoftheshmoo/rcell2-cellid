@@ -13,7 +13,6 @@ make_stage_list(
   well_width = 3300,
   fov_width = 500,
   origin_at_corner = "top-right",
-  origin_at_pos = 1,
   af_offset_default = 0,
   z_default = 0
 )
@@ -32,8 +31,6 @@ make_stage_list(
 \item{fov_width}{Width of the field of view of the final image (in microns).}
 
 \item{origin_at_corner}{Corner of the well at which the coordinate origin was set.}
-
-\item{origin_at_pos}{Stage position that contains the origin (at the corner selected by \code{origin_at_corner}).}
 
 \item{af_offset_default}{Default value for the hardware auto-focus offset.}
 

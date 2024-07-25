@@ -48,7 +48,6 @@
 #' @param well_width Width of the bottom of the wells (in microns).
 #' @param fov_width Width of the field of view of the final image (in microns).
 #' @param origin_at_corner Corner of the well at which the coordinate origin was set.
-#' @param origin_at_pos Stage position that contains the origin (at the corner selected by \code{origin_at_corner}).
 #' @param af_offset_default Default value for the hardware auto-focus offset.
 #' @param z_default Default value for the Z-coordinate (i.e. objective lens height).
 #' 
@@ -63,7 +62,8 @@ make_stage_list <- function(
   well_width = 3300,
   fov_width=500,
   origin_at_corner = "top-right",
-  origin_at_pos = 1,
+  # origin_at_pos = 1,
+  # @param origin_at_pos Stage position that contains the origin (at the corner selected by \code{origin_at_corner}).
   af_offset_default = 0,
   z_default = 0){
   
@@ -103,7 +103,7 @@ make_stage_list <- function(
   if(!all(sort(positions$pos) == sort(pdata$pos))) stop("Position indexes in pdata do not match the well images and ordering.")
   
   if(origin_at_corner != "top-right") stop("Only top-right origins supported ATM.")
-  if(origin_at_pos != 1) stop("The origin can only be in the well of the first position ATM.")
+  # if(origin_at_pos != 1) stop("The origin can only be in the well of the first position ATM.")
   
   half_n_fov <- floor((well_width %/% fov_width)/2)
   
@@ -130,6 +130,10 @@ make_stage_list <- function(
       y = y - max(fov_i %/% half_n_fov)/2 * fov_width
     ) |> 
     ungroup()
+  
+  origin_at_pos <- stage_coords |> 
+    filter(row_i == min(row_i), col_i == min(col_i)) |> 
+    with(pos)
   
   # Adjust with calibration
   if(!is.null(calib_stg_path)){
@@ -285,11 +289,9 @@ adjust_stg_z <- function(
     stage_coords,
     calib_stg_path = system.file("stage_positions-calib_tilt_B2_top_left.STG", package = "rcell2.cellid"),
     origin_at_corner = "top-right",
-    origin_at_pos = 1,
     plot_error = FALSE
 ){
   if(origin_at_corner != "top-right") stop("Only top-right origins supported ATM.")
-  if(origin_at_pos != 1) stop("The origin can only be in the well of the first position ATM.")
   
   calib_stg_list <- read_stg(calib_stg_path, plot_stage = F)
   m <- model_stg_z(calib_stg_list)
