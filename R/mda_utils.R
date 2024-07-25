@@ -190,6 +190,7 @@ plot_stg_coords <- function(stage_coords, origin_at_corner, origin_at_pos){
     geom_point(aes(x,y),color="red", shape=19, size=2, data=data.frame(x=0,y=0)) +
     geom_path(aes(x,y)) +
     geom_point(aes(x,y,color=well), size=5) +
+    geom_text(aes(x,y,label=pos), size=3) +
     # For the plot to render as a well-plate seen from above (as usual),
     # the X coordinates of the stage must be flipped.
     scale_x_reverse() +
@@ -197,7 +198,7 @@ plot_stg_coords <- function(stage_coords, origin_at_corner, origin_at_pos){
     guides(colour="none") +
     ggtitle("Generated stage coordinates for each imaging position",
             "The red diamond indicates the location of the origin (" |> 
-              paste0(origin_at_corner, " corner, at position ", origin_at_pos, ").")) +
+              paste0(origin_at_corner, " corner of position ", origin_at_pos, ").")) +
     theme_minimal()
   
   return(plt)
@@ -222,7 +223,7 @@ plot_stg_coords_z <- function(stage_coords, origin_at_corner, origin_at_pos){
     # guides(colour="none") +
     ggtitle("Generated stage coordinates for each imaging position",
             "The red diamond indicates the location of the origin (" |> 
-              paste0(origin_at_corner, " corner, at position ", origin_at_pos, ").")) +
+              paste0(origin_at_corner, " corner of position ", origin_at_pos, ").")) +
     theme_minimal()
   
   return(plt)
