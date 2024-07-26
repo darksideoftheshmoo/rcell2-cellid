@@ -107,7 +107,7 @@ make_stage_list <- function(
   
   half_n_fov <- floor((well_width %/% fov_width)/2)
   
-  stage_coords <-  positions |> 
+  stage_idxs <-  positions |> 
     select(pos,order,row,col,fov) |> 
     dplyr::rename(well=order) |> 
     mutate(row_i = as.integer(factor(row, levels=LETTERS))) |> 
@@ -116,6 +116,19 @@ make_stage_list <- function(
       row_i = row_i - min(row_i),
       col_i = col_i - min(col_i),
       fov_i = fov - min(fov)
+    )
+  
+  origin_at <- stage_idxs |> 
+    filter(row_i == min(row_i)) |> 
+    filter(col_i == min(col_i)) |> 
+    with(list(pos=pos, row_i=row_i, col_i=col_i))
+  
+  origin_at_pos <- origin_at$pos
+  
+  stage_coords <- stage_idxs |> 
+    mutate(
+      row_i = row_i - origin_at$row_i,
+      col_i = col_i - origin_at$col_i
     ) |> 
     mutate(
       # The stage coordinates use more negative numbers to move towards the right of a well-plate.
@@ -130,11 +143,6 @@ make_stage_list <- function(
       y = y - max(fov_i %/% half_n_fov)/2 * fov_width
     ) |> 
     ungroup()
-  
-  origin_at_pos <- stage_coords |> 
-    filter(row_i == min(row_i)) |> 
-    filter(col_i == min(col_i)) |> 
-    with(pos)
   
   # Adjust with calibration
   if(!is.null(calib_stg_path)){
