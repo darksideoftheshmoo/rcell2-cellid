@@ -132,7 +132,8 @@ make_stage_list <- function(
     ungroup()
   
   origin_at_pos <- stage_coords |> 
-    filter(row_i == min(row_i), col_i == min(col_i)) |> 
+    filter(row_i == min(row_i)) |> 
+    filter(col_i == min(col_i)) |> 
     with(pos)
   
   # Adjust with calibration
