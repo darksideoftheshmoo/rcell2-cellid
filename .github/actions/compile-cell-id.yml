@@ -1,0 +1,32 @@
+name: Compile Cell-ID C Code
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install build tools
+      run: sudo apt-get update && sudo apt-get install -y build-essential
+
+    - name: Compile C code
+      working-directory: src/cellID
+      run: make
+
+    - name: Verify compilation
+      run: |
+        if [ ! -f ./cell ]; then
+          echo "Compilation failed: executable not found."
+          exit 1
+        fi
+      working-directory: src/cellID
