@@ -65,6 +65,7 @@ End-copyright-notice-for-Libtiff
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <tiffio.h>
 #include <time.h>
 #include "tif_routines.h"
