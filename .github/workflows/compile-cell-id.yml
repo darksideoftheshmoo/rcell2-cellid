@@ -21,7 +21,9 @@ jobs:
 
     - name: Compile C code
       working-directory: src
-      run: make -f Makevars cellid
+      run: |
+        make -f Makevars cellid
+        ls -l
 
     - name: Verify compilation
       run: |
