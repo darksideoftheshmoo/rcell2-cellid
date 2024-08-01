@@ -103,7 +103,9 @@ which can finally be imported in to MetaMorph's MDA.
 
 ```{r}
 stage_coords <- template_path |> 
-  make_stage_list(af_offset_default = 3.5)
+  make_stage_list(af_offset_default = 3.5, 
+                  # Set this to NULL to disable Z-tilt correction.
+                  calib_stg_path = TRUE)
 
 stage_coords$positions_plot #|> plotly::ggplotly()
 ```
