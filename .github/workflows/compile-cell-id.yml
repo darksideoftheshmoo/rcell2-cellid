@@ -23,7 +23,7 @@ jobs:
       working-directory: src
       run: |
         make -f Makevars cellid
-        ls -l
+        make -f Makevars test
 
     - name: Verify compilation
       run: |
@@ -31,4 +31,4 @@ jobs:
           echo "Compilation failed: executable not found."
           exit 1
         fi
-      working-directory: src/cellID
+      working-directory: src
