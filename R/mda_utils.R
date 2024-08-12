@@ -26,6 +26,103 @@
 }
 
 
+#' Parse a grid sheet into long format
+grid_to_long <- function(sheet_data, rows_to="row", names_to="col", values_to="row"){
+  names(sheet_data)[1] <- rows_to
+  sheet_data <- sheet_data |> 
+    pivot_longer(-all_of(rows_to), names_to=names_to, values_to=values_to)
+  return(sheet_data)
+}
+
+#' Extract well order and image numbers from the template spreadsheet
+make_wells <- function(spreadsheet_path,
+                       well_order_sheet="well_order", 
+                       well_images_sheet="well_images"){
+  
+  well_order <- readxl::read_xlsx(spreadsheet_path, well_order_sheet) |> 
+    grid_to_long(names_to = "col", values_to = "order") |> 
+    filter(order > 0) |> 
+    arrange(order)
+  
+  if(!all(diff(well_order$order) == 1)) stop("Ordering is not consecutive.")
+  
+  well_images <- readxl::read_xlsx(spreadsheet_path, well_images_sheet) |> 
+    grid_to_long(names_to = "col", values_to = "images") |> 
+    filter(images > 0)
+  
+  wells <- 
+    left_join(well_order, well_images, 
+              by = join_by(row, col)) |> 
+    arrange(order) 
+  
+  return(wells)
+}
+
+#' Prepare a pdata dataframe from a template spreadsheet
+#' 
+#' Extract metadata information from a template spreadsheet (e.g. as the one provided by \code{get_spos_template}), joining it to the "pdata" table in that spreadsheet.
+#' 
+#' @inheritParams make_stage_list
+#' @param pdata_sheets Extract additional metadata from these sheets in the template spreadsheet file.
+#' @param plot_metadata If TRUE, plot the extracted metadata.
+#' @param write_pdata If TRUE, write a "pdata.csv" file next to the original template file.
+#' @export
+#' @import ggplot2 dplyr tidyr readxl
+make_pdata <- function(spreadsheet_path, pdata_sheets=c(), plot_metadata=TRUE, write_pdata=TRUE){
+  
+  pdata <- readxl::read_xlsx(spreadsheet_path, "pdata")
+  
+  positions <- spreadsheet_path |> 
+    make_wells() |> 
+    make_positions()
+  
+  if(!all(sort(positions$pos) == sort(pdata$pos))) stop("Position indexes in pdata do not match the well images and ordering.")
+  
+  pdata <- pdata |> 
+    left_join(positions, by = "pos")
+  
+  for(sheet in pdata_sheets){
+    metadata <- readxl::read_xlsx(spreadsheet_path, sheet) |> 
+      grid_to_long(values_to=sheet)
+    
+    pdata <- pdata |> 
+      left_join(metadata, by=c("row", "col"))
+  }
+  
+  pdata <- pdata |> 
+    mutate_at(.vars = c("row", "col"), .funs = as.ordered)
+  
+  if(plot_metadata){
+    for(sheet in pdata_sheets){
+      plt <- pdata |> 
+        ggplot() +
+        geom_tile(aes(col, row, fill=.data[[sheet]])) + 
+        scale_y_discrete(limits=rev)
+      
+      print(plt)
+    }
+  }
+  
+  if(isTRUE(write_pdata)){
+    write.csv(x = pdata, 
+              file = file.path(dirname(spreadsheet_path), "pdata.csv"))
+  }
+  
+  return(pdata)
+}
+
+#' Add 'pos' and 'fov' fields to the wells data frame
+make_positions <- function(wells){
+  
+  positions <- wells |> 
+    group_by(row, col, order) |> 
+    reframe(fov=1:max(images)) |> 
+    arrange(order, fov) |> 
+    mutate(pos = 1:n())
+  
+  return(positions)
+}
+
 #' Generate stage position data for a 384 well-plate experiment
 #' 
 #' @details
@@ -69,36 +166,9 @@ make_stage_list <- function(
   
   pdata <- readxl::read_xlsx(spreadsheet_path, "pdata")
   
-  well_order <- readxl::read_xlsx(spreadsheet_path, "well_order")
-  names(well_order)[1] <- "row"
-  well_order <- well_order |> 
-    pivot_longer(-row, names_to = "col", values_to = "order") |> 
-    filter(order > 0) |> 
-    arrange(order)
+  wells <- make_wells(spreadsheet_path)
   
-  if(!all(diff(well_order$order) == 1)) stop("Ordering is not consecutive.")
-  
-  well_images <- readxl::read_xlsx(spreadsheet_path, "well_images")
-  names(well_images)[1] <- "row"
-  well_images <- well_images |> 
-    pivot_longer(-row, names_to = "col", values_to = "images") |> 
-    filter(images > 0)
-  
-  wells <- 
-    left_join(well_order, well_images, 
-              by = join_by(row, col)) |> 
-    arrange(order) 
-  
-  # positions <- wells |> 
-  #   mutate(pos_count = cumsum(images)) |> 
-  #   mutate(start_pos = pos_count - images + 1,
-  #          end_pos = start_pos + images - 1)
-  
-  positions <- wells |> 
-    group_by(row, col, order) |> 
-    reframe(fov=1:max(images)) |> 
-    arrange(order, fov) |> 
-    mutate(pos = 1:n())
+  positions <- make_positions(wells)
   
   if(!all(sort(positions$pos) == sort(pdata$pos))) stop("Position indexes in pdata do not match the well images and ordering.")
   

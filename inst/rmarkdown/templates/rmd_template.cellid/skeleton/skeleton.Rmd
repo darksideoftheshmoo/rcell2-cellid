@@ -82,7 +82,7 @@ There is another "quick start" notebook bundled with the package.
 - Use the **help page** of functions before using them. Open help pages with R's `?` (e.g. `?arguments`).
 - Read the README.md at rcell2's [GitHub repo](https://github.com/darksideoftheshmoo/rcell2/).
 
-## Prepare stage metadata
+## Prepare position metadata
 
 For many-well experiments in a 384 microscopy plate, you may benefit from generating stage positions for MetaMorph's MDA automatically.
 
@@ -95,15 +95,31 @@ First, open and fill out the template spreadsheet, which must contain sheets wit
 The template can be copied to the current working directory with the `get_spos_template` function:
 
 ```{r}
-template_path <- get_spos_template()
+template_path <- get_spos_template(save_to = "data/stage_positions.xlsx")
 ```
+
+If you added the position metadata to "grids" in other sheets (instead of the table in the main `pdata` sheet)
+you can use them to generate a full `pdata` table with the `make_pdata` function, by setting the `pdata_sheets`
+argument to a vector with the names of those sheets.
+
+```{r}
+pdata <- make_pdata(template_path)
+
+# Un-comment to extract additional metadata from "grids" in other sheets.
+# pdata <- make_pdata(template_path, pdata_sheets = c("strain", "pheromone"))
+
+pdata
+```
+
+### Prepare stage metadata
 
 After filling out the template, use `make_stage_list` to generate the `.STG` file,
 which can finally be imported in to MetaMorph's MDA.
 
 ```{r}
 stage_coords <- template_path |> 
-  make_stage_list(af_offset_default = 3.5, 
+  make_stage_list(af_offset_default = 3.5,
+                  stg_output_path = "data/stage_list.STG",
                   # Set this to NULL to disable Z-tilt correction.
                   calib_stg_path = TRUE)
 
