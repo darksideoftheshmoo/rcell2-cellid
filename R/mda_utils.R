@@ -330,6 +330,7 @@ make_stage_coods <- function(stage_coords){
 #' Read STG file
 #' 
 #' @import ggplot2
+#' @export
 read_stg <- function(stg_list_path, plot_stage=TRUE){
   stg_list <- stg_list_path |> 
     read.csv(skip = 4, header = F)
