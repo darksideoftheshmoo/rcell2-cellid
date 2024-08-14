@@ -245,6 +245,21 @@ note that it has **3 capturing groups** (suff between parentheses).
 The regex as a whole is used to select images from a directory (filtering out
 other files) and the capturing groups are used to extract the metadata.
 
+The `rename_mda` functions below will rename files to match the following file
+pattern, which is meant for the `arguments` function. It is used to list images
+from the data directory and extract metadata from the file names.
+
+> **Note**: the usage of the "`file.pattern`" regex is explained in the
+> [Arguments] section of this notebook. The next pattern will work with the
+> example time-series images, and the output of `rename_mda`.
+> 
+> If you need to run the pre-processing steps with a different pattern,
+> review the [Arguments] section of this notebook, and change it here too.
+
+```{r}
+file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
+```
+
 ### Renaming images
 
 Metamorph's _Multi-dimensional acquisition_ (MDA for short) may use file 
@@ -352,13 +367,7 @@ The `arguments` function will run several tests (using `arguments_check` interna
 before returning the list of images for Cell-ID. Warnings (or errors if desired) will 
 be raised if the checks fail.
 
-> **Note**: the usage of the "`file.pattern`" argument is explained in the
-> [Arguments] section of this notebook. The following will work with the example
-> time-series images.
-
 ```{r}
-file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
-
 # Get images and their metadata.
 image_list <- rcell2.cellid::arguments(data.dir, 
                                        check_fail = TRUE,
@@ -463,7 +472,7 @@ Optionally set details from your microscope (e.g. magnification and physical siz
 ```{r}
 # Get images.
 image_list <- rcell2.cellid::arguments(path = data.dir,
-                                       file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
+                                       file.pattern = file.pattern)
 
 # Extract metadata and plot stage positions.
 result <- image_list |> 
@@ -531,7 +540,7 @@ Steps:
 ```{r}
 # Get images and their metadata.
 image_list <- rcell2.cellid::arguments(data.dir,
-                                       file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$")
+                                       file.pattern = file.pattern)
 
 # Convert the "arguments" to a list of "images" required to make the ImageJ macro.
 image_list |> 
@@ -647,7 +656,7 @@ Acquisition times can be extracted from metadata in the TIFF files produced by M
 ```{r}
 # Get images.
 image_list <- rcell2.cellid::arguments(path = data.dir,
-                                       file.pattern = "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$") |> 
+                                       file.pattern = file.pattern) |> 
   suppressWarnings()
 ```
 
@@ -706,7 +715,7 @@ List the BF images from the `arguments` function:
 # Get image paths
 cellid.args <-
   rcell2.cellid::arguments(path = data.dir,
-                           file.pattern = "^(BF|[TRY]FP)_Position(\\d+)_time(\\d+).tif$")
+                           file.pattern = file.pattern)
 ```
 
 The `run_fft_filter_on_bfs` will launch ImageJ in the background and apply the FFT filter on a copy of the images.
