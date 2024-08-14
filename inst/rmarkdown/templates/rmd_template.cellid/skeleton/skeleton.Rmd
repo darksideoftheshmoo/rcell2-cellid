@@ -262,7 +262,12 @@ and file names looking like this: `far6_w2LED-BF--YFPcube--cam_s7_t2.TIF`.
 To run the function on all images, provide the path to the images directory.
 
 ```{r}
-result <- rename_mda(images.path = data.dir)
+result <- rename_mda(images.path = data.dir,
+                     # Example patterns:
+                     identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
+                     identifier.info = c("ch", Position="pos", time="t.frame"),
+                     channel_ids = 1:4, 
+                     channel_names = c("TFP", "BF", "RFP", "YFP"))
 ```
 
 Update the value of the `data.dir` variable:
@@ -271,11 +276,12 @@ Update the value of the `data.dir` variable:
 data.dir <- result[["rename.path"]]
 ```
 
-The defaults are easily adaptable to other use cases. 
-To use the function with different file name patterns, adjust `identifier.pattern`,
-`identifier.info`, and `channel.maping.df`. See `?rename_mda` for details.
+The defaults are easily adaptable to other cases:
 
-> Note that the `ch` field in `channel.maping.df` must match exactly the
+- To choose names for your channels tweak `channel_ids` and `channel_names`.
+- To use the function with different file name patterns, adjust `identifier.pattern`, `identifier.info`, `channel_ids` and `channel_names`. See `?rename_mda` for details.
+
+> Note that the `channel_ids` argument on `rename_mda` must match exactly the
 > text captured by the channel group in the `identifier.pattern` regex.
 > Read the function's help page for details: `?rename_mda`.
 
@@ -289,10 +295,12 @@ The `rename_mdas` is meant for this use case.
 
 ```{r}
 result <- rename_mdas(images.path = data.dir,
-                      # Example pattenrs:
+                      # Example patterns:
                       identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
                       identifier.info = c("ch", Position="pos", time="t.frame"),
-                      channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")))
+                      channel_ids = 1:4, 
+                      channel_names = c("TFP", "BF", "RFP", "YFP")
+                      )
 
 result
 ```

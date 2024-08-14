@@ -11,7 +11,8 @@ rename_mda(
   rename.function = file.symlink,
   identifier.pattern = ".*_w(\\\\d).*_s(\\\\d{1,2})_t(\\\\d{1,2}).TIF$",
   identifier.info = c("ch", Position = "pos", time = "t.frame"),
-  channel.maping.df = data.frame(ch = 1:3, ch.name = c("BF", "YFP", "TFP")),
+  channel_ids = 1:3,
+  channel_names = c("CH1", "CH2", "CH3"),
   file.ext = ".tif",
   skip.thumbs.pat = ".*thumb.*",
   cleanup.first = FALSE,
@@ -32,7 +33,9 @@ rename_mda(
 
 \item{identifier.info}{Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. If an element in the vector is named, the name is prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).}
 
-\item{channel.maping.df}{A dataframe with two columns: "ch" holding the original channel names in the source files (coerced to character), and "ch.name" with the new names for each channel.}
+\item{channel_ids}{Channel names in the source files (coerced to character).}
+
+\item{channel_names}{New channel names for each channel in \code{channel_ids}.}
 
 \item{file.ext}{File extension to use in the final file name, such as: ".tif".}
 

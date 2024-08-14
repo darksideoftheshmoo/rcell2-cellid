@@ -10,7 +10,8 @@ rename_mdas(
   print_plot = T,
   identifier.pattern = ".*_w(\\\\d).*_s(\\\\d{1,2})_t(\\\\d{1,2}).TIF$",
   identifier.info = c("ch", Position = "pos", time = "t.frame"),
-  channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")),
+  channel_ids = 1:4,
+  channel_names = c("CH1", "CH2", "CH3", "CH4"),
   rename.function = file.symlink,
   ...
 )
@@ -26,7 +27,9 @@ rename_mdas(
 
 \item{identifier.info}{Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. If an element in the vector is named, the name is prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).}
 
-\item{channel.maping.df}{A dataframe with two columns: "ch" holding the original channel names in the source files (coerced to character), and "ch.name" with the new names for each channel.}
+\item{channel_ids}{Channel names in the source files (coerced to character).}
+
+\item{channel_names}{New channel names for each channel in \code{channel_ids}.}
 
 \item{rename.function}{Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function. Set to \code{NULL} to disable renaming (i.e. for testing purposes).}
 

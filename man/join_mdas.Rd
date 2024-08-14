@@ -18,7 +18,8 @@ join_mdas(index_pattern = "^MDA(\\\\d+)_.*", ..., print_plot = T)
     \item{\code{rename.function}}{Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function. Set to \code{NULL} to disable renaming (i.e. for testing purposes).}
     \item{\code{identifier.pattern}}{Regex defining the iamge file pattern, with gropus for identifier in the file names.}
     \item{\code{identifier.info}}{Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. If an element in the vector is named, the name is prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).}
-    \item{\code{channel.maping.df}}{A dataframe with two columns: "ch" holding the original channel names in the source files (coerced to character), and "ch.name" with the new names for each channel.}
+    \item{\code{channel_ids}}{Channel names in the source files (coerced to character).}
+    \item{\code{channel_names}}{New channel names for each channel in \code{channel_ids}.}
     \item{\code{file.ext}}{File extension to use in the final file name, such as: ".tif".}
     \item{\code{skip.thumbs.pat}}{A regex pattern to filter out files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.}
     \item{\code{cleanup.first}}{Set to \code{TRUE} to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.}
@@ -44,10 +45,13 @@ rename.df <- rename_mdas(
   # Example pattenrs:
   identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
   identifier.info = c("ch", Position="pos", time="t.frame"),
-  channel.maping.df = data.frame(ch = 1:4, 
-  ch.name = c("TFP", "BF", "RFP", "YFP")))
+  channel_ids = 1:4,
+  channel_names = c("TFP", "BF", "RFP", "YFP")
+)
 result <- rename_mda(
   images.path = data.dir, 
   rename.dataframe = rename.df,
-  channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")))
+  channel_ids = 1:4,
+  channel_names = c("TFP", "BF", "RFP", "YFP")
+)
 }

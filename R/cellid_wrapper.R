@@ -1627,7 +1627,8 @@ cero_a_la_izquierda <- function(x, pad_char="0"){
 #' @param rename.function Either \code{\link[base]{file.copy}}, \link[base]{file.symlink} or a similar function. Set to \code{NULL} to disable renaming (i.e. for testing purposes).
 #' @param identifier.pattern Regex defining the iamge file pattern, with gropus for identifier in the file names.
 #' @param identifier.info Character vector with strings "pos", "t.frame", and "ch" (channel), in the same order in which they appear in the \code{identifier.pattern}. If an element in the vector is named, the name is prefixed to the identifier in the final file name (for example, by default, "Position" is prepended to the position number; but channel has no prefix).
-#' @param channel.maping.df A dataframe with two columns: "ch" holding the original channel names in the source files (coerced to character), and "ch.name" with the new names for each channel.
+#' @param channel_ids Channel names in the source files (coerced to character).
+#' @param channel_names New channel names for each channel in \code{channel_ids}.
 #' @param file.ext File extension to use in the final file name, such as: ".tif".
 #' @param skip.thumbs.pat A regex pattern to filter out files. Convenient if the MDA output thumbnails for each image. Set to \code{NULL} to disable.
 #' @param cleanup.first Set to \code{TRUE} to remove all files within the \code{rename.path} directory before renaming. \code{FALSE} by default.
@@ -1642,29 +1643,14 @@ rename_mda <- function(images.path = NULL,
                        rename.function = file.symlink,
                        identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
                        identifier.info = c("ch", Position="pos", time="t.frame"),
-                       channel.maping.df = data.frame(ch=1:3, ch.name=c("BF", "YFP", "TFP")),
+                       channel_ids = 1:3,
+                       channel_names = c("CH1", "CH2", "CH3"),
                        file.ext=".tif",
                        skip.thumbs.pat = ".*thumb.*",
                        cleanup.first=FALSE,
                        file.names = NULL,
                        ...
                        ){
-  
-  if(F){
-    file.names <- c(
-      "timecourse1_w1LED-BF--YFPcube--cam_s1_t1.TIF",
-      "timecourse1_w1LED-BF--YFPcube--cam_s1_t10.TIF", 
-      "timecourse1_w1LED-BF--YFPcube--cam_s1_t11.TIF")
-    images.path = NULL
-    rename.path = NULL
-    rename.function = file.symlink
-    identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$"
-    identifier.info = c("ch", Position="pos", time="t.frame")
-    channel.maping.df = data.frame(ch=1:3, ch.name=c("BF", "YFP", "TFP"))
-    file.ext=".tif"
-    skip.thumbs.pat = ".*thumb.*"
-    cleanup.first=F
-  }
   
   # Prepare the renaming data.frame unless one has been provided.
   if(!is.data.frame(rename.dataframe)){
@@ -1697,18 +1683,21 @@ rename_mda <- function(images.path = NULL,
     images.info <- stringr::str_match(basename(image.files), identifier.pattern)[,-1,drop=F]
     # Convert to data frame
     images.info <- setNames(data.frame(images.info), identifier.info)
-    
+
+    # Create the channel mapping data frame.
+    channel_ids <- as.character(channel_ids)
+
     # Checks
-    channel.maping.df$ch <- as.character(channel.maping.df$ch)
-    mapping_check <- all(unique(images.info$ch) %in% channel.maping.df$ch)
+    mapping_check <- all(unique(images.info$ch) %in% channel_ids)
     if(!mapping_check) stop(paste0("rename_mda: error. Expected channel indexes '",
-                                   paste(channel.maping.df$ch, collapse = ", "),
+                                   paste(channel_ids, collapse = ", "),
                                    "' and found channel indexes '",
                                    paste(unique(images.info$ch), collapse = ", "),
-                                   "'. Consider updating 'channel.maping.df' to add a missing channel index."
+                                   "'. Consider updating 'channel_ids' and 'channel_names' to add a missing channel index."
     ))
     
     # Join extracted image info to the channel mapping data.frame
+    channel.maping.df = data.frame(ch=channel_ids, ch.name=channel_names)
     images.info <- dplyr::left_join(images.info, channel.maping.df, by = "ch")
     
     # Add file name and path
@@ -1830,12 +1819,15 @@ rename_mda <- function(images.path = NULL,
 #'   # Example pattenrs:
 #'   identifier.pattern=".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
 #'   identifier.info = c("ch", Position="pos", time="t.frame"),
-#'   channel.maping.df = data.frame(ch = 1:4, 
-#'   ch.name = c("TFP", "BF", "RFP", "YFP")))
+#'   channel_ids = 1:4,
+#'   channel_names = c("TFP", "BF", "RFP", "YFP")
+#' )
 #' result <- rename_mda(
 #'   images.path = data.dir, 
 #'   rename.dataframe = rename.df,
-#'   channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")))
+#'   channel_ids = 1:4,
+#'   channel_names = c("TFP", "BF", "RFP", "YFP")
+#' )
 #' 
 #' @import dplyr ggplot2
 #' @param index_pattern Regular expression with a single capturing group for the MDA group index. The index matched by the pattern must be an integer, and mus uniquely identify each MDA run.
@@ -1884,13 +1876,6 @@ join_mdas <- function(
   }
   
   return(rename.df)
-  
-  # NOT RUN.
-  # Quick review: in this plot, the total number of images in each channel and position is shown.
-  # The output is meant to be passed on to "rename_mda", for example:
-  result <- rename_mda(images.path = data.dir, 
-                       rename.dataframe = rename.df,
-                       channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")))
 }
 
 #' Convenience function combining join_mdas and rename_mda
@@ -1904,7 +1889,8 @@ rename_mdas <- function(
     print_plot = T,
     identifier.pattern = ".*_w(\\d).*_s(\\d{1,2})_t(\\d{1,2}).TIF$",
     identifier.info = c("ch", Position="pos", time="t.frame"),
-    channel.maping.df = data.frame(ch = 1:4, ch.name = c("TFP", "BF", "RFP", "YFP")),
+    channel_ids = 1:4,
+    channel_names = c("CH1", "CH2", "CH3", "CH4"),
     rename.function = file.symlink,
     ...
     ){
@@ -1915,7 +1901,8 @@ rename_mdas <- function(
     images.path = images.path,
     identifier.pattern = identifier.pattern,
     identifier.info = identifier.info,
-    channel.maping.df = channel.maping.df,
+    channel_ids = channel_ids,
+    channel_names = channel_names,
     ...)
   
   # You can now use this new `rename.df` data frame and `rename_mda` to rename the 
@@ -1925,7 +1912,8 @@ rename_mdas <- function(
     rename.dataframe = rename.df,
     identifier.pattern = identifier.pattern,
     identifier.info = identifier.info,
-    channel.maping.df = channel.maping.df,
+    channel_ids = channel_ids,
+    channel_names = channel_names,
     rename.function=rename.function,
     ...)
   
