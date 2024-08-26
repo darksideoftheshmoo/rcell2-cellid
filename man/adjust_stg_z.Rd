@@ -13,7 +13,7 @@ adjust_stg_z(
 )
 }
 \arguments{
-\item{stage_coords}{Stage coordinates data frame, as produced by "make_stage_list".}
+\item{stage_coords}{Stage coordinates data frame, as produced by "make_stage_list", or STG data as loaded by \code{read_stg}.}
 
 \item{calib_stg_path}{Path to an STG file with calibration points. Their origin must be the same as the origin used in \code{stage_coords}.}
 
