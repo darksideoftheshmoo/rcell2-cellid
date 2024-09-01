@@ -98,7 +98,7 @@ make_pdata <- function(spreadsheet_path, pdata_sheets=c(), plot_metadata=TRUE, w
         ggplot() +
         geom_tile(aes(col, row, fill=as.ordered(.data[[sheet]]))) + 
         scale_y_discrete(limits=rev) +
-        labs(fill=sheet)
+        labs(fill=sheet) + theme_minimal()
       
       print(plt)
     }
@@ -366,6 +366,7 @@ read_stg <- function(stg_list_path, plot_stage=TRUE){
       ggplot() +
       geom_path(aes(x,y)) +
       geom_point(aes(x,y,color=z), size=10, alpha =.5) +
+      scale_x_reverse() + 
       scale_color_viridis_c() + theme_minimal()
     print(plt)
   }
