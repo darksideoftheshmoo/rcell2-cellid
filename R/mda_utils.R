@@ -96,8 +96,9 @@ make_pdata <- function(spreadsheet_path, pdata_sheets=c(), plot_metadata=TRUE, w
     for(sheet in pdata_sheets){
       plt <- pdata |> 
         ggplot() +
-        geom_tile(aes(col, row, fill=.data[[sheet]])) + 
-        scale_y_discrete(limits=rev)
+        geom_tile(aes(col, row, fill=as.ordered(.data[[sheet]]))) + 
+        scale_y_discrete(limits=rev) +
+        labs(fill=sheet)
       
       print(plt)
     }
