@@ -61,6 +61,7 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, temp_dir_name="ijm_set", 
     '// Macro',
     import_command,
     'run("Stack to Hyperstack...", "order=xyczt(default) channels={n_axis1_c} slices={n_axis2_s} frames={n_axis3_f} display=Grayscale");',
+    'run("Scale to Fit");',
     .sep = "\n"
   )
   
