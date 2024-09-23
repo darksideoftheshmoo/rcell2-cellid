@@ -39,10 +39,12 @@ The `rcell2-cellid` package can be installed directly from [its git repository](
 if (!requireNamespace("remotes", quietly = TRUE))
   install.packages("remotes")
 
-# Our lab's GitHub organizacion lives at https://github.com/darksideoftheshmoo/
+# Our lab's GitHub organization lives at https://github.com/darksideoftheshmoo/
 if (!requireNamespace("rcell2.cellid", quietly = TRUE))
   remotes::install_github("darksideoftheshmoo/rcell2-cellid")
 ```
+
+To update, run `install_github("darksideoftheshmoo/rcell2-cellid")` again.
 
 # Notebook Setup
 
