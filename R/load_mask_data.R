@@ -265,7 +265,7 @@ cell.load.boundaries <- function(data,
       awk_term <- ""
     
     if(!is.null(pixel.type))
-      grep_term <- paste0(" | grep -P 'cellID|", paste(pixel.type, collapse = "|"), "'")
+      grep_term <- paste0(" | grep -E 'cellID|", paste(pixel.type, collapse = "|"), "'")
     else
       grep_term <- ""
     

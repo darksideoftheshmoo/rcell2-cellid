@@ -217,7 +217,7 @@ To load the boundary pixels, use the `cell.load.boundaries`:
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
   cell.load.boundaries(data_source = "masks.tsv",
-                       positions = cell.data$positions,
+                       data = cell.data$positions,
                        pixel.type = "b")
 ```
 
