@@ -211,19 +211,19 @@ cell.data <- get_cell_data(path = data.dir)
 if either `output_coords_to_tsv` or `encode_cellID_in_pixels` were set to `TRUE`
 when Cell-ID was run.
 
-To load the boundary pixels, use the `cell.load.boundaries`:
+To load the boundary pixels, use the `get_cell_boundaries`:
 
 ```{r eval=F}
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
-  cell.load.boundaries(data_source = "masks.tsv",
+  get_cell_boundaries(data_source = "masks.tsv",
                        data = cell.data$positions,
                        pixel.type = "b")
 ```
 
 > This data is only available if `cell2` was run with `output_coords_to_tsv = T`.
 
-> Note: `rcell2` provides the `load_cell_data` and `cell.load.boundaries` functions,
+> Note: `rcell2` provides the `load_cell_data` and `get_cell_boundaries` functions,
 > to load the measurements and cell boundary pixels, respectively.
 
 ### Understanding the data

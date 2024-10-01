@@ -21,7 +21,7 @@
 #' and do not contain the necessary information. This might be relevant if the
 #' fluorescent images were aligned to the BF by CellID, such that the pixel
 #' coordinates differ between brightfield and fluorescence output images.
-#' If this is a problem for you, then use \code{cell.load.boundaries} with
+#' If this is a problem for you, then use \code{get_cell_boundaries} with
 #' \code{data_source = 'masks.tsv'} to read CellID's TSV output files (for 
 #' that see \code{cell2}).
 #' 
@@ -214,7 +214,7 @@ tsv_paths_from_args <- function(positions,
 #' @return A "cell.boundaries" data.frame.
 #' @import data.table
 #' @export
-cell.load.boundaries <- function(data,
+get_cell_boundaries <- function(data,
                                  data_source,
                                  # Arguments for the tsv_paths_from_args function:
                                  position_pattern = ".*Position(\\d+)$",

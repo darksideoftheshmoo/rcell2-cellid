@@ -105,7 +105,7 @@ cell2_test <- function(...){
 #' @param dry Do everything without actually running Cell-ID, print the commands that would have been issued.
 #' @param debug_flag Set to 0 to disable Cell-ID printf messages (built-in Cell-ID only).
 #'
-#' @param output_coords_to_tsv Set to TRUE to write cell interior and boundary pixels coordinates of each cell to a compressed \code{.tsv} file, located in the main output directory (Cell-ID option '-t'). This data can be loaded with the \code{cell.load.boundaries} function.
+#' @param output_coords_to_tsv Set to TRUE to write cell interior and boundary pixels coordinates of each cell to a compressed \code{.tsv} file, located in the main output directory (Cell-ID option '-t'). This data can be loaded with the \code{get_cell_boundaries} function.
 #'
 #' @param encode_cellID_in_pixels Set to TRUE to encode cellIDs in the intensity values of the boundary pixels, and blank the rest of the output image (Cell-ID option '-m'). Pixel intensities are proportional to each cellID, following the relationship \code{cellID = 65535 - boundary_intensity - 1}. Only boundary pixels are used by default; this behavior can be modified by enabling \code{label_cells_in_bf}, \code{fill_interior_pixels}, or \code{interior_offset}.
 #'

@@ -1396,13 +1396,13 @@ cell_data <- rcell2::load_cell_data(path = data.dir)
 
 #### Load cell boundaries
 
-Both `rcell2.cellid` and `rcell2` provide the `cell.load.boundaries` function, which can 
+Both `rcell2.cellid` and `rcell2` provide the `get_cell_boundaries` function, which can 
 load the cell boundaries and interior pixels coordinates.
 
 This data is only available if either `output_coords_to_tsv` or `encode_cellID_in_pixels` 
 were set to `TRUE` when Cell-ID was run.
 
-To load the boundary pixels, use the `cell.load.boundaries` function. It can load this 
+To load the boundary pixels, use the `get_cell_boundaries` function. It can load this 
 information from two kinds of sources:
 
 * "`masks.tsv`": from TSV files, available if Cell-ID was run with `output_coords_to_tsv=TRUE`.
@@ -1411,7 +1411,7 @@ information from two kinds of sources:
 ```{r eval=F}
 # Useful if either "output_coords_to_tsv" or "encode_cellID_in_pixels" were TRUE in cell().
 cell.boundaries <- 
-  rcell2.cellid::cell.load.boundaries(
+  rcell2.cellid::get_cell_boundaries(
     data = cellid.args,
     data_source = "masks.tsv",
     pixel.type = "b"
