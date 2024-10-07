@@ -358,6 +358,96 @@ images.info.final <-
 images.info.final
 ```
 
+### Splitting stacks
+
+Sometimes time frames for a given channel are stored as a stack, instead of individual images.
+
+To split a stack into individual images, and name them appropriately, you can use R's tools.
+
+```{r}
+stack_files <- dir(data.dir, pattern = ".tif", full.names = T)
+
+stack_files[1]
+```
+
+```{r}
+paths <- data.frame(pic.path = data.dir,
+                    pic.file = basename(stack_files)) %>% 
+  extract(pic.file, c("pos", "ch"), regex = "Stack_Position(\\d+)_([A-Za-z]+)\\.tif$", remove = F) %>% 
+  mutate(pos = as.numeric(pos))
+
+head(paths)
+```
+
+```{r}
+selected_paths <- paths |> 
+  filter(pos %in% 33:48)
+
+selected_paths
+```
+
+Create the new split directory:
+
+```{r}
+split_dir <- file.path(data.dir, "split")
+dir.create(split_dir, showWarnings = F)
+
+split_dir
+```
+
+We will need the ijtiff package to split the stacks:
+
+```{r}
+if (!requireNamespace("ijtiff", quietly = TRUE))
+  install.packages("ijtiff")
+```
+
+Extract the frames from the selected stacks.
+
+```{r}
+pad_width <- paths$pos |> 
+  as.character() |> nchar() |> max()
+
+selected_paths |> 
+  apply(MARGIN = 1, FUN = function(d){
+    # Load one image.
+    pic <- file.path(d["pic.path"], d["pic.file"]) |> ijtiff::read_tif(msg = F)
+    pic.n_stacks <- dim(pic)[4]
+    frame_pad_width <- pic.n_stacks |> as.character() |> nchar()
+
+    for(i in 1:pic.n_stacks){
+      new_filename <- file.path(
+        split_dir,
+        paste0(
+          # Channel ID.
+          d["ch"],
+          # Position index.
+          "_Position",
+          str_pad(string=d["pos"], width=pad_width, pad = "0"),
+          # Time index.
+          "_time",
+          str_pad(string=i, width=frame_pad_width, pad = "0"),
+          # Extension.
+          ".tif"
+        )
+      )
+      # Save the frame as an individual image.
+      pic_data <- pic[,,,i]
+      ijtiff::tif_write(pic_data, msg = F,
+                        path = new_filename,
+                        overwrite = T)
+    }
+  })
+```
+
+Now adjust your `data.dir` to get images from the new "split" sub-directory:
+
+```{r}
+data.dir <- split_dir
+
+data.dir
+```
+
 ## Preprocessing
 
 The following sections may help improve the result of the segmentation,
