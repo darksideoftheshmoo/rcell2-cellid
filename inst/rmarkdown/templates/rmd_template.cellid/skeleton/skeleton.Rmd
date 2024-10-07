@@ -459,15 +459,20 @@ The `arguments` function will run several tests (using `arguments_check` interna
 before returning the list of images for Cell-ID. Warnings (or errors if desired) will 
 be raised if the checks fail.
 
-```{r}
-# Get images and their metadata.
-image_list <- rcell2.cellid::arguments(data.dir, 
-                                       check_fail = TRUE,
-                                       file.pattern = file.pattern)
-```
+If your experiment only contains bright-field images (a.k.a. "BF") you must
+set `bf_as_fl = T`. The function will otherwise complain about missing
+fluorescence channels.
 
 If images are missing, the command above will fail. Set `check_fail = FALSE` to 
 inspect all warnings without raising an error, as exemplified below.
+
+```{r}
+# Get images and their metadata.
+image_list <- rcell2.cellid::arguments(data.dir, 
+                                       # bf_as_fl = TRUE,  # May be required.
+                                       check_fail = TRUE,
+                                       file.pattern = file.pattern)
+```
 
 #### Identify missing frames
 
