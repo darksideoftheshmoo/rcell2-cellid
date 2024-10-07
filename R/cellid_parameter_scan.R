@@ -187,8 +187,11 @@ parameter_scan <- function(parameters.df,
               return(result)
             }
   
+  # Close progress bar
+  if(progress){
+    close(pb)
+  }
   # Close cluster
-  close(pb)
   parallel::stopCluster(cl)
   
   
