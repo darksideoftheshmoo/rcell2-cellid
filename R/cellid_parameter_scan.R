@@ -76,8 +76,8 @@ parameter_scan <- function(parameters.df,
     # Setup a progressbar and run CellID:
     ntasks <- length(test.params)
     pb <- txtProgressBar(max = ntasks, style = 3)
-    progress <- function(n) setTxtProgressBar(pb, n)
-    opts <- list(progress=progress)
+    progress_func <- function(n) setTxtProgressBar(pb, n)
+    opts <- list(progress=progress_func)
   } else {
     # Register a regular doParallel cluster
     doParallel::registerDoParallel(cl)
