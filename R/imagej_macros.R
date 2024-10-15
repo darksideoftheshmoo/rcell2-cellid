@@ -29,17 +29,19 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, temp_dir_name="ijm_set", 
       mutate(image = paste0("time-", t.frame, "-pos-", pos, "-ch-", channel, ".tif")) |> 
       unite(file, path, image, sep = .Platform$file.sep, remove = F)
     # Link images to new tmp dir
-    res <- file.symlink(from = exp.images$original.file, to = exp.images$file)
-    # Get axes
+    exp.images.map <- exp.images |>
+      select(original.file, file) |> unique()
+    res <- file.symlink(from = exp.images.map$original.file, to = exp.images.map$file)
+    # Count images in each axis.
     n_axis1_c <- exp.images %>% filter(is.out %in% use_out) %>% with(unique(channel)) %>% length()
     n_axis2_s <- exp.images %>% filter(is.out %in% use_out) %>% with(unique(pos)) %>% length()
     n_axis3_f <- exp.images %>% filter(is.out %in% use_out) %>% with(unique(t.frame)) %>% length()
   } else {
     # Just use the original images
     exp.images <- images
-    # Get dir
+    # Get target directory.
     img.dir <- exp.images$path[1]
-    # Get axes
+    # Count images in each axis.
     n_axis1_c <- exp.images %>% filter(is.out %in% use_out) %>% with(unique(t.frame)) %>% length()
     n_axis2_s <- exp.images %>% filter(is.out %in% use_out) %>% with(unique(pos)) %>% length()
     n_axis3_f <- exp.images %>% filter(is.out %in% use_out) %>% with(unique(channel)) %>% length()
