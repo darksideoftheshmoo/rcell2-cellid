@@ -7,7 +7,7 @@
 make_scan_stacks(
   scan.results,
   stack.channels = "BF.out",
-  annotation.font = "Hack"
+  annotation.font = NULL
 )
 }
 \arguments{
@@ -15,7 +15,7 @@ make_scan_stacks(
 
 \item{stack.channels}{Vector of channels which should be stacked.}
 
-\item{annotation.font}{Font for the annotations. A mono-spaced font is recommended.}
+\item{annotation.font}{Font family name for the annotations. A mono-spaced font is recommended (e.g. "Hack"). Defaults internally to any available "mono" font if NULL.}
 }
 \value{
 A list with paths to the stacks, and
