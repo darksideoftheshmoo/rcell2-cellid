@@ -213,12 +213,30 @@ parameter_scan <- function(parameters.df,
   return(output_list)
 }
 
+#' Get a monospaced font family name
+#' Defaults to an empty string if no monospaced fonts are found.
+get_monospaced_font_family <- function(mfonts) {
+  # Get fonts.
+  mfonts <- magick::magick_fonts()
+  # Filter the dataframe for font families that are monospaced.
+  monospaced_fonts <- mfonts %>%
+    dplyr::filter(grepl("Mono|Monospace|Hack", family, ignore.case = TRUE)) %>%
+    dplyr::distinct(family)
+  
+  # Return the distinct family names
+  monostpaced_families <- monospaced_fonts$family |> unique()
+  
+  # Default to empty string.
+  if(length(monostpaced_families) < 1) monostpaced_families <- ""
+  
+  return(monostpaced_families[1])
+}
 
 #' Make TIFF stacks for reviewing the result of parameter scans in ImageJ
 #'
 #' @param scan.results The full result from \code{parameter_scan}.
 #' @param stack.channels Vector of channels which should be stacked.
-#' @param annotation.font Font for the annotations. A mono-spaced font is recommended.
+#' @param annotation.font Font family name for the annotations. A mono-spaced font is recommended (e.g. "Hack"). Defaults internally to any available "mono" font if NULL.
 #'
 #' @return A list with paths to the stacks, and 
 #' @export
@@ -227,11 +245,13 @@ parameter_scan <- function(parameters.df,
 #'
 make_scan_stacks <- function(scan.results, 
                              stack.channels = "BF.out", 
-                             annotation.font = "Hack") {
+                             annotation.font = NULL) {
   
   if(!requireNamespace("magick")){
     stop("make_scan_stacks: requires functions from the 'magick' package, which is not installed.")
   }
+  
+  if(is.null(annotation.font)) annotation.font <- get_monospaced_font_family()
   
   # Load results
   test.dir <- scan.results$test.dir
