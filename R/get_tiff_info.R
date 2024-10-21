@@ -170,11 +170,11 @@ plot_pos_overlaps <- function(
     image_width_x = 1376,
     image_height_y = 1040,
     print_plot=T
-    ){
+){
   
   images <- parse_images_ch(image_list=image_list,
-                            images=images,
-                            channels=channels)
+                                            images=images,
+                                            channels=channels)
   
   plane_info_df <- get_plane_info(images)
   
@@ -194,24 +194,37 @@ plot_pos_overlaps <- function(
     dplyr::left_join(images_bf, by = "image") |> 
     dplyr::arrange(pos) %>% 
     ggplot(aes(stage.position.x, stage.position.y, label = pos)) +
-      geom_path(aes(group = t.frame)) +
-      geom_rect(aes(xmin=stage.position.x-fov_size_microns_x/2, 
-                    xmax=stage.position.x+fov_size_microns_x/2, 
-                    ymin=stage.position.y-fov_size_microns_y/2, 
-                    ymax=stage.position.y+fov_size_microns_y/2,
-                    group = pos, fill = factor(pos)), alpha =.5)+
-      geom_text(size=10) +
-      facet_wrap(t.frame~channel) + guides(fill = "none") +
-      
-      scale_x_continuous(trans = "reverse", limits = c(x_max,x_min),
-                         breaks=seq(0,-well_size_microns_x*10,by=-well_size_microns_x),
-                         minor_breaks=NULL) + 
-      scale_y_continuous(limits=c(y_min,y_max),
-                         breaks=seq(0,-well_size_microns_y*10,by=-well_size_microns_y),
-                         minor_breaks=NULL) +
-      
-      ggtitle("Physical stage coordinates v.s. Position index",
-              "Compare the index numbers with the expected physical distrubution in the well plate.\nThe shaded areas around index numbers shuould not overlap with each other.")
+    geom_path(aes(group = t.frame), linetype = 2) +
+    geom_rect(aes(xmin=stage.position.x-fov_size_microns_x/2, 
+                  xmax=stage.position.x+fov_size_microns_x/2, 
+                  ymin=stage.position.y-fov_size_microns_y/2, 
+                  ymax=stage.position.y+fov_size_microns_y/2,
+                  group = pos, fill = factor(pos)), alpha =.5)
+  
+  
+  # Check if ggrepel is installed, and use the appropriate geom function
+  if (requireNamespace("ggrepel", quietly = TRUE)) {
+    plt <- plt + ggrepel::geom_label_repel(size=4, min.segment.length=0, nudge_y = fov_size_microns_y)
+  } else {
+    message("\nInstall ggrepel to draw nicer labels.\n")
+    plt <- plt + geom_label(size=4, nudge_x=fov_size_microns_x, nudge_y=fov_size_microns_y)
+  }
+  
+  # Set facets, scales, title, and theme.
+  plt <- plt +
+    facet_wrap(t.frame~channel) + guides(fill = "none") +
+    
+    scale_x_continuous(trans = "reverse", limits = c(x_max,x_min),
+                       breaks=seq(0,-well_size_microns_x*10,by=-well_size_microns_x),
+                       minor_breaks=NULL) + 
+    scale_y_continuous(limits=c(y_min,y_max),
+                       breaks=seq(0,-well_size_microns_y*10,by=-well_size_microns_y),
+                       minor_breaks=NULL) +
+    
+    ggtitle("Physical stage coordinates v.s. Position index",
+            "Compare the index numbers with the expected physical distrubution in the well plate.\nThe shaded areas around index numbers shuould not overlap with each other.") +
+    
+    theme_minimal()
   
   if(print_plot) print(plt)
   
