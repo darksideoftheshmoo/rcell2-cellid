@@ -40,7 +40,8 @@ if (!requireNamespace("remotes", quietly = TRUE))
   install.packages("remotes")
 
 # Our lab's GitHub organizacion lives at https://github.com/darksideoftheshmoo/
-remotes::install_github("darksideoftheshmoo/rcell2-cellid")
+if (!requireNamespace("rcell2.cellid", quietly = TRUE))
+  remotes::install_github("darksideoftheshmoo/rcell2-cellid")
 ```
 
 # Notebook Setup
@@ -112,12 +113,12 @@ detailed explanation is available in the [Path to the dataset] section of
 this notebook.
 
 ```{r}
-if(!requireNamespace("remotes")){
+if(!requireNamespace("remotes", quietly = T)){
   # Install the "remotes" package if not found:
   install.packages("remotes")
 }
 
-if(!requireNamespace("rcell2.examples")){
+if(!requireNamespace("rcell2.examples", quietly = T)){
   # Install the "rcell2.examples" package if not found:
   remotes::install_github("darksideoftheshmoo/rcell2.examples")
 }
@@ -253,7 +254,10 @@ cell.boundaries %>%
   filter(pixtype == "b") %>% 
   ggplot(aes(x,y,color=factor(t.frame)))+
   geom_path()+
-  facet_wrap(~pos, scales = "free") + theme(aspect.ratio = 1)
+  facet_wrap(~pos, scales = "free") + theme(aspect.ratio = 1) +
+  theme_minimal() +
+  labs(color="frame") +
+  theme(aspect.ratio = 1)
 ```
 
 > This data is only available if `cell2` has been run with `output_coords_to_tsv = T`.
