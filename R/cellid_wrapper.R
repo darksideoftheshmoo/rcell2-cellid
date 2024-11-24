@@ -1124,8 +1124,6 @@ check_and_fix_paths <- function(images, path=NULL){
       return(new_path)
     }, FUN.VALUE="character")
     
-    browser()
-    
     existing_file_flags <- file.exists(new_paths)
     if(all(existing_file_flags)){
       message("Image paths fixed.")
