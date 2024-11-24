@@ -1095,23 +1095,44 @@ cell.load.alt <- get_cell_data
 
 #' Check and fix image paths
 #' 
-#' @param path Path to the data directory, holding the images.
-#' @param images Cell-ID dataframe with image paths, as loaded by \code{get_cell_data}.
+#' This function tries to find files for images at the paths found in the provided data frame, and optionally fixes them if an alternative path is provided.
+#' 
+#' @param images Cell-ID data-frame with image paths, as loaded by \code{get_cell_data}.
+#' @param path Vector of paths to alternate data directories, where the images are actually stored. If left NULL, the function will raise an error when images are missing.
 #' 
 #' @export
-check_and_fix_paths <- function(path, images){
+#' @importFrom dplyr first
+check_and_fix_paths <- function(images, path=NULL){
   # TEST:
   # images <- d.list$d.paths
-  
-  if(any(!file.exists(images$file))){
-    warning("\nNot all image files exist in the expected filesystem directory. Attempting to fix them... ")
+  missing_file_flags <- !file.exists(images$file)
+  if(any(missing_file_flags)){
+    warning(paste(sum(missing_file_flags), "image files were not found in the original filesystem directory. Attempting to find them in the provided path... "))
+    if(is.null(path)) stop("No alternative path was provided.")
     new_paths <- file.path(path, basename(images$file))
-    if(all(file.exists(new_paths))){
-      warning("Image paths fixed.\n")
+    
+    new_paths <- vapply(images$file, function(img_path){
+      if(file.exists(img_path)){
+        # Don't update working paths.
+        new_path <- img_path
+      } else {
+        # Update using any working path.
+        new_path <- file.path(path, basename(img_path)) |> 
+          Filter(f = file.exists) |> 
+          dplyr::first()
+      }
+      return(new_path)
+    }, FUN.VALUE="character")
+    
+    browser()
+    
+    existing_file_flags <- file.exists(new_paths)
+    if(all(existing_file_flags)){
+      message("Image paths fixed.")
       images$path <- path
       images$file <- file.path(path, basename(images$file))
     } else {
-      warning("Could not fix image file paths, expect issues when loading images in rcell2.\n")
+      stop(paste("Could not fix", sum(existing_file_flags), "image file paths, expect issues when loading images in rcell2."))
     }
   }
   
