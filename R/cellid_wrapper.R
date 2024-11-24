@@ -1127,8 +1127,8 @@ check_and_fix_paths <- function(images, path=NULL){
     existing_file_flags <- file.exists(new_paths)
     if(all(existing_file_flags)){
       message("Image paths fixed.")
-      images$path <- path
-      images$file <- file.path(path, basename(images$file))
+      images$path <- dirname(new_paths)
+      images$file <- new_paths
     } else {
       stop(paste("Could not fix", sum(existing_file_flags), "image file paths, expect issues when loading images in rcell2."))
     }
