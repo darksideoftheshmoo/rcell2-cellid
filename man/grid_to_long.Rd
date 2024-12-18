@@ -4,7 +4,13 @@
 \alias{grid_to_long}
 \title{Parse a grid sheet into long format}
 \usage{
-grid_to_long(sheet_data, rows_to = "row", names_to = "col", values_to = "row")
+grid_to_long(
+  sheet_data,
+  rows_to = "row",
+  names_to = "col",
+  values_to = "row",
+  transform_fun = NULL
+)
 }
 \description{
 Parse a grid sheet into long format
