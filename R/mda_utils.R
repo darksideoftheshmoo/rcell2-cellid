@@ -30,10 +30,13 @@
 
 
 #' Parse a grid sheet into long format
-grid_to_long <- function(sheet_data, rows_to="row", names_to="col", values_to="row"){
+grid_to_long <- function(sheet_data, rows_to="row", names_to="col", values_to="row", transform_fun=NULL){
   names(sheet_data)[1] <- rows_to
   sheet_data <- sheet_data |> 
-    pivot_longer(-all_of(rows_to), names_to=names_to, values_to=values_to)
+    pivot_longer(-all_of(rows_to), 
+                 names_to=names_to,
+                 values_to=values_to, 
+                 values_transform = transform_fun)
   return(sheet_data)
 }
 
@@ -86,13 +89,14 @@ make_pdata <- function(spreadsheet_path, pdata_sheets=c(), plot_metadata=TRUE, w
   
   for(sheet in pdata_sheets){
     metadata <- readxl::read_xlsx(spreadsheet_path, sheet) |> 
-      grid_to_long(values_to=sheet)
+      grid_to_long(values_to=sheet, transform_fun = as.factor)
     
     pdata <- pdata |> 
       left_join(metadata, by=c("row", "col"))
   }
   
   pdata <- pdata |> 
+    mutate(col = as.integer(col)) |> 
     mutate_at(.vars = c("row", "col"), .funs = as.ordered)
   
   if(plot_metadata){
