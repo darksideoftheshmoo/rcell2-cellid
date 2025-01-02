@@ -78,42 +78,27 @@ This notebook contains a [Usage guide] with in-depth explanations and advanced u
 
 There is another "quick start" notebook bundled with the package.
 
-## Friendly reminder
+## Reminders
 
 - **Read this notebook carefully**.
 - Use the **help page** of functions before using them. Open help pages with R's `?` (e.g. `?arguments`).
 - Read the README.md at rcell2's [GitHub repo](https://github.com/darksideoftheshmoo/rcell2/).
 
-## Prepare position metadata
+## Stage coordinates
 
-For many-well experiments in a 384 microscopy plate, you may benefit from generating stage positions for MetaMorph's MDA automatically.
+For many-well experiments in a 384 microscopy plate, you may benefit from generating stage coordinates for MetaMorph's MDA automatically.
 
 First, open and fill out the template spreadsheet, which must contain sheets with these names:
 
-1. "`pdata`": with the position metadata. This table will be useful in the future too (e.g. for analyzing results).
-2. "`well_order`": with a representation of the plate indicating the order in which to take pictures.
-3. "`well_images`": with a representation of the plate indicating how many images to acquire in each well.
+1. "`pdata`": the [position metadata]. This table will be useful in the future too (e.g. for analyzing results).
+2. "`well_order`": a representation of the plate indicating the order in which to take pictures.
+3. "`well_images`": a representation of the plate indicating how many images to acquire in each well.
 
 The template can be copied to the current working directory with the `get_spos_template` function:
 
 ```{r}
 template_path <- get_spos_template(save_to = "data/stage_positions.xlsx")
 ```
-
-If you added the position metadata to "grids" in other sheets (instead of the table in the main `pdata` sheet)
-you can use them to generate a full `pdata` table with the `make_pdata` function, by setting the `pdata_sheets`
-argument to a vector with the names of those sheets.
-
-```{r}
-pdata <- make_pdata(template_path)
-
-# Un-comment to extract additional metadata from "grids" in other sheets.
-# pdata <- make_pdata(template_path, pdata_sheets = c("strain", "pheromone"))
-
-pdata
-```
-
-### Prepare stage metadata
 
 After filling out the template, use `make_stage_list` to generate the `.STG` file,
 which can finally be imported in to MetaMorph's MDA.
@@ -134,6 +119,27 @@ If the calibration was already applied, the following plot should show 0 error:
 stage_coords_adj <- stage_coords |> 
   with(stage_coords) |> 
   adjust_stg_z(plot_error = TRUE)
+```
+
+## Position metadata
+
+The `pdata` table holds metadata about each stage position, each identified by a unique integer index (e.g. 0, 1, 2, etc.).
+
+You can generate your own `pdata` table and save it to a CSV file. It only requires a "`pos`" column for the position index. Additional columns can be added, containing metadata (e.g. experimental conditions, strain identifiers, etc). You can then load this table with R's `read.csv` function.
+
+This package includes a `make_pdata` function, that will extract the `pdata` table from a spreadsheet template, like the one used above.
+
+If you added the metadata to other sheets in "well-plate" layout, you can incorporate it to the full `pdata` table by setting the `pdata_sheets` argument of the `make_pdata` function. This argument should be a vector with the names of those sheets.
+This can work in combination with the table in the `pdata` sheet of the spreadsheet.
+
+```{r}
+pdata <- make_pdata(template_path)
+
+# Un-comment to extract additional metadata in "well-plate" layout from other sheets.
+#
+# pdata <- make_pdata(template_path, pdata_sheets = c("strain", "pheromone"))
+
+pdata
 ```
 
 # Usage guide
@@ -197,7 +203,7 @@ data.dir <- system.file("extdata/sample_datasets/sample_time_series/",
 > In the chunk above we set up `data.dir` to hold the path to samples images of a
 time-course experiment. This will replace any previous value!
 
-A position metadata (a.k.a. `pdata`) file is also included:
+A [position metadata] (a.k.a. `pdata`) file is also included:
 
 ```{r}
 # Example: Choose one set of example images:
