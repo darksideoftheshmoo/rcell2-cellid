@@ -77,11 +77,11 @@ parameter_scan <- function(parameters.df,
     ntasks <- length(test.params)
     pb <- txtProgressBar(max = ntasks, style = 3)
     progress_func <- function(n) setTxtProgressBar(pb, n)
-    opts <- list(progress=progress_func)
+    snow_opts <- list(progress=progress_func)
   } else {
     # Register a regular doParallel cluster
     doParallel::registerDoParallel(cl)
-    opts <- list()
+    snow_opts <- list()
   }
   
   # Test
@@ -90,7 +90,7 @@ parameter_scan <- function(parameters.df,
   # Run scan
   result <- 
     foreach(test.param=test.params, #.export = c(".parameters.df",)
-            .options.snow=opts,
+            .options.snow=snow_opts,
             .packages = c("base", "dplyr")) %dopar% {
               
               # Prepare a temp dir for each cellid run

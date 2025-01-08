@@ -193,6 +193,8 @@ cell2 <- function(arguments,
   
   # Prepare parallel backend if requested ####
   if(is.null(n_cores)) n_cores <- parallel::detectCores() - 1
+  # Default snow options.
+  snow_opts <- list()
   # Use parallel backend only if there are two or more cores
   if(n_cores >= 2){
     # Choose parallel foreach operator
@@ -223,7 +225,6 @@ cell2 <- function(arguments,
     # Register cluster
     if(!progress){
       doParallel::registerDoParallel(cl)
-      opts <- list()
     } else {
       # Use registerDoSNOW for a progress bar
       doSNOW::registerDoSNOW(cl)
@@ -231,7 +232,8 @@ cell2 <- function(arguments,
       ntasks <- length(positions)
       pb <- txtProgressBar(max = ntasks, style = 3)
       progress <- function(n) setTxtProgressBar(pb, n)
-      opts <- list(progress=progress)
+      # Override snow options.
+      snow_opts <- list(progress=progress)
     }
   } else {
     # Choose sequential foreach operator
@@ -240,7 +242,7 @@ cell2 <- function(arguments,
   
   # Run CellID ####
   # Iterate over positions
-  sent_commands <- foreach::foreach(pos=positions, .options.snow=opts) %do_op% {
+  sent_commands <- foreach::foreach(pos=positions, .options.snow=snow_opts) %do_op% {
     # Get arguments for current position
     arguments_pos <- arguments[arguments$pos == pos,]
     
