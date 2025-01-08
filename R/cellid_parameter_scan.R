@@ -407,11 +407,13 @@ annotate_scan_output <- function(scan.results,
                                  preserve_source_imgs = TRUE,
                                  in.place = FALSE,
                                  annotated.imgs.dir = "annotated",
-                                 annotation.font = "Hack") {
+                                 annotation.font = NULL) {
   
   if(!requireNamespace("magick")){
     stop("make_scan_stacks: requires functions from the 'magick' package, which is not installed.")
   }
+  
+  if(is.null(annotation.font)) annotation.font <- get_monospaced_font_family()
   
   # Load results
   test.dir <- scan.results$test.dir

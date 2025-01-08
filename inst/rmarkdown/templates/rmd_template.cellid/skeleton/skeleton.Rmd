@@ -1229,8 +1229,7 @@ of `annotate_scan_output`.
 imagej_macros <- annotate_scan_output(scan.results = scan.results, 
                                       in.place = FALSE,
                                       preserve_source_imgs = TRUE,
-                                      annotated.imgs.dir = "annotated",
-                                      annotation.font = "Hack")
+                                      annotated.imgs.dir = "annotated")
 ```
 
 **Option B**: `make_scan_stacks`
