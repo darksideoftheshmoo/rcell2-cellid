@@ -8,7 +8,8 @@ make_pdata(
   spreadsheet_path,
   pdata_sheets = c(),
   plot_metadata = TRUE,
-  write_pdata = FALSE
+  write_pdata = FALSE,
+  factorize_vars = FALSE
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ make_pdata(
 \item{plot_metadata}{If TRUE, plot the extracted metadata.}
 
 \item{write_pdata}{If TRUE, write a "pdata.csv" file next to the original template file.}
+
+\item{factorize_vars}{If TRUE, \code{col} and \code{row} variables will be converted to ordered type, and variables in \code{pdata_sheets} will be converted to factors.}
 }
 \description{
 Extract metadata information from a template spreadsheet (e.g. as the one provided by \code{get_spos_template}), joining it to the "pdata" table in that spreadsheet.

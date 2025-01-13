@@ -72,9 +72,10 @@ make_wells <- function(spreadsheet_path,
 #' @param pdata_sheets Extract additional metadata from these sheets in the template spreadsheet file.
 #' @param plot_metadata If TRUE, plot the extracted metadata.
 #' @param write_pdata If TRUE, write a "pdata.csv" file next to the original template file.
+#' @param factorize_vars If TRUE, \code{col} and \code{row} variables will be converted to ordered type, and variables in \code{pdata_sheets} will be converted to factors.
 #' @export
 #' @import ggplot2 dplyr tidyr readxl
-make_pdata <- function(spreadsheet_path, pdata_sheets=c(), plot_metadata=TRUE, write_pdata=FALSE){
+make_pdata <- function(spreadsheet_path, pdata_sheets=c(), plot_metadata=TRUE, write_pdata=FALSE, factorize_vars=FALSE){
   
   pdata <- readxl::read_xlsx(spreadsheet_path, "pdata")
   
@@ -87,21 +88,24 @@ make_pdata <- function(spreadsheet_path, pdata_sheets=c(), plot_metadata=TRUE, w
   pdata <- pdata |> 
     left_join(positions, by = "pos")
   
+  transform_fun <- NULL
+  if(factorize_vars){
+    transform_fun <- as.factor
+  }
+  
   for(sheet in pdata_sheets){
     metadata <- readxl::read_xlsx(spreadsheet_path, sheet) |> 
-      grid_to_long(values_to=sheet, transform_fun = as.factor)
+      grid_to_long(values_to=sheet, transform_fun = transform_fun)
     
     pdata <- pdata |> 
       left_join(metadata, by=c("row", "col"))
   }
   
-  pdata <- pdata |> 
-    mutate(col = as.integer(col)) |> 
-    mutate_at(.vars = c("row", "col"), .funs = as.ordered)
-  
   if(plot_metadata){
     for(sheet in pdata_sheets){
       plt <- pdata |> 
+        mutate(col = as.integer(col)) |> 
+        mutate_at(.vars = c("row", "col"), .funs = as.ordered) |> 
         ggplot() +
         geom_tile(aes(col, row, fill=as.ordered(.data[[sheet]]))) + 
         scale_y_discrete(limits=rev) +
@@ -114,6 +118,12 @@ make_pdata <- function(spreadsheet_path, pdata_sheets=c(), plot_metadata=TRUE, w
   if(isTRUE(write_pdata)){
     write.csv(x = pdata, 
               file = file.path(dirname(spreadsheet_path), "pdata.csv"))
+  }
+  
+  if(factorize_vars){
+    pdata <- pdata |> 
+      mutate(col = as.integer(col)) |> 
+      mutate_at(.vars = c("row", "col"), .funs = as.ordered)
   }
   
   return(pdata)
