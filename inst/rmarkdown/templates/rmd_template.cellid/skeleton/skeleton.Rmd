@@ -907,42 +907,17 @@ parameters.list$background_reject_factor
 parameters.list$max_split_over_minor
 ```
 
-#### The file
-
-> *Note*: This section is no longer critical. The `arguments` function also 
-> accepts a list of parameters, or a > `data.frame` with position numbers and 
-> paths to parameter files. See `?arguments` for details
-
-This parameter list must be written to a `parameters.txt` plain text file with 
-the proper syntax, which Cell-ID will read later on.
-
-For this purpose, you may use the `parameters_write` function. As its name 
-implies, it writes the parameters, and returns the path where it was saved.
-
-<!-- Internal note: consider moving this step into cell2() -->
-
-```{r}
-parameters.txt <- rcell2.cellid::parameters_write(parameters.list)
-
-parameters.txt
-```
-
-This path can be passed to the `arguments()` function in the next section.
-
-Lets read the contents of the `parameters.txt` file we just saved.
-
-```{r}
-# Mostrar el contenido del archivo
-writeLines(readLines(parameters.txt))
-```
-
 ### Arguments
 
 The `arguments` function outputs a `data.frame` with information from images and
 segmentation parameters, which is needed to run Cell-ID.
 
 The key parameter is `file.pattern`, a regular expression used to find image
-files in the `data.dir` folder.
+files in the `data.dir` folder, and the segmentation parameters.
+
+The `arguments` function accepts segmentation parameters as a list, as a path to
+a [parameters file], or a `data.frame` with position numbers and paths to 
+parameter files. Run `?arguments` for details
 
 The path to the images of your experiment must be already defined,
 as explained in the [Path to the dataset] section of this notebook.
@@ -1968,3 +1943,29 @@ Helping with data analysis is the purpose of the `rcell2` and `rcell2.magick` pa
 
 Installation instructions for `rcell2` and `rcell2.magick` packages can be found [here](https://github.com/darksideoftheshmoo/rcell2#installing-the-package) and [here](https://github.com/darksideoftheshmoo/rcell2-magick#installing-the-package),
 respectively.
+
+## Extras
+
+### Parammeters file
+
+This parameter list must be written to a `parameters.txt` plain text file with 
+the proper syntax, which Cell-ID will read later on.
+
+For this purpose, you may use the `parameters_write` function. As its name 
+implies, it writes the parameters, and returns the path where it was saved.
+
+```{r}
+parameters.txt <- rcell2.cellid::parameters_write(parameters.list)
+
+parameters.txt
+```
+
+This path can be passed to the `arguments()` function in the [Arguments] section
+of this notebook.
+
+Lets read the contents of the `parameters.txt` file we just saved.
+
+```{r}
+# Mostrar el contenido del archivo
+writeLines(readLines(parameters.txt))
+```
