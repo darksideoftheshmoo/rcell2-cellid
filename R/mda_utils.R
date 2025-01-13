@@ -74,7 +74,7 @@ make_wells <- function(spreadsheet_path,
 #' @param write_pdata If TRUE, write a "pdata.csv" file next to the original template file.
 #' @export
 #' @import ggplot2 dplyr tidyr readxl
-make_pdata <- function(spreadsheet_path, pdata_sheets=c(), plot_metadata=TRUE, write_pdata=TRUE){
+make_pdata <- function(spreadsheet_path, pdata_sheets=c(), plot_metadata=TRUE, write_pdata=FALSE){
   
   pdata <- readxl::read_xlsx(spreadsheet_path, "pdata")
   

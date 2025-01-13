@@ -10,7 +10,7 @@ annotate_scan_output(
   preserve_source_imgs = TRUE,
   in.place = FALSE,
   annotated.imgs.dir = "annotated",
-  annotation.font = "Hack"
+  annotation.font = NULL
 )
 }
 \arguments{

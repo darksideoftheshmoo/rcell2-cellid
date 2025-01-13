@@ -8,7 +8,7 @@ make_pdata(
   spreadsheet_path,
   pdata_sheets = c(),
   plot_metadata = TRUE,
-  write_pdata = TRUE
+  write_pdata = FALSE
 )
 }
 \arguments{
