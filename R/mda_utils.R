@@ -27,15 +27,92 @@
   
   return(save_to)
 }
+ 
+ #' List of prototypes in hierarchical order
+ type_to_prototype <- list(
+   "character" = as.character,
+   "numeric" = as.numeric,
+   "double" = as.numeric,
+   "integer" = as.integer,
+   "logical" = as.logical
+ )
+
+# Function to find the most specific column type
+find_common_type <- function(df) {
+  # Define a hierarchy of types (from most to least specific)
+  type_hierarchy <- names(type_to_prototype)
+  
+  # Get the types of all columns in the dataframe
+  column_types <- sapply(df, typeof)
+  
+  # Find the most specific type present in the data
+  for (type in type_hierarchy) {
+    if (type %in% column_types) {
+      return(type)
+    }
+  }
+  
+  # If no matching types are found (unlikely), return "unknown"
+  stop(paste("Unknown types in data:", unique(column_types), collapse = ", "))
+}
 
 
 #' Parse a grid sheet into long format
+#'
+#' Converts a data frame representing a grid (e.g., a spreadsheet) into a long format for easier manipulation and analysis.
+#'
+#' @param sheet_data A data frame containing the grid data. The first column is treated as row identifiers, and all other columns are treated as values.
+#' @param rows_to A character string specifying the name of the new column for row identifiers. Default is `"row"`.
+#' @param names_to A character string specifying the name of the new column for column names. Default is `"col"`.
+#' @param values_to A character string specifying the name of the new column for the cell values. Default is `"row"`.
+#' @param transform_fun A function to transform cell values when pivoting. If `NULL`, the function automatically determines an appropriate prototype based on the data type of the value columns.
+#'
+#' @details 
+#' The function pivots a wide-format grid into a long-format data frame. 
+#' If no `transform_fun` is provided, the function uses `find_common_type` to infer the most compatible data type for the value columns.
+#' The `transform_fun` is used as the `values_transform` argument in `tidyr::pivot_longer`.
+#'
+#' @return A data frame in long format with columns:
+#' \describe{
+#'   \item{\code{rows_to}}{Row identifiers, renamed based on the `rows_to` parameter.}
+#'   \item{\code{names_to}}{Column names from the original grid, renamed based on the `names_to` parameter.}
+#'   \item{\code{values_to}}{Cell values from the original grid, renamed based on the `values_to` parameter.}
+#' }
+#'
+#' @examples
+#' # Example grid data
+#' grid_data <- data.frame(
+#'   RowID = c("A", "B", "C"),
+#'   Col1 = c(1, 2, 3),
+#'   Col2 = c(T, F, NA)
+#' )
+#'
+#' # Convert to long format
+#' grid_to_long(
+#'   sheet_data = grid_data,
+#'   rows_to = "row_id",
+#'   names_to = "column_id",
+#'   values_to = "value"
+#' )
+#'
+#' @export
 grid_to_long <- function(sheet_data, rows_to="row", names_to="col", values_to="row", transform_fun=NULL){
+  # Set name of the first column.
   names(sheet_data)[1] <- rows_to
+
+  # Guess the common type.
+  if(is.null(transform_fun)){
+    cols_data <- sheet_data |> select(-all_of(rows_to))
+    common_type_name <- find_common_type(cols_data)
+    transform_fun <- type_to_prototype[[common_type_name]]
+    # cat("Using", common_type_name, "type for transform_fun.\n")
+  }
+  
+  # Join all columns.
   sheet_data <- sheet_data |> 
     pivot_longer(-all_of(rows_to), 
                  names_to=names_to,
-                 values_to=values_to, 
+                 values_to=values_to, #values_ptypes = values_ptypes,
                  values_transform = transform_fun)
   return(sheet_data)
 }
