@@ -7,6 +7,7 @@
 make_stage_list(
   spreadsheet_path,
   stg_output_path = "stage_list.STG",
+  stg_output_overwrite = FALSE,
   print_output = FALSE,
   calib_stg_path = NULL,
   well_sep = 4500,
@@ -21,6 +22,8 @@ make_stage_list(
 \item{spreadsheet_path}{Path to the an XLSX spreadsheet (e.g. "stage_positions.xlsx") with the following sheets: "pdata", "well_order", "well_images." A template file can be obtained with \code{get_spos_template}.}
 
 \item{stg_output_path}{Path where the STG file will be saved. This file is meant to be imported with MetaMorph's MDA.}
+
+\item{stg_output_overwrite}{Wether to overwrite the file at `stg_output_path` if it already exists.}
 
 \item{calib_stg_path}{Path where the calibration STG can be found saved. NULL by default (disabled).}
 
