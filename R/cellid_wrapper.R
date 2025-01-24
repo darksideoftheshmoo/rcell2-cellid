@@ -1748,8 +1748,8 @@ rename_mda <- function(images.path = NULL,
     images.info$rename.path <- rename.path
     
   } else {
+    # Use `rename.dataframe` instead of generating it from scratch.
     warning("rename_mda: a data.frame was passed to 'rename.dataframe'.",
-            " It's 'rename.file' column will be regenerated (overwritten).",
             " Will also update the 'rename.path' column if the parameter was specified.")
     
     # Update rename path if specified.
@@ -1759,6 +1759,33 @@ rename_mda <- function(images.path = NULL,
     } else {
       rename.path <- images.info$rename.path |> unique()
     }
+  }
+  
+  # Make new names, if no "rename.dataframe" was provided.
+  if(!is.data.frame(rename.dataframe)){
+    images.info$rename.file <- paste0(
+      
+      # ifelse(nzchar(names(identifier.info[identifier.info=="ch"])), "_", ""),
+      names(identifier.info[identifier.info=="ch"]),
+      images.info$ch.name,
+      "_",
+      
+      names(identifier.info[identifier.info=="pos"]),
+      cero_a_la_izquierda(as.numeric(images.info$pos)),
+      "_",
+      
+      names(identifier.info[identifier.info=="t.frame"]),
+      cero_a_la_izquierda(as.numeric(images.info$t.frame)),
+      
+      file.ext
+    )
+  }
+  
+  # If a "renaming data frame" (images.info) was not provided, but "rename.dataframe" is TRUE,
+  # then immediately return the prepared 'images.info' data frame.
+  if(isTRUE(rename.dataframe)){
+    message("rename_mda: rename.dataframe was set to TRUE, returning the 'images.info' dataframe. No renaming took place.")
+    return(images.info)
   }
   
   # Create the directory for renamed images.
@@ -1777,31 +1804,6 @@ rename_mda <- function(images.path = NULL,
     } else {
       message("rename_mda: to prevent accidental deletions, cleanup was skipped because 'rename.path' is empty.")
     }
-  }
-  
-  # Make new names.
-  images.info$rename.file <- paste0(
-    
-    # ifelse(nzchar(names(identifier.info[identifier.info=="ch"])), "_", ""),
-    names(identifier.info[identifier.info=="ch"]),
-    images.info$ch.name,
-    "_",
-    
-    names(identifier.info[identifier.info=="pos"]),
-    cero_a_la_izquierda(as.numeric(images.info$pos)),
-    "_",
-    
-    names(identifier.info[identifier.info=="t.frame"]),
-    cero_a_la_izquierda(as.numeric(images.info$t.frame)),
-    
-    file.ext
-  )
-  
-  # If a "renaming data frame" (images.info) was not provided, but "rename.dataframe" is TRUE,
-  # then immediately return the prepared 'images.info' data frame.
-  if(isTRUE(rename.dataframe)){
-    message("rename_mda: rename.dataframe was set to TRUE, returning the 'images.info' dataframe. No renaming took place.")
-    return(images.info)
   }
   
   # Rename the files.
