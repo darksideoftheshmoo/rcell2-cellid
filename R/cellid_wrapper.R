@@ -709,11 +709,11 @@ arguments_check <- function(arguments_df, check_fail=F){
     mutate(matches = t.frame == t.frame.cid)
   if(sum(!t.frame.idx.match$matches) > 0){
     warning(paste0(
-      "\n\narguments_check: ",
+      "\narguments_check: ",
       "Time frame index numbers in file names will not match those assigned by Cell-ID ",
-      "in the 'out_all' files. This is likely to cause some confusion when filtering by 't.frame' ",
+      "in the 'out_all' files. This may cause some confusion when filtering by 't.frame' ",
       "or when joining metadata to 'cdata'. Cell-ID's time frames start at 0 and grow by 1 unit.",
-      "\n\n"
+      "\n"
     ))
   }
   # Check channels ####
@@ -723,9 +723,9 @@ arguments_check <- function(arguments_df, check_fail=F){
   if(ch_len_test){
     # Emit a warning
     warning(paste0(
-      "\n\narguments warning: the following channel identifiers are of the incorrect length, which must be equal to 3 characters: '",
+      "\narguments warning: the following channel identifiers are of the incorrect length, which must be equal to 3 characters: '",
       paste0(ch_ids[nchar(ch_ids) != 3], collapse = "', '"),
-      "'. Cell-ID will group imaging channels by the first 3 letters of file names. This is not customizable yet.\n\n"
+      "'. Cell-ID will group imaging channels by the first 3 letters of file names. This is not customizable yet.\n"
     ))
     # And check if this will cause problems with Cell-ID, and stop if it is the case:
     unique_ch_check <- arguments_df %>% 
@@ -734,14 +734,14 @@ arguments_check <- function(arguments_df, check_fail=F){
       unique() %>% nrow()
     if(unique_ch_check != length(ch_ids)) {
       stop(paste(
-        "\n\narguments error: the first three letters of fluorescence",
+        "\narguments error: the first three letters of fluorescence",
         "images and the extracted channel IDs form different sets.",
-        "Rename your files and rebuild the arguments dataframe.\n\n"
+        "Rename your files and rebuild the arguments dataframe.\n"
       ))
     } else {
       warning(paste(
-        "\n\narguments warning: though the channel IDs are short, there will be",
-        "no issues with the current image set during imaging channel mapping.\n\n"
+        "\narguments warning: though the channel IDs are short, there will be",
+        "no issues with the current image set during imaging channel mapping.\n"
       ))
     }
       
@@ -750,9 +750,9 @@ arguments_check <- function(arguments_df, check_fail=F){
   # Check output files ####
   n_out <- sum(file.exists(arguments_df$output))
   if(n_out>0){
-    warning(paste0("\n\narguments_check: ", 
+    warning(paste0("\narguments_check: ", 
                    n_out, "/", n_row, 
-                   " output directories already exist.\n\n"))
+                   " output directories already exist.\n"))
   } else {
     cat("\narguments_check: no output directories exist.\n")
   }
@@ -761,9 +761,9 @@ arguments_check <- function(arguments_df, check_fail=F){
   n_bf <- sum(file.exists(paste0(arguments_df$path, .Platform$file.sep, arguments_df$bf, ".out.tif")))
   if(n_bf>0){
     # Warning
-    warning(paste0("\n\narguments_check: ", 
+    warning(paste0("\narguments_check: ", 
                    n_bf, "/", n_row, 
-                   " output BF.out.tif files already exist.\n\n"))
+                   " output BF.out.tif files already exist.\n"))
   } else {
     # Message OK
     cat("\narguments_check: no output BF.out.tif files exist.\n")
@@ -773,28 +773,28 @@ arguments_check <- function(arguments_df, check_fail=F){
   n_fl <- sum(file.exists(paste0(arguments_df$path, .Platform$file.sep, arguments_df$image, ".out.tif")))
   if(n_fl>0){ 
     # Warning
-    warning(paste0("\n\narguments_check: ", 
+    warning(paste0("\narguments_check: ", 
                    n_fl, "/", n_row, 
-                   " output FL.out.tif files already exist.\n\n"))
+                   " output FL.out.tif files already exist.\n"))
   } else{
     # Message OK
-    cat("\narguments_check:  no output FL.out.tif files exist.\n")
+    cat("\narguments_check: no output FL.out.tif files exist.\n")
   }
   
   
   # Raise an error if requested
   if (any(c(n_out, n_bf, n_fl) > 0)) {
     result <- FALSE
-    if(check_fail) stop("\n\narguments_check: output files found, raising error!\n\n")
+    if(check_fail) stop("\narguments_check: output files found, raising error!\n")
   }
   
   # Count channels ####
   ch_count <- arguments_df |> group_by(ch) |>
     summarise(image_count = n()) |> with(image_count) |> unique()
   if(length(ch_count) != 1){
-    msg = paste0("\n\narguments_check: the amount of images differ between channels! (", 
+    msg = paste0("\narguments_check: the amount of images differ between channels! (", 
                  paste(ch_count, collapse = " "),
-                 ")\n\n")
+                 ")\n")
     if(check_fail) {stop(msg)} else {warning(msg)}
   }
   
@@ -802,9 +802,9 @@ arguments_check <- function(arguments_df, check_fail=F){
   pos_count <- arguments_df |> group_by(pos) |>
     summarise(image_count = n()) |> with(image_count) |> unique()
   if(length(pos_count) != 1) {
-    msg = paste0("\n\narguments_check: the amount of images differ between positions! (",
+    msg = paste0("\narguments_check: the amount of images differ between positions! (",
                  paste(pos_count, collapse = " "),
-                 ")\n\n")
+                 ")\n")
     if(check_fail) {stop(msg)} else {warning(msg)}
   }
   
@@ -812,9 +812,9 @@ arguments_check <- function(arguments_df, check_fail=F){
   t.frame_count <- arguments_df |> group_by(t.frame) |>
     summarise(image_count = n()) |> with(image_count) |> unique()
   if(length(t.frame_count) != 1) {
-    msg = paste0("\n\narguments_check: the amount of images differ between t.frames! (",
+    msg = paste0("\narguments_check: the amount of images differ between t.frames! (",
                  paste(t.frame_count, collapse = " "),
-                 ")\n\n")
+                 ")\n")
     if(check_fail) {stop(msg)} else {warning(msg)}
   }
   
