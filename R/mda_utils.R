@@ -318,7 +318,7 @@ make_stage_list <- function(
       calib_stg_path <- system.file("stage_positions-calib_tilt_B2_top_left.STG", package = "rcell2.cellid")
     }
     # Adjust the Z coordinate.
-    warning(paste("Adjusting stage coords with calibration file:", calib_stg_path))
+    warning(paste0("Adjusting stage coords with calibration file: ", calib_stg_path, "\n"))
     stage_coords <- adjust_stg_z(stage_coords, calib_stg_path = calib_stg_path, plot_error = F)
   }
   
@@ -425,10 +425,15 @@ make_stage_coords <- function(stage_coords){
 #'
 write_stg <- function(stage_coords, positions, stg_output_path, overwrite=FALSE){
   
+  # Create the target directory.
+  dir.create(path = basename(stg_output_path), showWarnings = F, recursive = T)
+  
+  # Check if the file exists.
   if(file.exists(stg_output_path) & !overwrite){
     stop(paste("File already exits at", stg_output_path, "set 'overwrite' to TRUE to force."))
   }
   
+  # Build the STG file's table header.
   stg_file_header <- paste(
     '"Stage Memory List", Version 6.0',
     '0, 0, 0, 0, 0, 0, 0, "um", "um"',
