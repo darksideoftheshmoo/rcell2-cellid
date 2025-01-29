@@ -249,7 +249,7 @@ metadata from their file names (i.e. channel, position, and time frame.)
 
 The file list will be recognized by a specific regular expression (regex).
 A regex matching these files can be `^(BF|TFP)_Position(\\d+)_time(\\d+).tif$`;
-note that it has **3 capturing groups** (suff between parentheses).
+note that it has **3 capturing groups** (i.e. the _stuff_ between parentheses).
 The regex as a whole is used to select images from a directory (filtering out
 other files) and the capturing groups are used to extract the metadata.
 
@@ -963,13 +963,13 @@ Note, however, that the channel identifier _must_ be first. Cell-ID will use the
 Images file pattern examples; choose one and comment the others:
 
 ```{r}
-# Default value: all channels, no z-stack.
+# Default value for the common channels (no z-stacks):
 arguments.file.pattern <- "^(BF|[A-Z]FP)_Position(\\d+)_time(\\d+).tif$"
 
-# To consider z-stacks:
-# arguments.file.pattern <- "^(BF|[A-Z]\d+)_Position(\d+)_time(\d+).tif$"
+# Pattern for a time-course with z-stacks as channels:
+# arguments.file.pattern <- "^(BF|[A-Z]\\d+)_Position(\\d+)_time(\\d+).tif$"
 
-# BF or TFP only, no t.frame info.
+# Pattern for BF or TFP only, no t.frame info.
 # arguments.file.pattern <- "^(BF|TFP)_Position(\\d+)().tif$"
 ```
 
