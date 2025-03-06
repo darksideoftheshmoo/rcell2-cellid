@@ -1096,18 +1096,19 @@ simplified procedure of 3 small scans, on a small subset of images.
 Here is a procedure to reduce the scan's complexity:
 
 0. Relax segmentation parameters:
-  - Set `max_split_over_minor` and `max_pixels_per_cell` to high values (e.g. `5` and `5000`).
-  - Set `min_pixels_per_cell` to a low value (e.g. `30`).
-1. First scan over `background_reject_factor` *only* (e.g. between `0` and `2`).
+  - Set `min_pixels_per_cell` to a low value (e.g. `30`) and `max_pixels_per_cell` to a high value (e.g. `5000`).
+  - Set `max_dist_over_waist` (split) and `max_split_over_minor` (rejoin) to high values (e.g. `80` and `5`).
+1. Now scan over `background_reject_factor` *only* (e.g. between `0` and `2`).
   - Set `background_reject_factor` to its optimal value, which maximizes 
     detection of cells, and minimizes segmentation artifacts.
 3. Scan over `max_dist_over_waist`.
-4. Fix `max_dist_over_waist` to its optimal value, which adjacent cells and 
-   daughters cells from their mothers.
-  - At this point you must tolerate projected growth (i.e. shmoos) being split 
-    from the rest of the cell body.
+  - At this step you must not consider projected growth (i.e. shmoos) being split 
+    from the rest of the cell body, because `max_split_over_minor` is essentially disabled.
+  - Set `max_dist_over_waist` to its optimal value, which adjacent cells and 
+    daughters cells from their mothers.
 5. Scan over `max_split_over_minor` *only*, which should minimize the amount of 
-   growth projections split from their bodies.
+   growth projections split from their bodies, while allowing buds to remain
+   split from their mothers.
 
 > Do not skip the first step, is will make the interpretation of parameters simpler.
 > For example, `max_dist_over_waist` can split "figure-8" cells into two,
@@ -1121,7 +1122,17 @@ values produced with R's `seq` function:
 
 ```{r}
 parameters.list <- rcell2.cellid::parameters_default(
-  background_reject_factor = seq(from=0, to=1.5, by = 0.4)
+  # Extreme values to detect all.
+  max_pixels_per_cell = 5000, min_pixels_per_cell = 30,
+  
+  # Large values to effectively disable these features temporarily.
+  max_dist_over_waist = 80, max_split_over_minor = 5,
+  
+  # Scan over bgrf first.
+  background_reject_factor = seq(from=0.2, to=1.4, length.out=6)
+  
+  # Then scan over max_dist_over_waist, and then max_split_over_minor,
+  # as explained above.
 )
 
 parameters.list$background_reject_factor
