@@ -71,6 +71,7 @@ ijm_open_hyperstack <- function(images, use_out = 0:1, temp_dir_name="ijm_set", 
   tools <- paste('// Additional tools:',
                  'run("Channels Tool...");',
                  'run("Brightness/Contrast...");',
+                 'run("Synchronize Windows");',
                  'setTool("multipoint");',
                  'run("Point Tool...");',
                  sep = "\n")
